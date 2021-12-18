@@ -1,7 +1,6 @@
 #ifndef COMPILER_LEXER_HPP
 #define COMPILER_LEXER_HPP
 
-#include <set>
 #include <string>
 #include <vector>
 
@@ -13,13 +12,11 @@ namespace compiler {
 class lexer {
 
 public:
-  enum class LexerResult { OKAY, WARNINGS, ERRORS };
-
   lexer();
 
-  bool load_files(std::vector<std::string> &files);
+  bool load_file(std::string &file);
 
-  LexerResult lex(std::vector<TD_Pair> &tokens);
+  bool lex(std::vector<TD_Pair> &tokens);
 
 private:
   void clear();
@@ -28,12 +25,11 @@ private:
   SourceLine *_current_line;
   size_t _line_len;
   size_t _idx;
-  std::set<char> _id_stop;
 
-  LexerResult lex_line();
+  bool lex_line();
 
   void advance();
-  char peek();
+  char peek(size_t ahead = 1);
 };
 } // namespace compiler
 

@@ -1,4 +1,5 @@
 #include "compiler/lexer.hpp"
+#include "compiler/parser.hpp"
 
 #include <iostream>
 #include <string>
@@ -43,32 +44,18 @@ int main(int argc, char **argv) {
 
   compiler::lexer lexer;
 
-  if (!lexer.load_files(filenames)) {
-    return -1;
+  for (auto &file : filenames) {
+    if (!lexer.load_file(file)) {
+      return -1;
+    }
+    std::vector<compiler::TD_Pair> token_data_pairs;
+    if (!lexer.lex(token_data_pairs)) {
+      std::cout << "Failed to lex : " << file << std::endl;
+    }
+
+    // Parser will eventually emit a tree
+    compiler::parser().parse(token_data_pairs);
   }
-
-  std::vector<compiler::TD_Pair> token_data_pairs;
-  switch (lexer.lex(token_data_pairs)) {
-  case compiler::lexer::LexerResult::WARNINGS:
-    return -1;
-  case compiler::lexer::LexerResult::ERRORS:
-    return -1;
-  case compiler::lexer::LexerResult::OKAY:
-    break;
-  default:
-    std::cerr << "Default reached main : lexer.lex(td_pair)" << std::endl;
-    return -1;
-    break;
-  }
-
-  // Send the token_data_pairs to the parser
-
-  std::cout << "Got : " << token_data_pairs.size() << " tokens\n";
-
-  for (auto &tok : token_data_pairs) {
-    std::cout << " " << token_to_str(tok);
-  }
-  std::cout << std::endl;
 
   return 0;
 }

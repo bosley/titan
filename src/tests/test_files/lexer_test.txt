@@ -1,0 +1,23 @@
+{}[]()<>,.?;:'"+-*/#@$&|~^%
++=
+-=
+/=
+// Ignored
+*=
+%=
+=
+==
+**
+**=
+->
+||
+&&
+!
+!=
+variable
+43
+3.14159
+fn
+variable_name
+variable_name_something_422
+fn main() -> some_return_type {}
