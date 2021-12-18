@@ -14,7 +14,7 @@ parser::parse(std::vector<TD_Pair> &tokens) {
 
   while (_parser_okay && _idx < _tokens->size()) {
 
-    new_top_level_item = parse_function();
+    new_top_level_item = function();
     if (new_top_level_item) {
       top_level_items.push_back(new_top_level_item);
     }
@@ -50,7 +50,7 @@ TD_Pair parser::peek(size_t ahead) {
   return _tokens->at(_idx + ahead);
 }
 
-parse_tree::toplevel *parser::parse_function() {
+parse_tree::toplevel *parser::function() {
 
   // fn some_function
   if (_tokens->at(_idx).token != Token::FN) {
@@ -68,7 +68,7 @@ parse_tree::toplevel *parser::parse_function() {
 
   // Get function name
 
-  auto params = parse_function_parameters();
+  auto params = function_params();
 
   // Function validated, return it
   if (_parser_okay) {
@@ -78,8 +78,17 @@ parse_tree::toplevel *parser::parse_function() {
   return nullptr;
 }
 
-std::vector<parse_tree::variable> parser::parse_function_parameters() {
-  return {};
-}
-
+std::vector<parse_tree::variable> parser::function_params() { return {}; }
+parse_tree::element *parser::statement() { return nullptr; }
+parse_tree::element *parser::assignment() { return nullptr; }
+parse_tree::element *parser::if_statement() { return nullptr; }
+parse_tree::element *parser::else_if_statement() { return nullptr; }
+parse_tree::element *parser::else_statement() { return nullptr; }
+parse_tree::element *parser::loop() { return nullptr; }
+parse_tree::expr_node *parser::expression() { return nullptr; }
+parse_tree::expr_node *parser::term() { return nullptr; }
+parse_tree::expr_node *parser::factor() { return nullptr; }
+parse_tree::expr_node *parser::primary() { return nullptr; }
+parse_tree::expr_node *parser::function_call() { return nullptr; }
+std::vector<parse_tree::expr_node *> function_call_params() { return {}; }
 } // namespace compiler

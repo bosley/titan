@@ -2,12 +2,15 @@
 ```
     <entry> := <function-statement>+
 
-    <function-statement> := 'fn' <identifier> <function-params> '->' <identifier> '{' <statements> '}'
+    <function-statement> := 'fn' <identifier> '(' <function-params> ')' '->' <identifier> '{' <statements> '}'
+
+    <function-params> := <identifier> ':' <identifier>
+                       | <function-params> ',' <identifier> ':' <identifier>
 
     <statements> := <statement> 
                   | <statements> <statement>
 
-    <satement> := <assignment> 
+    <statement> := <assignment> 
                 | <if-statement> 
                 | <loop> 
                 | <expression>

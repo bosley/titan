@@ -1,14 +1,2 @@
 
-
-```
-
-    START: FUNCTION_STATEMENT+
-
-    FUNCTION_STATEMENT := 'fn' 'identifier' FUNCTION_PARAMS '->' 'identifier' STATEMENTS
-
-    STATEMENTS := STATEMENT | STATEMENTS STATEMENT
-
-    STATEMENT := ASSIGNMENT | RETURN
-
-
-```
+# titan
