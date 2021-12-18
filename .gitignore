@@ -3,6 +3,7 @@
 
 .vscode
 **/*.vscode
+**/CMakeFiles
 
 build/
 
