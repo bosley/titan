@@ -87,195 +87,241 @@ bool lexer::lex_line() {
     case 'f':
       if (peek() == 'n') {
         advance();
-        _tokens->emplace_back(TD_Pair{Token::FN, {}});
+        _tokens->emplace_back(
+            TD_Pair{Token::FN, {}, &_current_line->file_line_no});
       }
       break;
 
     case '(':
-      _tokens->emplace_back(TD_Pair{Token::L_PAREN, {}});
+      _tokens->emplace_back(
+          TD_Pair{Token::L_PAREN, {}, &_current_line->file_line_no});
       break;
 
     case ')':
-      _tokens->emplace_back(TD_Pair{Token::R_PAREN, {}});
+      _tokens->emplace_back(
+          TD_Pair{Token::R_PAREN, {}, &_current_line->file_line_no});
       break;
 
     case '[':
-      _tokens->emplace_back(TD_Pair{Token::L_BRACKET, {}});
+      _tokens->emplace_back(
+          TD_Pair{Token::L_BRACKET, {}, &_current_line->file_line_no});
       break;
 
     case ']':
-      _tokens->emplace_back(TD_Pair{Token::R_BRACKET, {}});
+      _tokens->emplace_back(
+          TD_Pair{Token::R_BRACKET, {}, &_current_line->file_line_no});
       break;
 
     case '{':
-      _tokens->emplace_back(TD_Pair{Token::L_BRACE, {}});
+      _tokens->emplace_back(
+          TD_Pair{Token::L_BRACE, {}, &_current_line->file_line_no});
       break;
 
     case '}':
-      _tokens->emplace_back(TD_Pair{Token::R_BRACE, {}});
+      _tokens->emplace_back(
+          TD_Pair{Token::R_BRACE, {}, &_current_line->file_line_no});
       break;
 
     case ':':
-      _tokens->emplace_back(TD_Pair{Token::COLON, {}});
+      _tokens->emplace_back(
+          TD_Pair{Token::COLON, {}, &_current_line->file_line_no});
       break;
 
     case ';':
-      _tokens->emplace_back(TD_Pair{Token::SEMICOLON, {}});
+      _tokens->emplace_back(
+          TD_Pair{Token::SEMICOLON, {}, &_current_line->file_line_no});
       break;
 
     case ',':
-      _tokens->emplace_back(TD_Pair{Token::COMMA, {}});
+      _tokens->emplace_back(
+          TD_Pair{Token::COMMA, {}, &_current_line->file_line_no});
       break;
 
     case '>':
-      _tokens->emplace_back(TD_Pair{Token::GT, {}});
+      _tokens->emplace_back(
+          TD_Pair{Token::GT, {}, &_current_line->file_line_no});
       break;
 
     case '<':
-      _tokens->emplace_back(TD_Pair{Token::LT, {}});
+      _tokens->emplace_back(
+          TD_Pair{Token::LT, {}, &_current_line->file_line_no});
       break;
 
     case '@':
-      _tokens->emplace_back(TD_Pair{Token::AT, {}});
+      _tokens->emplace_back(
+          TD_Pair{Token::AT, {}, &_current_line->file_line_no});
       break;
 
     case '$':
-      _tokens->emplace_back(TD_Pair{Token::DOLLAR, {}});
+      _tokens->emplace_back(
+          TD_Pair{Token::DOLLAR, {}, &_current_line->file_line_no});
       break;
 
     case '"':
-      _tokens->emplace_back(TD_Pair{Token::DOUBLE_QUOTE, {}});
+      _tokens->emplace_back(
+          TD_Pair{Token::DOUBLE_QUOTE, {}, &_current_line->file_line_no});
       break;
 
     case '\'':
-      _tokens->emplace_back(TD_Pair{Token::SINGLE_QUOTE, {}});
+      _tokens->emplace_back(
+          TD_Pair{Token::SINGLE_QUOTE, {}, &_current_line->file_line_no});
       break;
 
     case '?':
-      _tokens->emplace_back(TD_Pair{Token::QUESTION_MARK, {}});
+      _tokens->emplace_back(
+          TD_Pair{Token::QUESTION_MARK, {}, &_current_line->file_line_no});
       break;
 
     case '.':
-      _tokens->emplace_back(TD_Pair{Token::PERIOD, {}});
+      _tokens->emplace_back(
+          TD_Pair{Token::PERIOD, {}, &_current_line->file_line_no});
       break;
 
     case '#':
-      _tokens->emplace_back(TD_Pair{Token::OCTOTHORPE, {}});
+      _tokens->emplace_back(
+          TD_Pair{Token::OCTOTHORPE, {}, &_current_line->file_line_no});
       break;
 
     case '!':
       if (peek() == '=') {
         advance();
-        _tokens->emplace_back(TD_Pair{Token::EXCLAMATION_EQ, {}});
+        _tokens->emplace_back(
+            TD_Pair{Token::EXCLAMATION_EQ, {}, &_current_line->file_line_no});
       } else {
-        _tokens->emplace_back(TD_Pair{Token::EXCLAMATION, {}});
+        _tokens->emplace_back(
+            TD_Pair{Token::EXCLAMATION, {}, &_current_line->file_line_no});
       }
       break;
 
     case '-':
       if (peek() == '>') {
         advance();
-        _tokens->emplace_back(TD_Pair{Token::ARROW, {}});
+        _tokens->emplace_back(
+            TD_Pair{Token::ARROW, {}, &_current_line->file_line_no});
       } else if (peek() == '=') {
         advance();
-        _tokens->emplace_back(TD_Pair{Token::SUB_EQ, {}});
+        _tokens->emplace_back(
+            TD_Pair{Token::SUB_EQ, {}, &_current_line->file_line_no});
       } else {
-        _tokens->emplace_back(TD_Pair{Token::SUB, {}});
+        _tokens->emplace_back(
+            TD_Pair{Token::SUB, {}, &_current_line->file_line_no});
       }
       break;
 
     case '+':
       if (peek() == '=') {
         advance();
-        _tokens->emplace_back(TD_Pair{Token::ADD_EQ, {}});
+        _tokens->emplace_back(
+            TD_Pair{Token::ADD_EQ, {}, &_current_line->file_line_no});
       } else {
-        _tokens->emplace_back(TD_Pair{Token::ADD, {}});
+        _tokens->emplace_back(
+            TD_Pair{Token::ADD, {}, &_current_line->file_line_no});
       }
       break;
 
     case '/':
       if (peek() == '=') {
         advance();
-        _tokens->emplace_back(TD_Pair{Token::DIV_EQ, {}});
+        _tokens->emplace_back(
+            TD_Pair{Token::DIV_EQ, {}, &_current_line->file_line_no});
       } else {
-        _tokens->emplace_back(TD_Pair{Token::DIV, {}});
+        _tokens->emplace_back(
+            TD_Pair{Token::DIV, {}, &_current_line->file_line_no});
       }
       break;
 
     case '*':
       if (peek() == '=') {
         advance();
-        _tokens->emplace_back(TD_Pair{Token::MUL_EQ, {}});
+        _tokens->emplace_back(
+            TD_Pair{Token::MUL_EQ, {}, &_current_line->file_line_no});
       } else if (peek() == '*') {
         advance();
         if (peek() == '=') {
           advance();
-          _tokens->emplace_back(TD_Pair{Token::POW_EQ, {}});
+          _tokens->emplace_back(
+              TD_Pair{Token::POW_EQ, {}, &_current_line->file_line_no});
         } else {
-          _tokens->emplace_back(TD_Pair{Token::POW, {}});
+          _tokens->emplace_back(
+              TD_Pair{Token::POW, {}, &_current_line->file_line_no});
         }
       } else {
-        _tokens->emplace_back(TD_Pair{Token::MUL, {}});
+        _tokens->emplace_back(
+            TD_Pair{Token::MUL, {}, &_current_line->file_line_no});
       }
       break;
 
     case '%':
       if (peek() == '=') {
         advance();
-        _tokens->emplace_back(TD_Pair{Token::MOD_EQ, {}});
+        _tokens->emplace_back(
+            TD_Pair{Token::MOD_EQ, {}, &_current_line->file_line_no});
       } else {
-        _tokens->emplace_back(TD_Pair{Token::MOD, {}});
+        _tokens->emplace_back(
+            TD_Pair{Token::MOD, {}, &_current_line->file_line_no});
       }
       break;
 
     case '&':
       if (peek() == '=') {
         advance();
-        _tokens->emplace_back(TD_Pair{Token::AMPERSAND_EQ, {}});
+        _tokens->emplace_back(
+            TD_Pair{Token::AMPERSAND_EQ, {}, &_current_line->file_line_no});
       } else if (peek() == '&') {
         advance();
-        _tokens->emplace_back(TD_Pair{Token::AND, {}});
+        _tokens->emplace_back(
+            TD_Pair{Token::AND, {}, &_current_line->file_line_no});
       } else {
-        _tokens->emplace_back(TD_Pair{Token::AMPERSAND, {}});
+        _tokens->emplace_back(
+            TD_Pair{Token::AMPERSAND, {}, &_current_line->file_line_no});
       }
       break;
 
     case '|':
       if (peek() == '=') {
         advance();
-        _tokens->emplace_back(TD_Pair{Token::PIPE_EQ, {}});
+        _tokens->emplace_back(
+            TD_Pair{Token::PIPE_EQ, {}, &_current_line->file_line_no});
       } else if (peek() == '|') {
         advance();
-        _tokens->emplace_back(TD_Pair{Token::OR, {}});
+        _tokens->emplace_back(
+            TD_Pair{Token::OR, {}, &_current_line->file_line_no});
       } else {
-        _tokens->emplace_back(TD_Pair{Token::PIPE, {}});
+        _tokens->emplace_back(
+            TD_Pair{Token::PIPE, {}, &_current_line->file_line_no});
       }
       break;
 
     case '~':
       if (peek() == '=') {
         advance();
-        _tokens->emplace_back(TD_Pair{Token::TILDE_EQ, {}});
+        _tokens->emplace_back(
+            TD_Pair{Token::TILDE_EQ, {}, &_current_line->file_line_no});
       } else {
-        _tokens->emplace_back(TD_Pair{Token::TILDE, {}});
+        _tokens->emplace_back(
+            TD_Pair{Token::TILDE, {}, &_current_line->file_line_no});
       }
       break;
 
     case '^':
       if (peek() == '=') {
         advance();
-        _tokens->emplace_back(TD_Pair{Token::HAT_EQ, {}});
+        _tokens->emplace_back(
+            TD_Pair{Token::HAT_EQ, {}, &_current_line->file_line_no});
       } else {
-        _tokens->emplace_back(TD_Pair{Token::HAT, {}});
+        _tokens->emplace_back(
+            TD_Pair{Token::HAT, {}, &_current_line->file_line_no});
       }
       break;
 
     case '=':
       if (peek() == '=') {
         advance();
-        _tokens->emplace_back(TD_Pair{Token::EQ_EQ, {}});
+        _tokens->emplace_back(
+            TD_Pair{Token::EQ_EQ, {}, &_current_line->file_line_no});
       } else {
-        _tokens->emplace_back(TD_Pair{Token::EQ, {}});
+        _tokens->emplace_back(
+            TD_Pair{Token::EQ, {}, &_current_line->file_line_no});
       }
       break;
 
@@ -296,15 +342,18 @@ bool lexer::lex_line() {
         }
 
         if (is_float) {
-          _tokens->emplace_back(TD_Pair{Token::LITERAL_FLOAT, item});
+          _tokens->emplace_back(TD_Pair{Token::LITERAL_FLOAT, item,
+                                        &_current_line->file_line_no});
         } else {
-          _tokens->emplace_back(TD_Pair{Token::LITERAL_NUMBER, item});
+          _tokens->emplace_back(TD_Pair{Token::LITERAL_NUMBER, item,
+                                        &_current_line->file_line_no});
         }
         break;
       }
 
       // Eat identifier until next white space
-      _tokens->emplace_back(TD_Pair{Token::IDENTIFIER, {}});
+      _tokens->emplace_back(
+          TD_Pair{Token::IDENTIFIER, {}, &_current_line->file_line_no});
       while (std::isalnum(peek()) || std::isdigit(peek()) || peek() == '_') {
         _tokens->back().data += _current_line->data[_idx];
         advance();

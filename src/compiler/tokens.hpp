@@ -61,113 +61,116 @@ enum class Token {
 struct TD_Pair {
   Token token;
   std::string data;
+  size_t *line;
 };
 
 static std::string token_to_str(const TD_Pair &td) {
+
+  size_t line_no = (td.line) ? *td.line : 0;
   switch (td.token) {
   case Token::FN:
-    return "FN";
+    return "FN[" + std::to_string(line_no) + "]";
   case Token::IDENTIFIER:
-    return "IDENTIFIER(" + td.data + ")";
+    return "IDENTIFIER(" + td.data + ")[" + std::to_string(line_no) + "]";
   case Token::L_BRACKET:
-    return "L_BRACKET";
+    return "L_BRACKET[" + std::to_string(line_no) + "]";
   case Token::R_BRACKET:
-    return "R_BRACKET";
+    return "R_BRACKET[" + std::to_string(line_no) + "]";
   case Token::L_PAREN:
-    return "L_PAREN";
+    return "L_PAREN[" + std::to_string(line_no) + "]";
   case Token::R_PAREN:
-    return "R_PAREN";
+    return "R_PAREN[" + std::to_string(line_no) + "]";
   case Token::L_BRACE:
-    return "L_BRACE";
+    return "L_BRACE[" + std::to_string(line_no) + "]";
   case Token::R_BRACE:
-    return "R_BRACE";
+    return "R_BRACE[" + std::to_string(line_no) + "]";
   case Token::COLON:
-    return "COLON";
+    return "COLON[" + std::to_string(line_no) + "]";
   case Token::SEMICOLON:
-    return "SEMICOLON";
+    return "SEMICOLON[" + std::to_string(line_no) + "]";
   case Token::COMMA:
-    return "COMMA";
+    return "COMMA[" + std::to_string(line_no) + "]";
   case Token::GT:
-    return "GT";
+    return "GT[" + std::to_string(line_no) + "]";
   case Token::LT:
-    return "LT";
+    return "LT[" + std::to_string(line_no) + "]";
   case Token::SUB:
-    return "SUB";
+    return "SUB[" + std::to_string(line_no) + "]";
   case Token::ARROW:
-    return "ARROW";
+    return "ARROW[" + std::to_string(line_no) + "]";
   case Token::ADD:
-    return "ADD";
+    return "ADD[" + std::to_string(line_no) + "]";
   case Token::MUL:
-    return "MUL";
+    return "MUL[" + std::to_string(line_no) + "]";
   case Token::DIV:
-    return "DIV";
+    return "DIV[" + std::to_string(line_no) + "]";
   case Token::MOD:
-    return "MOD";
+    return "MOD[" + std::to_string(line_no) + "]";
   case Token::POW:
-    return "POW";
+    return "POW[" + std::to_string(line_no) + "]";
   case Token::ADD_EQ:
-    return "ADD_EQ";
+    return "ADD_EQ[" + std::to_string(line_no) + "]";
   case Token::SUB_EQ:
-    return "SUB_EQ";
+    return "SUB_EQ[" + std::to_string(line_no) + "]";
   case Token::MUL_EQ:
-    return "MUL_EQ";
+    return "MUL_EQ[" + std::to_string(line_no) + "]";
   case Token::DIV_EQ:
-    return "DIV_EQ";
+    return "DIV_EQ[" + std::to_string(line_no) + "]";
   case Token::MOD_EQ:
-    return "MOD_EQ";
+    return "MOD_EQ[" + std::to_string(line_no) + "]";
   case Token::POW_EQ:
-    return "POW_EQ";
+    return "POW_EQ[" + std::to_string(line_no) + "]";
   case Token::AMPERSAND:
-    return "AMPERSAND";
+    return "AMPERSAND[" + std::to_string(line_no) + "]";
   case Token::PIPE:
-    return "PIPE";
+    return "PIPE[" + std::to_string(line_no) + "]";
   case Token::TILDE:
-    return "TILDE";
+    return "TILDE[" + std::to_string(line_no) + "]";
   case Token::HAT:
-    return "HAT";
+    return "HAT[" + std::to_string(line_no) + "]";
   case Token::AMPERSAND_EQ:
-    return "AMPERSAND_EQ";
+    return "AMPERSAND_EQ[" + std::to_string(line_no) + "]";
   case Token::PIPE_EQ:
-    return "PIPE_EQ";
+    return "PIPE_EQ[" + std::to_string(line_no) + "]";
   case Token::TILDE_EQ:
-    return "TILDE_EQ";
+    return "TILDE_EQ[" + std::to_string(line_no) + "]";
   case Token::HAT_EQ:
-    return "HAT_EQ";
+    return "HAT_EQ[" + std::to_string(line_no) + "]";
   case Token::EQ:
-    return "EQ";
+    return "EQ[" + std::to_string(line_no) + "]";
   case Token::EQ_EQ:
-    return "EQ_EQ";
+    return "EQ_EQ[" + std::to_string(line_no) + "]";
   case Token::AT:
-    return "AT";
+    return "AT[" + std::to_string(line_no) + "]";
   case Token::DOLLAR:
-    return "DOLLAR";
+    return "DOLLAR[" + std::to_string(line_no) + "]";
   case Token::DOUBLE_QUOTE:
-    return "DOUBLE_QUOTE";
+    return "DOUBLE_QUOTE[" + std::to_string(line_no) + "]";
   case Token::SINGLE_QUOTE:
-    return "SINGLE_QUOTE";
+    return "SINGLE_QUOTE[" + std::to_string(line_no) + "]";
   case Token::QUESTION_MARK:
-    return "QUESTION_MARK";
+    return "QUESTION_MARK[" + std::to_string(line_no) + "]";
   case Token::PERIOD:
-    return "PERIOD";
+    return "PERIOD[" + std::to_string(line_no) + "]";
   case Token::OCTOTHORPE:
-    return "OCTOTHORPE";
+    return "OCTOTHORPE[" + std::to_string(line_no) + "]";
   case Token::LITERAL_FLOAT:
-    return "FLOAT(" + td.data + ")";
+    return "FLOAT(" + td.data + ")[" + std::to_string(line_no) + "]";
   case Token::LITERAL_NUMBER:
-    return "NUMBER(" + td.data + ")";
+    return "NUMBER(" + td.data + ")[" + std::to_string(line_no) + "]";
   case Token::OR:
-    return "OR";
+    return "OR[" + std::to_string(line_no) + "]";
   case Token::AND:
-    return "AND";
+    return "AND[" + std::to_string(line_no) + "]";
   case Token::EXCLAMATION:
-    return "EXCLAMATION";
+    return "EXCLAMATION[" + std::to_string(line_no) + "]";
   case Token::EXCLAMATION_EQ:
-    return "EXCLAMATION_EQ";
+    return "EXCLAMATION_EQ[" + std::to_string(line_no) + "]";
   case Token::EOS:
-    return "EOS";
+    return "EOS[" + std::to_string(line_no) + "]";
   }
 
-  return "UNKNOWN";
+  return "UNKNOWN[" + std::to_string(line_no) + "]";
 }
 
 } // namespace compiler

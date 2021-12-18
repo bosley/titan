@@ -53,6 +53,11 @@ int main(int argc, char **argv) {
       std::cout << "Failed to lex : " << file << std::endl;
     }
 
+    for (auto &td : token_data_pairs) {
+      std::cout << " " << compiler::token_to_str(td);
+    }
+    std::cout << std::endl;
+
     // Parser will eventually emit a tree
     compiler::parser().parse(token_data_pairs);
   }
