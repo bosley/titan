@@ -70,6 +70,17 @@ std::vector<TestCase> tcs = {
          {compiler::Token::IDENTIFIER, "some_return_type", nullptr},
          {compiler::Token::L_BRACE, {}, nullptr},
          {compiler::Token::R_BRACE, {}, nullptr},
+         {compiler::Token::IF, {}, nullptr},
+         {compiler::Token::ELSE, {}, nullptr},
+         {compiler::Token::FOR, {}, nullptr},
+         {compiler::Token::WHILE, {}, nullptr},
+         {compiler::Token::RETURN, {}, nullptr},
+         {compiler::Token::BREAK, {}, nullptr},
+         {compiler::Token::LET, {}, nullptr},
+         {compiler::Token::IDENTIFIER, "x", nullptr},
+         {compiler::Token::EQ, {}, nullptr},
+         {compiler::Token::LITERAL_NUMBER, "3", nullptr},
+         {compiler::Token::SEMICOLON, {}, nullptr},
      }}};
 
 } // namespace

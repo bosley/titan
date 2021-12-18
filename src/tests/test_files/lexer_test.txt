@@ -21,3 +21,10 @@ fn
 variable_name
 variable_name_something_422
 fn main() -> some_return_type {}
+if
+else
+for
+while
+return 
+break
+let x = 3;

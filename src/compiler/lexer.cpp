@@ -84,14 +84,6 @@ bool lexer::lex_line() {
   _line_len = _current_line->data.size();
   for (_idx = 0; _idx < _line_len; advance()) {
     switch (_current_line->data[_idx]) {
-    case 'f':
-      if (peek() == 'n') {
-        advance();
-        _tokens->emplace_back(
-            TD_Pair{Token::FN, {}, &_current_line->file_line_no});
-      }
-      break;
-
     case '(':
       _tokens->emplace_back(
           TD_Pair{Token::L_PAREN, {}, &_current_line->file_line_no});
@@ -340,6 +332,7 @@ bool lexer::lex_line() {
           }
           advance();
         }
+        item += _current_line->data[_idx];
 
         if (is_float) {
           _tokens->emplace_back(TD_Pair{Token::LITERAL_FLOAT, item,
@@ -351,14 +344,43 @@ bool lexer::lex_line() {
         break;
       }
 
-      // Eat identifier until next white space
-      _tokens->emplace_back(
-          TD_Pair{Token::IDENTIFIER, {}, &_current_line->file_line_no});
+      // Eat some word, could be a reserved word or an identifier
+      std::string word;
       while (std::isalnum(peek()) || std::isdigit(peek()) || peek() == '_') {
-        _tokens->back().data += _current_line->data[_idx];
+        word += _current_line->data[_idx];
         advance();
       }
-      _tokens->back().data += _current_line->data[_idx];
+      word += _current_line->data[_idx];
+
+      // Check against reserved words, default to assuming its an identifier
+      if (word == "fn") {
+        _tokens->emplace_back(
+            TD_Pair{Token::FN, {}, &_current_line->file_line_no});
+      } else if (word == "while") {
+        _tokens->emplace_back(
+            TD_Pair{Token::WHILE, {}, &_current_line->file_line_no});
+      } else if (word == "for") {
+        _tokens->emplace_back(
+            TD_Pair{Token::FOR, {}, &_current_line->file_line_no});
+      } else if (word == "if") {
+        _tokens->emplace_back(
+            TD_Pair{Token::IF, {}, &_current_line->file_line_no});
+      } else if (word == "else") {
+        _tokens->emplace_back(
+            TD_Pair{Token::ELSE, {}, &_current_line->file_line_no});
+      } else if (word == "return") {
+        _tokens->emplace_back(
+            TD_Pair{Token::RETURN, {}, &_current_line->file_line_no});
+      } else if (word == "break") {
+        _tokens->emplace_back(
+            TD_Pair{Token::BREAK, {}, &_current_line->file_line_no});
+      } else if (word == "let") {
+        _tokens->emplace_back(
+            TD_Pair{Token::LET, {}, &_current_line->file_line_no});
+      } else {
+        _tokens->emplace_back(
+            TD_Pair{Token::IDENTIFIER, word, &_current_line->file_line_no});
+      }
       break;
     }
   }

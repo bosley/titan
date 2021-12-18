@@ -37,6 +37,7 @@ private:
   parse_tree::expr_node *primary();
   parse_tree::expr_node *function_call();
   std::vector<parse_tree::expr_node *> function_call_params();
+  std::string identifier();
 };
 } // namespace compiler
 

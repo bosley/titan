@@ -55,6 +55,13 @@ enum class Token {
   AND,
   EXCLAMATION,
   EXCLAMATION_EQ,
+  WHILE,
+  FOR,
+  IF,
+  ELSE,
+  RETURN,
+  BREAK,
+  LET,
   EOS // End of stream
 };
 
@@ -166,6 +173,20 @@ static std::string token_to_str(const TD_Pair &td) {
     return "EXCLAMATION[" + std::to_string(line_no) + "]";
   case Token::EXCLAMATION_EQ:
     return "EXCLAMATION_EQ[" + std::to_string(line_no) + "]";
+  case Token::WHILE:
+    return "WHILE[" + std::to_string(line_no) + "]";
+  case Token::FOR:
+    return "FOR[" + std::to_string(line_no) + "]";
+  case Token::IF:
+    return "IF[" + std::to_string(line_no) + "]";
+  case Token::ELSE:
+    return "ELSE[" + std::to_string(line_no) + "]";
+  case Token::RETURN:
+    return "RETURN[" + std::to_string(line_no) + "]";
+  case Token::BREAK:
+    return "BREAK[" + std::to_string(line_no) + "]";
+  case Token::LET:
+    return "LET[" + std::to_string(line_no) + "]";
   case Token::EOS:
     return "EOS[" + std::to_string(line_no) + "]";
   }

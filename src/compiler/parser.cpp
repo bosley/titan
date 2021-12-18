@@ -90,5 +90,9 @@ parse_tree::expr_node *parser::term() { return nullptr; }
 parse_tree::expr_node *parser::factor() { return nullptr; }
 parse_tree::expr_node *parser::primary() { return nullptr; }
 parse_tree::expr_node *parser::function_call() { return nullptr; }
-std::vector<parse_tree::expr_node *> function_call_params() { return {}; }
+std::vector<parse_tree::expr_node *> parser::function_call_params() {
+  return {};
+}
+std::string parser::identifier() { return {}; };
+
 } // namespace compiler
