@@ -62,6 +62,7 @@ enum class Token {
   RETURN,
   BREAK,
   LET,
+  IMPORT,
   EOS // End of stream
 };
 
@@ -187,6 +188,8 @@ static std::string token_to_str(const TD_Pair &td) {
     return "BREAK[" + std::to_string(line_no) + "]";
   case Token::LET:
     return "LET[" + std::to_string(line_no) + "]";
+  case Token::IMPORT:
+    return "IMPORT[" + std::to_string(line_no) + "]";
   case Token::EOS:
     return "EOS[" + std::to_string(line_no) + "]";
   }

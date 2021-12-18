@@ -1,6 +1,10 @@
 
 ```
-    <entry> := <function-statement>+
+    <entry> := <import> 
+             | <entry> <function-statement>+
+
+    <import> := 'import' <identifier>
+              | <import> 'import' <identifier>
 
     <function-statement> := 'fn' <identifier> '(' <function-params> ')' '->' <identifier> '{' <statements> '}'
 

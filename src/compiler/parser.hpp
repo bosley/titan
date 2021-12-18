@@ -1,6 +1,7 @@
 #ifndef COMPILER_PARSER_HPP
 #define COMPILER_PARSER_HPP
 
+#include <set>
 #include <string>
 #include <vector>
 
@@ -14,15 +15,21 @@ class parser {
 public:
   parser();
 
-  std::vector<parse_tree::toplevel *> parse(std::vector<TD_Pair> &tokens);
+  std::vector<parse_tree::toplevel *>
+  parse(std::function<std::vector<TD_Pair>(std::string)> import_function,
+        std::vector<TD_Pair> &tokens);
+
+  bool is_okay() const { return _parser_okay; }
 
 private:
   bool _parser_okay;
   size_t _idx;
   std::vector<TD_Pair> *_tokens;
+  std::set<std::string> _imported_objects;
   void advance();
   TD_Pair peek(size_t ahead = 1);
   parse_tree::toplevel *function();
+  parse_tree::toplevel *import_stmt();
   std::vector<parse_tree::variable> function_params();
   std::vector<parse_tree::element *> statements();
   parse_tree::element *statement();

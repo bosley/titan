@@ -81,6 +81,7 @@ std::vector<TestCase> tcs = {
          {compiler::Token::EQ, {}, nullptr},
          {compiler::Token::LITERAL_NUMBER, "3", nullptr},
          {compiler::Token::SEMICOLON, {}, nullptr},
+         {compiler::Token::IMPORT, {}, nullptr},
      }}};
 
 } // namespace

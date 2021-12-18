@@ -42,24 +42,29 @@ int main(int argc, char **argv) {
 
   parse_args(std::vector<std::string>(argv, argv + argc));
 
-  compiler::lexer lexer;
+  constexpr auto import_file =
+      [](std::string file) -> std::vector<compiler::TD_Pair> {
+    compiler::lexer lexer;
+    if (!lexer.load_file(file)) {
+      std::exit(-1);
+    }
+    std::vector<compiler::TD_Pair> td;
+    if (!lexer.lex(td)) {
+      std::exit(-1);
+    }
+    return td;
+  };
 
   for (auto &file : filenames) {
-    if (!lexer.load_file(file)) {
-      return -1;
-    }
-    std::vector<compiler::TD_Pair> token_data_pairs;
-    if (!lexer.lex(token_data_pairs)) {
-      std::cout << "Failed to lex : " << file << std::endl;
-    }
 
-    for (auto &td : token_data_pairs) {
+    auto files_tokens = import_file(file);
+
+    compiler::parser().parse(import_file, files_tokens);
+
+    for (auto &td : files_tokens) {
       std::cout << " " << compiler::token_to_str(td);
     }
     std::cout << std::endl;
-
-    // Parser will eventually emit a tree
-    compiler::parser().parse(token_data_pairs);
   }
 
   return 0;

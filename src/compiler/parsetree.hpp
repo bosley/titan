@@ -71,10 +71,16 @@ public:
 
 class toplevel {
 public:
-  enum class tl_type { FUNCTION };
+  enum class tl_type { IMPORT, FUNCTION };
   toplevel(tl_type t) : type(t) {}
   virtual ~toplevel() = default;
   tl_type type;
+};
+
+class import_stmt : public toplevel {
+public:
+  import_stmt() : toplevel(toplevel::tl_type::IMPORT) {}
+  std::string target;
 };
 
 class function : public toplevel {

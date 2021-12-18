@@ -6,7 +6,8 @@ namespace compiler {
 parser::parser() : _parser_okay(true), _idx(0), _tokens(nullptr) {}
 
 std::vector<parse_tree::toplevel *>
-parser::parse(std::vector<TD_Pair> &tokens) {
+parser::parse(std::function<std::vector<TD_Pair>(std::string)> import_file,
+              std::vector<TD_Pair> &tokens) {
   _tokens = &tokens;
   std::vector<parse_tree::toplevel *> top_level_items;
 
@@ -14,11 +15,52 @@ parser::parse(std::vector<TD_Pair> &tokens) {
 
   while (_parser_okay && _idx < _tokens->size()) {
 
+    /*
+        Check fo an import statement
+        If a statement is returned
+    */
+    new_top_level_item = import_stmt();
+    if (new_top_level_item) {
+      if (!_parser_okay) {
+        continue;
+      }
+
+      parse_tree::import_stmt *import_statement =
+          static_cast<parse_tree::import_stmt *>(new_top_level_item);
+
+      // Ensure we haven't imported it yet
+      if (_imported_objects.find(import_statement->target) !=
+          _imported_objects.end()) {
+        delete new_top_level_item;
+        continue;
+      }
+      _imported_objects.insert(import_statement->target);
+
+      // Lex and parse the file
+      std::vector<TD_Pair> imported_tokens =
+          import_file(import_statement->target);
+
+      parser import_parser;
+      std::vector<parse_tree::toplevel *> parsed_file =
+          import_parser.parse(import_file, imported_tokens);
+      if (!import_parser.is_okay()) {
+        _parser_okay = true;
+        continue;
+      }
+
+      // Add it to our top level objects
+      top_level_items.insert(top_level_items.end(), parsed_file.begin(),
+                             parsed_file.end());
+    }
+    if (!_parser_okay) {
+      continue;
+    }
+
     new_top_level_item = function();
     if (new_top_level_item) {
       top_level_items.push_back(new_top_level_item);
     }
-    if (!_parser_okay) { // Skip ahead to exit for failure
+    if (!_parser_okay) {
       continue;
     }
 
@@ -30,12 +72,15 @@ parser::parse(std::vector<TD_Pair> &tokens) {
     }
   }
 
-  // If we got here there is an err so we clean up
-  for (size_t i = 0; i < top_level_items.size(); i++) {
-    delete top_level_items[i];
+  if (!_parser_okay) {
+    // If we got here there is an err so we clean up
+    for (size_t i = 0; i < top_level_items.size(); i++) {
+      delete top_level_items[i];
+    }
+    top_level_items.clear();
   }
 
-  return {};
+  return top_level_items;
 }
 
 void parser::advance() { _idx++; }
@@ -49,6 +94,8 @@ TD_Pair parser::peek(size_t ahead) {
   }
   return _tokens->at(_idx + ahead);
 }
+
+parse_tree::toplevel *parser::import_stmt() { return nullptr; }
 
 parse_tree::toplevel *parser::function() {
 

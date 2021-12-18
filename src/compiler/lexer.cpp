@@ -377,6 +377,9 @@ bool lexer::lex_line() {
       } else if (word == "let") {
         _tokens->emplace_back(
             TD_Pair{Token::LET, {}, &_current_line->file_line_no});
+      } else if (word == "import") {
+        _tokens->emplace_back(
+            TD_Pair{Token::IMPORT, {}, &_current_line->file_line_no});
       } else {
         _tokens->emplace_back(
             TD_Pair{Token::IDENTIFIER, word, &_current_line->file_line_no});
