@@ -9,7 +9,8 @@ include_directories(
 add_executable(unit_tests
         ${PROJECT_SOURCES}
         main.cpp
-        lexer_tests.cpp)
+        lexer_tests.cpp
+        parser_tests.cpp)
 
 
 target_link_libraries(unit_tests

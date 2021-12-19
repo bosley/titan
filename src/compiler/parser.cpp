@@ -224,6 +224,7 @@ parse_tree::toplevel *parser::function() {
   parse_tree::function *new_func = new parse_tree::function();
 
   new_func->name = function_name;
+  new_func->return_type = parse_tree::string_to_variable_type(return_type);
   new_func->parameters = parameters;
   new_func->element_list = element_list;
 
@@ -283,18 +284,68 @@ std::vector<parse_tree::variable> parser::function_params() {
 
 std::vector<parse_tree::element *> parser::statements() {
 
-  advance();
+  expect(Token::L_BRACE,
+         "Expected '{' to mark the beginning of a statement block");
   advance();
 
-  return {};
+  // Check for empty statement body
+  if (_tokens->at(_idx).token != Token::R_BRACE) {
+    advance();
+    return {};
+  }
+
+  std::vector<parse_tree::element *> elements;
+
+  //  Check for statements
+  //
+  bool check_for_statement = true;
+  while (check_for_statement) {
+
+    // Attempt to get a statement - Return on error
+    parse_tree::element *new_element = statement();
+    if (!_parser_okay) {
+      for (auto &el : elements) {
+        delete el;
+      }
+      return {};
+    }
+
+    // If a new item was gotten, add it to the list
+    if (new_element) {
+      elements.push_back(new_element);
+    } else {
+      check_for_statement = false;
+    }
+  }
+
+  expect(Token::R_BRACE, "Expected '}' to mark the end of a statement block");
+
+  advance();
+  return elements;
 }
 
-parse_tree::element *parser::statement() { return nullptr; }
+parse_tree::element *parser::statement() {
+  if (parse_tree::element *item = parser::assignment()) {
+    return item;
+  }
+  if (parse_tree::element *item = parser::if_statement()) {
+    return item;
+  }
+  if (parse_tree::element *item = parser::loop()) {
+    return item;
+  }
+  if (parse_tree::element *item = parser::expression_statement()) {
+    return item;
+  }
+  return nullptr;
+}
+
 parse_tree::element *parser::assignment() { return nullptr; }
 parse_tree::element *parser::if_statement() { return nullptr; }
 parse_tree::element *parser::else_if_statement() { return nullptr; }
 parse_tree::element *parser::else_statement() { return nullptr; }
 parse_tree::element *parser::loop() { return nullptr; }
+parse_tree::element *parser::expression_statement() { return nullptr; }
 parse_tree::expr_node *parser::expression() { return nullptr; }
 parse_tree::expr_node *parser::term() { return nullptr; }
 parse_tree::expr_node *parser::factor() { return nullptr; }

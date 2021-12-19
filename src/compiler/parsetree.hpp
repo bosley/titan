@@ -106,6 +106,14 @@ public:
   virtual void visit(visitor &v) override;
 };
 
+class expr_statement : public element {
+public:
+  expr_statement(size_t line, expr_node *node) : element(line), expr(node) {}
+  expr_node *expr;
+
+  virtual void visit(visitor &v) override;
+};
+
 class toplevel {
 public:
   enum class tl_type { IMPORT, FUNCTION };
@@ -126,6 +134,7 @@ class function : public toplevel {
 public:
   function() : toplevel(toplevel::tl_type::FUNCTION) {}
   std::string name;
+  variable_types return_type;
   std::vector<variable> parameters;
   std::vector<element *> element_list;
 };
@@ -133,6 +142,7 @@ public:
 class visitor {
 public:
   virtual void accept(assignment &stmt) = 0;
+  virtual void accept(expr_statement &stmt) = 0;
 };
 
 } // namespace parse_tree
