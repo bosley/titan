@@ -18,12 +18,49 @@ enum class variable_types {
   I32,
   I64,
   DOUBLE,
+  STRING,
   USER_DEFINED
 };
+
+static variable_types string_to_variable_type(const std::string &s) {
+  if (s == "u8") {
+    return variable_types::U8;
+  }
+  if (s == "u16") {
+    return variable_types::U16;
+  }
+  if (s == "u32") {
+    return variable_types::U32;
+  }
+  if (s == "u64") {
+    return variable_types::U64;
+  }
+  if (s == "i8") {
+    return variable_types::I8;
+  }
+  if (s == "i16") {
+    return variable_types::I16;
+  }
+  if (s == "i32") {
+    return variable_types::I32;
+  }
+  if (s == "i64") {
+    return variable_types::I64;
+  }
+  if (s == "double") {
+    return variable_types::DOUBLE;
+  }
+  if (s == "string") {
+    return variable_types::STRING;
+  }
+  return variable_types::USER_DEFINED;
+}
 
 struct variable {
   std::string name;
   variable_types type;
+  uint64_t depth; // 0 For single variable, >0 for allocation space,
+                  // uint64_t::max() for unknown size
 };
 
 enum class node_type { ROOT, ADD, SUB, DIV, MUL };

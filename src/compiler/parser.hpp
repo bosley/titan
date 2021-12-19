@@ -16,7 +16,7 @@ public:
   parser();
 
   std::vector<parse_tree::toplevel *>
-  parse(std::vector<std::string> &include_directories,
+  parse(std::string filename, std::vector<std::string> &include_directories,
         std::function<std::vector<TD_Pair>(std::string)> import_function,
         std::vector<TD_Pair> &tokens);
 
@@ -27,7 +27,9 @@ private:
   size_t _idx;
   std::vector<TD_Pair> *_tokens;
   std::set<std::string> _imported_objects;
+  std::string _filename;
   void advance();
+  void expect(Token token, std::string error, size_t ahead = 0);
   TD_Pair peek(size_t ahead = 1);
   parse_tree::toplevel *function();
   parse_tree::toplevel *import_stmt();

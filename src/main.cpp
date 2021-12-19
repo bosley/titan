@@ -100,7 +100,7 @@ int main(int argc, char **argv) {
     compiler::parser parser;
 
     std::vector<compiler::parse_tree::toplevel *> p_tree =
-        parser.parse(include_directories, import_file, files_tokens);
+        parser.parse(file, include_directories, import_file, files_tokens);
 
     std::cout << "Top level items : " << p_tree.size() << std::endl;
   }
