@@ -79,6 +79,8 @@ public:
 
 class import_stmt : public toplevel {
 public:
+  import_stmt(std::string target)
+      : toplevel(toplevel::tl_type::IMPORT), target(target) {}
   import_stmt() : toplevel(toplevel::tl_type::IMPORT) {}
   std::string target;
 };

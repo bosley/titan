@@ -3,8 +3,8 @@
     <entry> := <import> 
              | <entry> <function-statement>+
 
-    <import> := 'import' <identifier>
-              | <import> 'import' <identifier>
+    <import> := 'import' <string>
+              | <import> 'import' <string>
 
     <function-statement> := 'fn' <identifier> '(' <function-params> ')' '->' <identifier> '{' <statements> '}'
 
@@ -43,6 +43,8 @@
     <number> := DECIMAL_NUMBER
 
     <float> := <number> '.' <number>+
+
+    <string> := '"' <chars>+ '"'
 
     <expression> := <term>
                   | <expression> '+' <term>

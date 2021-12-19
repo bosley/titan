@@ -1,4 +1,4 @@
-{}[]()<>,.?;:'"+-*/#@$&|~^%
+{}[]()<>,.?;:'+-*/#@$&|~^%
 +=
 -=
 /=
@@ -29,3 +29,6 @@ return
 break
 let x = 3;
 import
+"This is a string"
+"This \"is a string\""
+"This \"is a string\" as well as \"this\", see?"

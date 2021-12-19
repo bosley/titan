@@ -29,7 +29,6 @@ std::vector<TestCase> tcs = {
          {compiler::Token::SEMICOLON, {}, nullptr},
          {compiler::Token::COLON, {}, nullptr},
          {compiler::Token::SINGLE_QUOTE, {}, nullptr},
-         {compiler::Token::DOUBLE_QUOTE, {}, nullptr},
          {compiler::Token::ADD, {}, nullptr},
          {compiler::Token::SUB, {}, nullptr},
          {compiler::Token::MUL, {}, nullptr},
@@ -82,6 +81,10 @@ std::vector<TestCase> tcs = {
          {compiler::Token::LITERAL_NUMBER, "3", nullptr},
          {compiler::Token::SEMICOLON, {}, nullptr},
          {compiler::Token::IMPORT, {}, nullptr},
+         {compiler::Token::STRING, "This is a string", nullptr},
+         {compiler::Token::STRING, "This \\\"is a string\\\"", nullptr},
+         {compiler::Token::STRING,
+          "This \\\"is a string\\\" as well as \\\"this\\\", see?", nullptr},
      }}};
 
 } // namespace
@@ -100,6 +103,7 @@ TEST(lexer_tests, all_tokens) {
     for (size_t i = 0; i < tokens.size(); i++) {
       CHECK_EQUAL(static_cast<int>(tokens[i].token),
                   static_cast<int>(tc.tdp[i].token));
+      CHECK_EQUAL(tc.tdp[i].data, tokens[i].data);
     }
   }
 }

@@ -1,12 +1,57 @@
 #include "parser.hpp"
+
+#include <filesystem>
 #include <iostream>
+#include <tuple>
+#include <unordered_map>
 
 namespace compiler {
+
+namespace {
+
+/* Stores files found [import target] => [location found from include dir] */
+static std::unordered_map<std::string, std::string> located_items;
+
+/* Finds an import */
+static std::tuple<bool, std::string>
+locate_import(std::vector<std::string> &paths, std::string &target) {
+
+  // Check the local directory first
+  std::filesystem::path item_as_local = std::filesystem::current_path();
+  item_as_local /= target;
+  if (std::filesystem::is_regular_file(item_as_local)) {
+    return {true, item_as_local};
+  }
+
+  // If its not in the same directory as the file importing it, check the
+  // already located items
+  if (located_items.end() != located_items.find(target)) {
+    return {true, located_items[target]};
+  }
+
+  // If it still isn't found, we need to iterate all include dirs and search for
+  // it
+  for (auto &dir : paths) {
+    std::filesystem::path item_path = dir;
+    item_path /= target;
+
+    // If we find the item store it for later before handing off
+    if (std::filesystem::is_regular_file(item_path)) {
+      located_items[target] = item_path;
+      return {true, item_path};
+    }
+  }
+
+  return {false, {}};
+}
+
+} // namespace
 
 parser::parser() : _parser_okay(true), _idx(0), _tokens(nullptr) {}
 
 std::vector<parse_tree::toplevel *>
-parser::parse(std::function<std::vector<TD_Pair>(std::string)> import_file,
+parser::parse(std::vector<std::string> &include_directories,
+              std::function<std::vector<TD_Pair>(std::string)> import_file,
               std::vector<TD_Pair> &tokens) {
   _tokens = &tokens;
   std::vector<parse_tree::toplevel *> top_level_items;
@@ -36,13 +81,23 @@ parser::parse(std::function<std::vector<TD_Pair>(std::string)> import_file,
       }
       _imported_objects.insert(import_statement->target);
 
+      auto [item_found, target_item] =
+          locate_import(include_directories, import_statement->target);
+
+      if (!item_found) {
+        std::cout << "Error : Unable to locate import \""
+                  << import_statement->target << "\"" << std::endl;
+        delete new_top_level_item;
+        _parser_okay = false;
+        continue;
+      }
+
       // Lex and parse the file
-      std::vector<TD_Pair> imported_tokens =
-          import_file(import_statement->target);
+      std::vector<TD_Pair> imported_tokens = import_file(target_item);
 
       parser import_parser;
-      std::vector<parse_tree::toplevel *> parsed_file =
-          import_parser.parse(import_file, imported_tokens);
+      std::vector<parse_tree::toplevel *> parsed_file = import_parser.parse(
+          include_directories, import_file, imported_tokens);
       if (!import_parser.is_okay()) {
         _parser_okay = true;
         continue;
@@ -95,7 +150,23 @@ TD_Pair parser::peek(size_t ahead) {
   return _tokens->at(_idx + ahead);
 }
 
-parse_tree::toplevel *parser::import_stmt() { return nullptr; }
+parse_tree::toplevel *parser::import_stmt() {
+
+  if (_tokens->at(_idx).token != Token::IMPORT) {
+    return nullptr;
+  }
+  if (peek().token != Token::STRING) {
+    /*
+        Issue an error event
+    */
+    std::cout << "Error : expected string value for given import on line ("
+              << &(_tokens->at(_idx).line) << std::endl;
+    _parser_okay = false;
+    return nullptr;
+  }
+  advance();
+  return new parse_tree::import_stmt(_tokens->at(_idx).data);
+}
 
 parse_tree::toplevel *parser::function() {
 
@@ -113,6 +184,7 @@ parse_tree::toplevel *parser::function() {
 
   */
 
+  _parser_okay = false;
   // Get function name
 
   auto params = function_params();

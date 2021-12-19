@@ -149,11 +149,6 @@ bool lexer::lex_line() {
           TD_Pair{Token::DOLLAR, {}, &_current_line->file_line_no});
       break;
 
-    case '"':
-      _tokens->emplace_back(
-          TD_Pair{Token::DOUBLE_QUOTE, {}, &_current_line->file_line_no});
-      break;
-
     case '\'':
       _tokens->emplace_back(
           TD_Pair{Token::SINGLE_QUOTE, {}, &_current_line->file_line_no});
@@ -317,6 +312,35 @@ bool lexer::lex_line() {
       }
       break;
 
+    case '"': {
+      std::string value;
+      bool consume_string = true;
+      while (consume_string && peek() != '\0') {
+        if ('\\' == _current_line->data[_idx]) {
+          value += _current_line->data[_idx];
+          advance();
+          if ('\"' == _current_line->data[_idx]) {
+            value += _current_line->data[_idx];
+            advance();
+            continue;
+          }
+        }
+        if ('"' == peek()) {
+          consume_string = false;
+          value += _current_line->data[_idx];
+          advance();
+          continue;
+        }
+        if ('"' != _current_line->data[_idx]) {
+          value += _current_line->data[_idx];
+        }
+        advance();
+      }
+
+      _tokens->emplace_back(
+          TD_Pair{Token::STRING, value, &_current_line->file_line_no});
+      break;
+    }
     default:
       if (isspace(_current_line->data[_idx])) {
         break;

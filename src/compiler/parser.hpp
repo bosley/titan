@@ -16,7 +16,8 @@ public:
   parser();
 
   std::vector<parse_tree::toplevel *>
-  parse(std::function<std::vector<TD_Pair>(std::string)> import_function,
+  parse(std::vector<std::string> &include_directories,
+        std::function<std::vector<TD_Pair>(std::string)> import_function,
         std::vector<TD_Pair> &tokens);
 
   bool is_okay() const { return _parser_okay; }

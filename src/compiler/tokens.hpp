@@ -44,7 +44,7 @@ enum class Token {
   EQ_EQ,
   AT,
   DOLLAR,
-  DOUBLE_QUOTE,
+  STRING,
   SINGLE_QUOTE,
   QUESTION_MARK,
   PERIOD,
@@ -152,8 +152,8 @@ static std::string token_to_str(const TD_Pair &td) {
     return "AT[" + std::to_string(line_no) + "]";
   case Token::DOLLAR:
     return "DOLLAR[" + std::to_string(line_no) + "]";
-  case Token::DOUBLE_QUOTE:
-    return "DOUBLE_QUOTE[" + std::to_string(line_no) + "]";
+  case Token::STRING:
+    return "STRING(" + td.data + ")[" + std::to_string(line_no) + "]";
   case Token::SINGLE_QUOTE:
     return "SINGLE_QUOTE[" + std::to_string(line_no) + "]";
   case Token::QUESTION_MARK:
