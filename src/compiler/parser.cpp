@@ -380,7 +380,9 @@ parse_tree::element *parser::assignment() {
   expect(Token::EQ, "Expected '=' in variable assignment");
 
   advance();
-  parse_tree::expr_node *exp = expression();
+
+  parse_tree::expr_node *tree = new parse_tree::expr_node();
+  parse_tree::expr_node *exp = expression(tree);
 
   advance();
   expect(Token::SEMICOLON, "Expected semicolon at end of variable assignment");
@@ -392,6 +394,7 @@ parse_tree::element *parser::assignment() {
         {name, parse_tree::string_to_variable_type(variable_type), depth}, exp);
   }
 
+  delete tree;
   return nullptr;
 }
 parse_tree::element *parser::if_statement() { return nullptr; }
@@ -399,16 +402,11 @@ parse_tree::element *parser::else_if_statement() { return nullptr; }
 parse_tree::element *parser::else_statement() { return nullptr; }
 parse_tree::element *parser::loop() { return nullptr; }
 parse_tree::element *parser::expression_statement() { return nullptr; }
-parse_tree::expr_node *parser::expression() {
-
-  // NUMBER || FLOAT || IDENTIFIER || FUNCTION CALL
+parse_tree::expr_node *parser::expression(parse_tree::expr_node *tree) {
 
   /*
-      This will take some thought.
+    //  In the mean time 'advance()' until we get a ';'
 
-      In the mean time 'advance()' until we get a ';'
-
-  */
 
   size_t wd = 0;
   while (wd < 200) {
@@ -426,8 +424,55 @@ parse_tree::expr_node *parser::expression() {
   }
 
   return nullptr;
+  */
+
+  // Check for term (exit condition)
+  if (parse_tree::expr_node *term = parser::term()) {
+    tree->type = parse_tree::node_type::ROOT;
+    tree->left = term;
+    tree->right = expression();
+    return term;
+  }
+
+  Token current_token = _tokens->at(_idx).token;
+  parse_tree::expr_node *result = new parse_tree::expr_node();
+
+  advance();
+
+  result->value = _tokens->at(_idx).value;
+  result->left = expression();
+  result->right = parser::term();
+
+  switch (current_token) {
+  case Token::ADD:
+    result->type = parse_tree::node_type::ADD : break;
+  case Token::SUB:
+    result->type = parse_tree::node_type::SUB : break;
+  case Token::GT:
+    result->type = parse_tree::node_type::GT : break;
+  case Token::LT:
+    result->type = parse_tree::node_type::LT : break;
+  case Token::EQ_EQ:
+    result->type = parse_tree::node_type::EQ_EQ : break;
+  case Token::EXCLAMATION_EQ:
+    result->type = parse_tree::node_type::NE : break;
+  default:
+    std::cout << "Default reached in expression" << std::endl;
+    std::exit(0);
+    break;
+  }
+
+  return result;
 }
-parse_tree::expr_node *parser::term() { return nullptr; }
+
+parse_tree::expr_node *parser::term() {
+
+  if (parse_tree::expr_node *factor = parser::factor()) {
+    return term;
+  }
+
+  return nullptr;
+}
 parse_tree::expr_node *parser::factor() { return nullptr; }
 parse_tree::expr_node *parser::primary() { return nullptr; }
 parse_tree::expr_node *parser::function_call() { return nullptr; }

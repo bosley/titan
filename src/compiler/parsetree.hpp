@@ -63,22 +63,20 @@ struct variable {
                   // uint64_t::max() for unknown size
 };
 
-enum class node_type { ROOT, ADD, SUB, DIV, MUL };
-
-enum class node_value_type { NIL, INTEGER, FLOAT, STRING };
+enum class node_type { ROOT, ID, RAW, ADD, SUB, DIV, MUL, GT, LT, EQ_EQ, NE };
 
 class expr_node {
 public:
   expr_node()
-      : type(node_type::ROOT), val_type(node_value_type::NIL), left(nullptr),
-        right(nullptr) {}
-  expr_node(node_type t, node_value_type nvt)
+      : type(node_type::ROOT), val_type(variable_types::USER_DEFINED),
+        left(nullptr), right(nullptr) {}
+  expr_node(node_type t, variable_types nvt)
       : type(t), val_type(nvt), left(nullptr), right(nullptr) {}
-  expr_node(node_type t, node_value_type nvt, expr_node *left, expr_node *right)
+  expr_node(node_type t, variable_types nvt, expr_node *left, expr_node *right)
       : type(t), val_type(nvt), left(left), right(right) {}
 
   node_type type;
-  node_value_type val_type;
+  variable_types val_type;
   std::string value;
 
   expr_node *left;

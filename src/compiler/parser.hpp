@@ -42,7 +42,7 @@ private:
   parse_tree::element *else_statement();
   parse_tree::element *loop();
   parse_tree::element *expression_statement();
-  parse_tree::expr_node *expression();
+  parse_tree::expr_node *expression(parse_tree::expr_node *term);
   parse_tree::expr_node *term();
   parse_tree::expr_node *factor();
   parse_tree::expr_node *primary();
