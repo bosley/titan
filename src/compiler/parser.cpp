@@ -201,11 +201,6 @@ parse_tree::toplevel *parser::function() {
   advance();
   std::vector<parse_tree::variable> parameters = function_params();
 
-  for (auto &i : parameters) {
-
-    std::cout << "param: " << i.name << ", depth: " << i.depth << std::endl;
-  }
-
   expect(Token::ARROW,
          "Expected '->' following function parameters to denote return type");
 
@@ -289,7 +284,7 @@ std::vector<parse_tree::element *> parser::statements() {
   advance();
 
   // Check for empty statement body
-  if (_tokens->at(_idx).token != Token::R_BRACE) {
+  if (_tokens->at(_idx).token == Token::R_BRACE) {
     advance();
     return {};
   }
@@ -319,8 +314,6 @@ std::vector<parse_tree::element *> parser::statements() {
   }
 
   expect(Token::R_BRACE, "Expected '}' to mark the end of a statement block");
-
-  advance();
   return elements;
 }
 
@@ -340,13 +333,100 @@ parse_tree::element *parser::statement() {
   return nullptr;
 }
 
-parse_tree::element *parser::assignment() { return nullptr; }
+parse_tree::element *parser::assignment() {
+
+  if (_tokens->at(_idx).token != Token::LET) {
+    return nullptr;
+  }
+
+  advance();
+  expect(Token::IDENTIFIER, "Expected variable name in assignmnet");
+  std::string name = _tokens->at(_idx).data;
+  size_t line_no = *_tokens->at(_idx).line;
+
+  advance();
+  expect(Token::COLON,
+         "Expected colon between name:type in varialbe assignment");
+
+  advance();
+  expect(Token::IDENTIFIER, "Expected variable type");
+  std::string variable_type = _tokens->at(_idx).data;
+
+  /*
+      Consume [100][3][3]... [?]
+      and calculate the number of items that would represent i.e [10][10] = 100
+  */
+  advance();
+  uint64_t depth = 0;
+  if (_tokens->at(_idx).token == Token::L_BRACKET) {
+    depth = 1;
+    bool consume = true;
+    while (consume) {
+      advance();
+      expect(Token::LITERAL_NUMBER, "Literal number expected");
+      depth *= std::stoull(_tokens->at(_idx).data);
+
+      advance();
+      expect(Token::R_BRACKET, "Ending bracket expected");
+      if (peek().token != Token::L_BRACKET) {
+        consume = false;
+        advance();
+      } else {
+        advance(); // Eat the '['
+      }
+    }
+  }
+
+  expect(Token::EQ, "Expected '=' in variable assignment");
+
+  advance();
+  parse_tree::expr_node *exp = expression();
+
+  advance();
+  expect(Token::SEMICOLON, "Expected semicolon at end of variable assignment");
+
+  advance();
+  if (_parser_okay) {
+    return new parse_tree::assignment(
+        line_no,
+        {name, parse_tree::string_to_variable_type(variable_type), depth}, exp);
+  }
+
+  return nullptr;
+}
 parse_tree::element *parser::if_statement() { return nullptr; }
 parse_tree::element *parser::else_if_statement() { return nullptr; }
 parse_tree::element *parser::else_statement() { return nullptr; }
 parse_tree::element *parser::loop() { return nullptr; }
 parse_tree::element *parser::expression_statement() { return nullptr; }
-parse_tree::expr_node *parser::expression() { return nullptr; }
+parse_tree::expr_node *parser::expression() {
+
+  // NUMBER || FLOAT || IDENTIFIER || FUNCTION CALL
+
+  /*
+      This will take some thought.
+
+      In the mean time 'advance()' until we get a ';'
+
+  */
+
+  size_t wd = 0;
+  while (wd < 200) {
+    if (peek().token == Token::SEMICOLON || peek().token == Token::EOS) {
+      break;
+    }
+    advance();
+    if (++wd == 200) {
+      std::cout << "Either a large expression is being parsed OR there was an "
+                   "internal error in the temporary parser::expression() "
+                   "implementation"
+                << std::endl;
+      std::exit(1);
+    }
+  }
+
+  return nullptr;
+}
 parse_tree::expr_node *parser::term() { return nullptr; }
 parse_tree::expr_node *parser::factor() { return nullptr; }
 parse_tree::expr_node *parser::primary() { return nullptr; }

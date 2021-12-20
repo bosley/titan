@@ -7,21 +7,21 @@
 
 #include <CppUTest/TestHarness.h>
 
-namespace {
-struct TestCase {
-  compiler::parse_tree::toplevel::tl_type type;
-  std::string name;
-  std::vector<compiler::parse_tree::variable> parameters;
-  std::vector<compiler::parse_tree::element *> element_list;
-  compiler::parse_tree::variable_types return_type;
-};
-} // namespace
+namespace {} // namespace
 
 TEST_GROUP(parser_tests){};
 
 //  Load the text files and ensure the expected tokens match the input
 //
 TEST(parser_tests, basic_function) {
+
+  struct TestCase {
+    compiler::parse_tree::toplevel::tl_type type;
+    std::string name;
+    std::vector<compiler::parse_tree::variable> parameters;
+    std::vector<compiler::parse_tree::element *> element_list;
+    compiler::parse_tree::variable_types return_type;
+  };
 
   std::vector<TestCase> tcs = {
       {compiler::parse_tree::toplevel::tl_type::FUNCTION,
@@ -95,5 +95,57 @@ TEST(parser_tests, basic_function) {
       CHECK_EQUAL((int)tcs[i].parameters[p].type, (int)f->parameters[p].type);
       CHECK_EQUAL(tcs[i].parameters[p].depth, f->parameters[p].depth);
     }
+  }
+}
+TEST(parser_tests, assignments) {
+
+  std::vector<compiler::parse_tree::assignment> expected;
+
+  expected.push_back(compiler::parse_tree::assignment(
+      5, {"d", compiler::parse_tree::variable_types::U32, 0}, nullptr));
+  expected.push_back(compiler::parse_tree::assignment(
+      6, {"e", compiler::parse_tree::variable_types::U16, 12}, nullptr));
+  expected.push_back(compiler::parse_tree::assignment(
+      7, {"f", compiler::parse_tree::variable_types::U8, 6}, nullptr));
+  expected.push_back(compiler::parse_tree::assignment(
+      8, {"g", compiler::parse_tree::variable_types::I8, 0}, nullptr));
+
+  //  Lex the file(s)
+  //
+  std::string file = "test_files/parser_assignments.tl";
+  compiler::lexer lexer;
+  std::vector<compiler::TD_Pair> tokens;
+  CHECK_TRUE(lexer.load_file(file));
+  CHECK_TRUE(lexer.lex(tokens));
+
+  //  Parse the Token Data pairs
+  //
+  constexpr auto import_file =
+      [](std::string file) -> std::vector<compiler::TD_Pair> {
+    //  Test file will not be importing
+    //
+    return {};
+  };
+
+  compiler::parser parser;
+  std::vector<std::string> include_directories;
+  std::vector<compiler::parse_tree::toplevel *> functions =
+      parser.parse(file, include_directories, import_file, tokens);
+
+  CHECK_EQUAL(1, functions.size());
+  CHECK_EQUAL((int)compiler::parse_tree::toplevel::tl_type::FUNCTION,
+              (int)functions[0]->type);
+
+  compiler::parse_tree::function *f =
+      static_cast<compiler::parse_tree::function *>(functions[0]);
+
+  CHECK_EQUAL(expected.size(), f->element_list.size());
+
+  for (size_t i = 0; i < expected.size(); i++) {
+    compiler::parse_tree::assignment *a =
+        static_cast<compiler::parse_tree::assignment *>(f->element_list[i]);
+    CHECK_EQUAL(expected[i].line_number, a->line_number);
+    CHECK_EQUAL(expected[i].var.name, a->var.name);
+    CHECK_EQUAL(expected[i].var.depth, a->var.depth);
   }
 }
