@@ -63,7 +63,28 @@ struct variable {
                   // uint64_t::max() for unknown size
 };
 
-enum class node_type { ROOT, ID, RAW, ADD, SUB, DIV, MUL, GT, LT, EQ_EQ, NE };
+enum class node_type {
+  ROOT,
+  ID,
+  CALL,
+  RAW,
+  ADD,
+  SUB,
+  DIV,
+  MUL,
+  GT,
+  LT,
+  EQ_EQ,
+  LSH,
+  RSH,
+  BW_XOR,
+  BW_NOT,
+  BW_OR,
+  BW_AND,
+  AND,
+  OR,
+  NE
+};
 
 class expr_node {
 public:
@@ -81,6 +102,15 @@ public:
 
   expr_node *left;
   expr_node *right;
+};
+
+class expr_function_call : public expr_node {
+public:
+  expr_function_call(std::string name)
+      : expr_node(node_type::CALL, variable_types::USER_DEFINED) {
+    value = name;
+  }
+  std::vector<parse_tree::expr_node *> parameters;
 };
 
 class visitor;

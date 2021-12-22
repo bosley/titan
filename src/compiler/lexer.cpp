@@ -130,13 +130,25 @@ bool lexer::lex_line() {
       break;
 
     case '>':
-      _tokens->emplace_back(
-          TD_Pair{Token::GT, {}, &_current_line->file_line_no});
+      if (peek() == '>') {
+        advance();
+        _tokens->emplace_back(
+            TD_Pair{Token::RSH, {}, &_current_line->file_line_no});
+      } else {
+        _tokens->emplace_back(
+            TD_Pair{Token::GT, {}, &_current_line->file_line_no});
+      }
       break;
 
     case '<':
-      _tokens->emplace_back(
-          TD_Pair{Token::LT, {}, &_current_line->file_line_no});
+      if (peek() == '<') {
+        advance();
+        _tokens->emplace_back(
+            TD_Pair{Token::LSH, {}, &_current_line->file_line_no});
+      } else {
+        _tokens->emplace_back(
+            TD_Pair{Token::LT, {}, &_current_line->file_line_no});
+      }
       break;
 
     case '@':

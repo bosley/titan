@@ -29,6 +29,7 @@ private:
   std::set<std::string> _imported_objects;
   std::string _filename;
   void advance();
+  void die(std::string error);
   void expect(Token token, std::string error, size_t ahead = 0);
   TD_Pair peek(size_t ahead = 1);
   parse_tree::toplevel *function();
@@ -42,13 +43,12 @@ private:
   parse_tree::element *else_statement();
   parse_tree::element *loop();
   parse_tree::element *expression_statement();
-  parse_tree::expr_node *expression(parse_tree::expr_node *term);
+  parse_tree::expr_node *expression();
   parse_tree::expr_node *term();
   parse_tree::expr_node *factor();
   parse_tree::expr_node *primary();
   parse_tree::expr_node *function_call();
   std::vector<parse_tree::expr_node *> function_call_params();
-  std::string identifier();
 };
 } // namespace compiler
 
