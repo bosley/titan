@@ -80,28 +80,28 @@ parser::parse(std::string filename,
   _filename = filename;
 
 
-  prefix_fns[Token::IDENTIFIER] = &parser::identifier;
-  prefix_fns[Token::LITERAL_NUMBER] = &parser::number;
-  prefix_fns[Token::LITERAL_FLOAT] = &parser::number;
-  prefix_fns[Token::STRING] = &parser::str;
-  prefix_fns[Token::EXCLAMATION] = &parser::prefix_expr;
-  prefix_fns[Token::SUB] = &parser::prefix_expr;
-  prefix_fns[Token::L_PAREN] = &parser::grouped_expr;
-  prefix_fns[Token::L_BRACKET] = &parser::array;
+  _prefix_fns[Token::IDENTIFIER] = &parser::identifier;
+  _prefix_fns[Token::LITERAL_NUMBER] = &parser::number;
+  _prefix_fns[Token::LITERAL_FLOAT] = &parser::number;
+  _prefix_fns[Token::STRING] = &parser::str;
+  _prefix_fns[Token::EXCLAMATION] = &parser::prefix_expr;
+  _prefix_fns[Token::SUB] = &parser::prefix_expr;
+  _prefix_fns[Token::L_PAREN] = &parser::grouped_expr;
+  _prefix_fns[Token::L_BRACKET] = &parser::array;
 
-  infix_fns[Token::ADD] = &parser::infix_expr;
-  infix_fns[Token::SUB] = &parser::infix_expr;
-  infix_fns[Token::DIV] = &parser::infix_expr;
-  infix_fns[Token::MUL] = &parser::infix_expr;
-  infix_fns[Token::MOD] = &parser::infix_expr;
-  infix_fns[Token::EQ_EQ] = &parser::infix_expr;
-  infix_fns[Token::EXCLAMATION_EQ] = &parser::infix_expr;
-  infix_fns[Token::LT] = &parser::infix_expr;
-  infix_fns[Token::LTE] = &parser::infix_expr;
-  infix_fns[Token::GT] = &parser::infix_expr;
-  infix_fns[Token::GTE] = &parser::infix_expr;
-  infix_fns[Token::L_PAREN] = &parser::call_expr;
-  infix_fns[Token::L_BRACKET] = &parser::index_expr;
+  _infix_fns[Token::ADD] = &parser::infix_expr;
+  _infix_fns[Token::SUB] = &parser::infix_expr;
+  _infix_fns[Token::DIV] = &parser::infix_expr;
+  _infix_fns[Token::MUL] = &parser::infix_expr;
+  _infix_fns[Token::MOD] = &parser::infix_expr;
+  _infix_fns[Token::EQ_EQ] = &parser::infix_expr;
+  _infix_fns[Token::EXCLAMATION_EQ] = &parser::infix_expr;
+  _infix_fns[Token::LT] = &parser::infix_expr;
+  _infix_fns[Token::LTE] = &parser::infix_expr;
+  _infix_fns[Token::GT] = &parser::infix_expr;
+  _infix_fns[Token::GTE] = &parser::infix_expr;
+  _infix_fns[Token::L_PAREN] = &parser::call_expr;
+  _infix_fns[Token::L_BRACKET] = &parser::index_expr;
 
 
   std::vector<parse_tree::toplevel *> top_level_items;
@@ -218,6 +218,13 @@ TD_Pair parser::peek(size_t ahead) {
     return TD_Pair{Token::EOS, {}};
   }
   return _tokens->at(_idx + ahead);
+}
+
+parser::precedence parser::peek_precedence() {
+  if (precedences.find(peek().token) != precedences.end()) {
+    return precedences[peek().token];
+  }
+  return parser::precedence::LOWEST;
 }
 
 parse_tree::toplevel *parser::import_stmt() {
@@ -434,6 +441,8 @@ parse_tree::element *parser::assignment() {
 
   advance();
   expect(Token::SEMICOLON, "Expected semicolon at end of variable assignment");
+
+  std::cout << "Current token : " << token_to_str(_tokens->at(_idx)) << std::endl;
   
   advance();
   if (_parser_okay) {
@@ -453,16 +462,124 @@ parse_tree::element *parser::expression_statement() { return nullptr; }
 
 parse_tree::expr_node *parser::expression(parser::precedence precedence) {
 
-  return nullptr;
+  if (_prefix_fns.find(_tokens->at(_idx).token) == _prefix_fns.end()) {
+    die("No prefix function for given token");
+    return nullptr;
+  }
+
+  auto fn = _prefix_fns[_tokens->at(_idx).token];
+  parse_tree::expr_node *left = (this->*fn)();
+
+  while(peek().token != Token::SEMICOLON && precedence < peek_precedence()) {
+    if (_infix_fns.find(peek().token) == _infix_fns.end()) {
+      return left;
+    }
+    auto i_fn = _infix_fns[peek().token];
+    advance();
+    left = (this->*i_fn)(left);
+  }
+
+  return left;
 }
 
-parse_tree::expr_node *parser::identifier() { return nullptr; }
-parse_tree::expr_node *parser::number() { return nullptr; }
+parse_tree::expr_node *parser::prefix_expr() { 
+
+  parse_tree::node_type nt;
+  parse_tree::variable_types vt;
+  switch(_tokens->at(_idx).token) {
+    case Token::IDENTIFIER:     nt = parse_tree::node_type::ID;         vt = parse_tree::variable_types::USER_DEFINED; break;
+    case Token::LITERAL_NUMBER: nt = parse_tree::node_type::RAW_NUMBER; vt = parse_tree::variable_types::RAW_NUMBER;   break;
+    case Token::LITERAL_FLOAT:  nt = parse_tree::node_type::RAW_FLOAT;  vt = parse_tree::variable_types::FLOAT;        break;
+    case Token::STRING:         nt = parse_tree::node_type::RAW_STRING; vt = parse_tree::variable_types::STRING;       break;
+    case Token::EXCLAMATION:    nt = parse_tree::node_type::NOT;        vt = parse_tree::variable_types::OP;           break;
+    case Token::SUB:            nt = parse_tree::node_type::SUB;        vt = parse_tree::variable_types::OP;           break;
+    case Token::L_PAREN:        nt = parse_tree::node_type::LP;         vt = parse_tree::variable_types::OP;           break;
+    case Token::L_BRACKET:      nt = parse_tree::node_type::LB;         vt = parse_tree::variable_types::OP;           break;
+    default:
+      die("Internal Error : Unable to convert token for prefix_expr()");
+      return nullptr;
+  };
+
+  auto result = new parse_tree::expr_node(nt, vt, _tokens->at(_idx).data);
+
+  advance();
+
+  result->right = expression(precedence::PREFIX); 
+  return result;
+}
+
+parse_tree::expr_node *parser::infix_expr(parse_tree::expr_node *left) { 
+
+  parse_tree::node_type nt;
+  parse_tree::variable_types vt;
+  switch(_tokens->at(_idx).token) {
+    case Token::ADD:     nt = parse_tree::node_type::ADD;  vt = parse_tree::variable_types::OP; break;
+    case Token::SUB:     nt = parse_tree::node_type::SUB;  vt = parse_tree::variable_types::OP; break;
+    case Token::DIV:     nt = parse_tree::node_type::DIV;  vt = parse_tree::variable_types::OP; break;
+    case Token::MUL:     nt = parse_tree::node_type::MUL;  vt = parse_tree::variable_types::OP; break;
+    case Token::MOD:     nt = parse_tree::node_type::MOD;  vt = parse_tree::variable_types::OP; break;
+    case Token::EQ_EQ:   nt = parse_tree::node_type::EQ_EQ;  vt = parse_tree::variable_types::OP; break;
+    case Token::LT:      nt = parse_tree::node_type::LT;   vt = parse_tree::variable_types::OP; break;
+    case Token::LTE:     nt = parse_tree::node_type::LTE;  vt = parse_tree::variable_types::OP; break;
+    case Token::GT:      nt = parse_tree::node_type::GT;   vt = parse_tree::variable_types::OP; break;
+    case Token::GTE:     nt = parse_tree::node_type::GTE;  vt = parse_tree::variable_types::OP; break;
+    case Token::L_PAREN: nt = parse_tree::node_type::LP;   vt = parse_tree::variable_types::OP; break;
+    case Token::L_BRACKET: nt = parse_tree::node_type::LB; vt = parse_tree::variable_types::OP; break;
+    case Token::EXCLAMATION_EQ: nt = parse_tree::node_type::NE;  vt = parse_tree::variable_types::OP; break;
+    default:
+      die("Internal Error : Unable to convert token for infix_expr()");
+      return nullptr;
+  }
+
+  auto result = new parse_tree::expr_node(nt, vt, _tokens->at(_idx).data);
+  result->left = left;
+
+  precedence p = precedence::LOWEST;
+  if (precedences.find(_tokens->at(_idx).token) != precedences.end()) {
+    p = precedences[_tokens->at(_idx).token];
+  }
+
+  advance();
+
+  result->right = expression(p);
+  return result;
+}
+
+parse_tree::expr_node *parser::identifier() { 
+
+  // Sanity check
+  expect(Token::IDENTIFIER, "Expected identifier in expression");
+  return new parse_tree::expr_node(
+      parse_tree::node_type::ID, 
+      parse_tree::variable_types::USER_DEFINED, 
+      _tokens->at(_idx).data
+  );
+}
+
+parse_tree::expr_node *parser::number() {
+  if(_tokens->at(_idx).token == Token::LITERAL_NUMBER) {
+    return new parse_tree::expr_node(
+        parse_tree::node_type::RAW_NUMBER, 
+        parse_tree::variable_types::RAW_NUMBER, 
+        _tokens->at(_idx).data
+    );
+  }
+  else if (_tokens->at(_idx).token == Token::LITERAL_FLOAT) {
+    return new parse_tree::expr_node(
+        parse_tree::node_type::RAW_FLOAT, 
+        parse_tree::variable_types::FLOAT, 
+        _tokens->at(_idx).data
+    );
+  }
+  else {
+    die("Expected numerical item");
+    return nullptr;
+  }
+}
+
 parse_tree::expr_node *parser::str() { return nullptr; }
-parse_tree::expr_node *parser::prefix_expr() { return nullptr; }
 parse_tree::expr_node *parser::grouped_expr() { return nullptr; }
 parse_tree::expr_node *parser::array() { return nullptr; }
-parse_tree::expr_node *parser::infix_expr(parse_tree::expr_node *left) { return nullptr; }
 parse_tree::expr_node *parser::call_expr(parse_tree::expr_node *fn) { return nullptr; }
 parse_tree::expr_node *parser::index_expr(parse_tree::expr_node *arr) { return nullptr; }
 

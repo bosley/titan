@@ -17,9 +17,11 @@ enum class variable_types {
   I16,
   I32,
   I64,
-  DOUBLE,
+  RAW_NUMBER, // Literal number with no assigned type
+  FLOAT,
   STRING,
-  USER_DEFINED
+  USER_DEFINED,
+  OP
 };
 
 static variable_types string_to_variable_type(const std::string &s) {
@@ -47,8 +49,8 @@ static variable_types string_to_variable_type(const std::string &s) {
   if (s == "i64") {
     return variable_types::I64;
   }
-  if (s == "double") {
-    return variable_types::DOUBLE;
+  if (s == "float") {
+    return variable_types::FLOAT;
   }
   if (s == "string") {
     return variable_types::STRING;
@@ -67,13 +69,18 @@ enum class node_type {
   ROOT,
   ID,
   CALL,
-  RAW,
+  RAW_FLOAT,
+  RAW_NUMBER,
+  RAW_STRING,
   ADD,
   SUB,
   DIV,
   MUL,
+  MOD,
   GT,
   LT,
+  LTE,
+  GTE,
   EQ_EQ,
   LSH,
   RSH,
@@ -83,6 +90,9 @@ enum class node_type {
   BW_AND,
   AND,
   OR,
+  NOT,// !
+  LP, // (
+  LB, // [
   NE
 };
 
@@ -93,6 +103,8 @@ public:
         left(nullptr), right(nullptr) {}
   expr_node(node_type t, variable_types nvt)
       : type(t), val_type(nvt), left(nullptr), right(nullptr) {}
+  expr_node(node_type t, variable_types nvt, std::string val)
+      : type(t), val_type(nvt), value(val), left(nullptr), right(nullptr) {}
   expr_node(node_type t, variable_types nvt, expr_node *left, expr_node *right)
       : type(t), val_type(nvt), left(left), right(right) {}
 
