@@ -176,13 +176,21 @@ TEST(parser_tests, expr)
   CHECK_EQUAL((int)compiler::parse_tree::toplevel::tl_type::FUNCTION,
               (int)functions[0]->type);
 
-
   auto func = reinterpret_cast<compiler::parse_tree::function*>(functions[0]);
   for (auto &el : func->element_list) {
     
     auto assign = reinterpret_cast<compiler::parse_tree::assignment*>(el);
     
-    compiler::parse_tree::display_expr_node_tree("", assign->expr, false);
+    /*
+     *      TODO:
+     *
+     *          Create tests that verifies that the values read in are what we expect.
+     *
+     *          Suggest making the structures that they create by hand and ensuring 
+     *          that each field matches 
+     * */
+
+    //compiler::parse_tree::display_expr_node_tree("", assign->expr, false);
   }
 }
 
