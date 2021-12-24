@@ -7,8 +7,6 @@
 
 #include <CppUTest/TestHarness.h>
 
-namespace {} // namespace
-
 TEST_GROUP(parser_tests){};
 
 //  Load the text files and ensure the expected tokens match the input
@@ -149,3 +147,42 @@ TEST(parser_tests, assignments) {
     CHECK_EQUAL(expected[i].var.depth, a->var.depth);
   }
 }
+
+TEST(parser_tests, expr) 
+{
+  //  Lex the file(s)
+  //
+  std::string file = "test_files/exprs.tl";
+  compiler::lexer lexer;
+  std::vector<compiler::TD_Pair> tokens;
+  CHECK_TRUE(lexer.load_file(file));
+  CHECK_TRUE(lexer.lex(tokens));
+
+  //  Parse the Token Data pairs
+  //
+  constexpr auto import_file =
+      [](std::string file) -> std::vector<compiler::TD_Pair> {
+    //  Test file will not be importing
+    //
+    return {};
+  };
+
+  compiler::parser parser;
+  std::vector<std::string> include_directories;
+  std::vector<compiler::parse_tree::toplevel *> functions =
+      parser.parse(file, include_directories, import_file, tokens);
+
+  CHECK_EQUAL(1, functions.size());
+  CHECK_EQUAL((int)compiler::parse_tree::toplevel::tl_type::FUNCTION,
+              (int)functions[0]->type);
+
+
+  auto func = reinterpret_cast<compiler::parse_tree::function*>(functions[0]);
+  for (auto &el : func->element_list) {
+    
+    auto assign = reinterpret_cast<compiler::parse_tree::assignment*>(el);
+    
+    compiler::parse_tree::display_expr_node_tree("", assign->expr, false);
+  }
+}
+

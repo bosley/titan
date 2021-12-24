@@ -63,7 +63,6 @@ private:
   parse_tree::element *loop();
   parse_tree::element *expression_statement();
   parse_tree::expr_node *expression(precedence precedence);
-
   parse_tree::expr_node *identifier();
   parse_tree::expr_node *number(); 
   parse_tree::expr_node *str();
@@ -71,13 +70,12 @@ private:
   parse_tree::expr_node *grouped_expr();
   parse_tree::expr_node *array();
   parse_tree::expr_node *infix_expr(parse_tree::expr_node* left);
-  parse_tree::expr_node *call_expr(parse_tree::expr_node* function);
   parse_tree::expr_node *index_expr(parse_tree::expr_node* array);
-
-
-  parse_tree::expr_node *function_call();
-  std::vector<parse_tree::expr_node *> function_call_params();
+  parse_tree::expr_node *call_expr(parse_tree::expr_node* function);
+  std::vector<parse_tree::expr_node *> expression_list();
 };
 } // namespace compiler
 
 #endif
+
+

@@ -454,11 +454,6 @@ parse_tree::element *parser::assignment() {
   delete tree;
   return nullptr;
 }
-parse_tree::element *parser::if_statement() { return nullptr; }
-parse_tree::element *parser::else_if_statement() { return nullptr; }
-parse_tree::element *parser::else_statement() { return nullptr; }
-parse_tree::element *parser::loop() { return nullptr; }
-parse_tree::element *parser::expression_statement() { return nullptr; }
 
 parse_tree::expr_node *parser::expression(parser::precedence precedence) {
 
@@ -577,14 +572,19 @@ parse_tree::expr_node *parser::number() {
   }
 }
 
-parse_tree::expr_node *parser::str() { return nullptr; }
-parse_tree::expr_node *parser::grouped_expr() { return nullptr; }
-parse_tree::expr_node *parser::array() { return nullptr; }
-parse_tree::expr_node *parser::call_expr(parse_tree::expr_node *fn) { return nullptr; }
-parse_tree::expr_node *parser::index_expr(parse_tree::expr_node *arr) { return nullptr; }
+parse_tree::expr_node *parser::str() { 
 
+  // Sanity check
+  expect(Token::STRING, "Expected string in expression");
 
-parse_tree::expr_node *parser::function_call() {
+  return new parse_tree::expr_node(
+      parse_tree::node_type::RAW_STRING, 
+      parse_tree::variable_types::STRING, 
+      _tokens->at(_idx).data
+  );
+}
+
+parse_tree::expr_node *parser::call_expr(parse_tree::expr_node *fn) {
 
   if (_tokens->at(_idx).token != Token::IDENTIFIER) {
     return nullptr;
@@ -599,11 +599,11 @@ parse_tree::expr_node *parser::function_call() {
   }
 
   advance();
-
+  
   parse_tree::expr_function_call *result =
       new parse_tree::expr_function_call(potential_function_name);
-
-  result->parameters = parser::function_call_params();
+  
+  result->parameters = parser::expression_list();
 
   expect(Token::R_PAREN, "Expected ')' following expression");
 
@@ -615,37 +615,89 @@ parse_tree::expr_node *parser::function_call() {
   return nullptr;
 }
 
-std::vector<parse_tree::expr_node *> parser::function_call_params() {
+std::vector<parse_tree::expr_node *> parser::expression_list() {
 
-  // Empty list of parameters
-  if (_tokens->at(_idx).token == Token::R_PAREN) {
-    return {};
-  }
 
   std::vector<parse_tree::expr_node *> results;
 
-  while (parse_tree::expr_node *expr = parser::expression(precedence::LOWEST)) {
+  results.emplace_back(expression(precedence::LOWEST));
 
-    results.emplace_back(expr);
-
-    if (_tokens->at(_idx).token == Token::R_PAREN) {
-      return results;
-    }
-
-    expect(Token::COMMA,
-           "Expected comma following expression in function call");
-
-    if (!_parser_okay) {
-      for (auto &e : results) {
-        delete e;
-      }
-      return {};
-    }
-
+  while(peek().token == Token::COMMA) {
     advance();
+    advance();
+    results.emplace_back(expression(precedence::LOWEST));
   }
 
-  return {};
+  if(!_parser_okay) {
+    for(auto &e : results) {
+      delete e;
+    }
+    results.clear();
+  }
+
+  return results;
 }
+
+parse_tree::expr_node *parser::grouped_expr() { 
+  advance();
+  parse_tree::expr_node *expr = expression(precedence::LOWEST);
+
+  if (peek().token != Token::R_PAREN) {
+    delete expr;
+    return nullptr;
+  }
+  advance();
+  return expr; 
+}
+
+parse_tree::expr_node *parser::array() { 
+
+  parse_tree::expr_array_lit* arr = new parse_tree::expr_array_lit();
+
+  if (peek().token == Token::R_BRACKET) {
+    advance();
+    return arr;
+  }
+
+  arr->exprs = expression_list();
+
+  if (peek().token != Token::R_BRACKET) {
+    for (auto &e : arr->exprs) {
+      delete e;
+    }
+    arr->exprs = {};
+  }
+
+  return arr;
+}
+
+parse_tree::expr_node *parser::index_expr(parse_tree::expr_node *arr) {
+
+  parse_tree::expr_index *idx = new parse_tree::expr_index();
+  idx->arr = arr;
+
+  advance();
+  idx->index = expression(precedence::LOWEST);
+
+  advance();
+  expect(Token::R_BRACKET, "Expected ']' following index into array");
+  prev();
+
+  if(!_parser_okay) {
+    if(idx->index){ delete idx->index; }
+    delete idx;
+    return nullptr;
+  }
+
+  return idx;
+}
+
+
+parse_tree::element *parser::if_statement() { return nullptr; }
+parse_tree::element *parser::else_if_statement() { return nullptr; }
+parse_tree::element *parser::else_statement() { return nullptr; }
+parse_tree::element *parser::loop() { return nullptr; }
+parse_tree::element *parser::expression_statement() { return nullptr; }
+
 
 } // namespace compiler

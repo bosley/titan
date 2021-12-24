@@ -2,6 +2,7 @@
 #define COMPILER_PARSE_TREE_HPP
 
 #include "tokens.hpp"
+#include <iostream> 
 #include <vector>
 
 namespace compiler {
@@ -21,7 +22,8 @@ enum class variable_types {
   FLOAT,
   STRING,
   USER_DEFINED,
-  OP
+  OP,
+  EXPR
 };
 
 static variable_types string_to_variable_type(const std::string &s) {
@@ -93,6 +95,8 @@ enum class node_type {
   NOT,// !
   LP, // (
   LB, // [
+  ARRAY,
+  ARRAY_IDX,
   NE
 };
 
@@ -116,6 +120,15 @@ public:
   expr_node *right;
 };
 
+static void display_expr_node_tree(const std::string& prefix, expr_node *n, bool is_left) {
+  if(!n){ return; } 
+  std::cout << prefix;    
+  std::cout << (is_left ? "├──" : "└──" );    
+  std::cout << " " << n->value << std::endl;
+  display_expr_node_tree(prefix + (is_left ? "│   " : "    "), n->left, true);
+  display_expr_node_tree(prefix + (is_left ? "│   " : "    "), n->right, false);
+}
+
 class expr_function_call : public expr_node {
 public:
   expr_function_call(std::string name)
@@ -123,6 +136,19 @@ public:
     value = name;
   }
   std::vector<parse_tree::expr_node *> parameters;
+};
+
+class expr_array_lit : public expr_node {
+public:
+  expr_array_lit() : expr_node(node_type::ARRAY, variable_types::EXPR) {}
+  std::vector<expr_node*> exprs;
+};
+
+class expr_index : public expr_node {
+public:
+  expr_index() : expr_node(node_type::ARRAY_IDX, variable_types::EXPR) {}
+  expr_node* arr;
+  expr_node* index;
 };
 
 class visitor;
