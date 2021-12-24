@@ -586,33 +586,27 @@ parse_tree::expr_node *parser::str() {
 
 parse_tree::expr_node *parser::call_expr(parse_tree::expr_node *fn) {
 
-  if (_tokens->at(_idx).token != Token::IDENTIFIER) {
-    return nullptr;
-  }
-
-  std::string potential_function_name = _tokens->at(_idx).data;
-
-  advance();
-
-  if (_tokens->at(_idx).token != Token::L_PAREN) {
-    return nullptr;
-  }
-
-  advance();
   
   parse_tree::expr_function_call *result =
-      new parse_tree::expr_function_call(potential_function_name);
+      new parse_tree::expr_function_call();
   
-  result->parameters = parser::expression_list();
+  result->fn = fn;
 
-  expect(Token::R_PAREN, "Expected ')' following expression");
-
-  if (_parser_okay) {
+  if(peek().token == Token::R_PAREN) {
+    advance();
     return result;
   }
 
-  delete result;
-  return nullptr;
+  result->params = parser::expression_list();
+
+  if(!_parser_okay) {
+    for(auto& e: result->params) {
+      delete e;
+    }
+    return nullptr;
+  }
+
+  return result;
 }
 
 std::vector<parse_tree::expr_node *> parser::expression_list() {
@@ -681,7 +675,6 @@ parse_tree::expr_node *parser::index_expr(parse_tree::expr_node *arr) {
 
   advance();
   expect(Token::R_BRACKET, "Expected ']' following index into array");
-  prev();
 
   if(!_parser_okay) {
     if(idx->index){ delete idx->index; }

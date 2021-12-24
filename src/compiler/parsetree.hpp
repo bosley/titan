@@ -120,24 +120,6 @@ public:
   expr_node *right;
 };
 
-static void display_expr_node_tree(const std::string& prefix, expr_node *n, bool is_left) {
-  if(!n){ return; } 
-  std::cout << prefix;    
-  std::cout << (is_left ? "├──" : "└──" );    
-  std::cout << " " << n->value << std::endl;
-  display_expr_node_tree(prefix + (is_left ? "│   " : "    "), n->left, true);
-  display_expr_node_tree(prefix + (is_left ? "│   " : "    "), n->right, false);
-}
-
-class expr_function_call : public expr_node {
-public:
-  expr_function_call(std::string name)
-      : expr_node(node_type::CALL, variable_types::USER_DEFINED) {
-    value = name;
-  }
-  std::vector<parse_tree::expr_node *> parameters;
-};
-
 class expr_array_lit : public expr_node {
 public:
   expr_array_lit() : expr_node(node_type::ARRAY, variable_types::EXPR) {}
@@ -149,6 +131,14 @@ public:
   expr_index() : expr_node(node_type::ARRAY_IDX, variable_types::EXPR) {}
   expr_node* arr;
   expr_node* index;
+};
+
+class expr_function_call : public expr_node {
+public:
+  expr_function_call() : expr_node(node_type::CALL, variable_types::USER_DEFINED) {}
+
+  expr_node* fn;
+  std::vector<expr_node*> params;
 };
 
 class visitor;
@@ -210,6 +200,39 @@ public:
   virtual void accept(assignment &stmt) = 0;
   virtual void accept(expr_statement &stmt) = 0;
 };
+
+
+static void display_expr_node_tree(const std::string& prefix, expr_node *n, bool is_left) {
+  if(!n){ return; } 
+  std::cout << prefix;    
+  std::cout << (is_left ? "├──" : "└──" );
+
+
+  if(n->type == node_type::CALL) {
+    auto i = reinterpret_cast<expr_function_call*>(n);
+    if(i->fn) {
+      std::cout << " call<" << i->fn->value << ">" << std::endl;
+    }
+    else {
+      std::cout << " call " << std::endl;
+    }
+  }
+  else if(n->type == node_type::ARRAY_IDX) {
+    auto i = reinterpret_cast<expr_index*>(n);
+    if(i->arr && i->index) {
+      std::cout << " " << i->arr->value << "[" << i->index->value << "]" << std::endl;
+    } 
+    else {
+      std::cout << " array[] " << std::endl;
+    }
+  }
+  else {
+    std::cout << " " << n->value << std::endl;
+  }
+  display_expr_node_tree(prefix + (is_left ? "│   " : "    "), n->left, true);
+  display_expr_node_tree(prefix + (is_left ? "│   " : "    "), n->right, false);
+}
+
 
 } // namespace parse_tree
 
