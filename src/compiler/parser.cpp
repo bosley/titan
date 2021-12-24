@@ -9,6 +9,23 @@ namespace compiler {
 
 namespace {
 
+std::unordered_map<Token, parser::precedence> precedences = {
+  { Token::EQ_EQ, parser::precedence::EQUALS },
+  { Token::EXCLAMATION_EQ, parser::precedence::EQUALS },
+  { Token::LT,  parser::precedence::LESS_GREATER },
+  { Token::GT,  parser::precedence::LESS_GREATER },
+  { Token::LTE, parser::precedence::LESS_GREATER },
+  { Token::GTE, parser::precedence::LESS_GREATER },
+  { Token::ADD, parser::precedence::SUM },
+  { Token::SUB, parser::precedence::SUM},
+  { Token::DIV, parser::precedence::PROD},
+  { Token::MUL, parser::precedence::PROD },
+  { Token::MOD, parser::precedence::PROD },
+  { Token::L_PAREN, parser::precedence::CALL },
+  { Token::L_BRACKET, parser::precedence::INDEX },
+};
+
+
 /* Stores files found [import target] => [location found from include dir] */
 static std::unordered_map<std::string, std::string> located_items;
 
@@ -61,8 +78,33 @@ parser::parse(std::string filename,
               std::vector<TD_Pair> &tokens) {
   _tokens = &tokens;
   _filename = filename;
-  std::vector<parse_tree::toplevel *> top_level_items;
 
+
+  prefix_fns[Token::IDENTIFIER] = &parser::identifier;
+  prefix_fns[Token::LITERAL_NUMBER] = &parser::number;
+  prefix_fns[Token::LITERAL_FLOAT] = &parser::number;
+  prefix_fns[Token::STRING] = &parser::str;
+  prefix_fns[Token::EXCLAMATION] = &parser::prefix_expr;
+  prefix_fns[Token::SUB] = &parser::prefix_expr;
+  prefix_fns[Token::L_PAREN] = &parser::grouped_expr;
+  prefix_fns[Token::L_BRACKET] = &parser::array;
+
+  infix_fns[Token::ADD] = &parser::infix_expr;
+  infix_fns[Token::SUB] = &parser::infix_expr;
+  infix_fns[Token::DIV] = &parser::infix_expr;
+  infix_fns[Token::MUL] = &parser::infix_expr;
+  infix_fns[Token::MOD] = &parser::infix_expr;
+  infix_fns[Token::EQ_EQ] = &parser::infix_expr;
+  infix_fns[Token::EXCLAMATION_EQ] = &parser::infix_expr;
+  infix_fns[Token::LT] = &parser::infix_expr;
+  infix_fns[Token::LTE] = &parser::infix_expr;
+  infix_fns[Token::GT] = &parser::infix_expr;
+  infix_fns[Token::GTE] = &parser::infix_expr;
+  infix_fns[Token::L_PAREN] = &parser::call_expr;
+  infix_fns[Token::L_BRACKET] = &parser::index_expr;
+
+
+  std::vector<parse_tree::toplevel *> top_level_items;
   parse_tree::toplevel *new_top_level_item;
 
   while (_parser_okay && _idx < _tokens->size()) {
@@ -146,6 +188,8 @@ parser::parse(std::string filename,
 
   return top_level_items;
 }
+
+void parser::prev() { _idx--; }
 
 void parser::advance() { _idx++; }
 
@@ -386,11 +430,11 @@ parse_tree::element *parser::assignment() {
   advance();
 
   parse_tree::expr_node *tree = new parse_tree::expr_node();
-  parse_tree::expr_node *exp = expression();
+  parse_tree::expr_node *exp = expression(parser::precedence::LOWEST);
 
   advance();
   expect(Token::SEMICOLON, "Expected semicolon at end of variable assignment");
-
+  
   advance();
   if (_parser_okay) {
     return new parse_tree::assignment(
@@ -407,170 +451,21 @@ parse_tree::element *parser::else_statement() { return nullptr; }
 parse_tree::element *parser::loop() { return nullptr; }
 parse_tree::element *parser::expression_statement() { return nullptr; }
 
-parse_tree::expr_node *parser::expression() {
+parse_tree::expr_node *parser::expression(parser::precedence precedence) {
 
-  // Check for term (exit condition)
-  if (parse_tree::expr_node *term_item = parser::term()) {
-    return term_item;
-  }
-
-  Token current_token = _tokens->at(_idx).token;
-  parse_tree::expr_node *result = new parse_tree::expr_node();
-
-  advance();
-
-  result->value = _tokens->at(_idx).data;
-  result->left = parser::expression();
-  result->right = parser::term();
-
-  switch (current_token) {
-  case Token::ADD:
-    result->type = parse_tree::node_type::ADD;
-    break;
-  case Token::SUB:
-    result->type = parse_tree::node_type::SUB;
-    break;
-  case Token::GT:
-    result->type = parse_tree::node_type::GT;
-    break;
-  case Token::LT:
-    result->type = parse_tree::node_type::LT;
-    break;
-  case Token::EQ_EQ:
-    result->type = parse_tree::node_type::EQ_EQ;
-    break;
-  case Token::EXCLAMATION_EQ:
-    result->type = parse_tree::node_type::NE;
-    break;
-  default:
-    std::cout << "Default reached in expression" << std::endl;
-    std::exit(0);
-    break;
-  }
-
-  return result;
+  return nullptr;
 }
 
-parse_tree::expr_node *parser::term() {
+parse_tree::expr_node *parser::identifier() { return nullptr; }
+parse_tree::expr_node *parser::number() { return nullptr; }
+parse_tree::expr_node *parser::str() { return nullptr; }
+parse_tree::expr_node *parser::prefix_expr() { return nullptr; }
+parse_tree::expr_node *parser::grouped_expr() { return nullptr; }
+parse_tree::expr_node *parser::array() { return nullptr; }
+parse_tree::expr_node *parser::infix_expr(parse_tree::expr_node *left) { return nullptr; }
+parse_tree::expr_node *parser::call_expr(parse_tree::expr_node *fn) { return nullptr; }
+parse_tree::expr_node *parser::index_expr(parse_tree::expr_node *arr) { return nullptr; }
 
-  if (parse_tree::expr_node *factor_item = parser::factor()) {
-    return factor_item;
-  }
-
-  Token current_token = _tokens->at(_idx).token;
-  parse_tree::expr_node *result = new parse_tree::expr_node();
-
-  advance();
-
-  result->value = _tokens->at(_idx).data;
-  result->left = parser::term();
-  result->right = parser::factor();
-
-  switch (current_token) {
-  case Token::MUL:
-    result->type = parse_tree::node_type::ADD;
-    break;
-  case Token::DIV:
-    result->type = parse_tree::node_type::SUB;
-    break;
-  case Token::POW:
-    result->type = parse_tree::node_type::GT;
-    break;
-  case Token::MOD:
-    result->type = parse_tree::node_type::LT;
-    break;
-  case Token::LSH:
-    result->type = parse_tree::node_type::LSH;
-    break;
-  case Token::RSH:
-    result->type = parse_tree::node_type::RSH;
-    break;
-  case Token::HAT:
-    result->type = parse_tree::node_type::BW_XOR;
-    break;
-  case Token::PIPE:
-    result->type = parse_tree::node_type::BW_OR;
-    break;
-  case Token::AMPERSAND:
-    result->type = parse_tree::node_type::BW_AND;
-    break;
-  case Token::OR:
-    result->type = parse_tree::node_type::OR;
-    break;
-  case Token::AND:
-    result->type = parse_tree::node_type::AND;
-    break;
-  default:
-    std::cout << "Default reached in term" << std::endl;
-    std::exit(0);
-    break;
-  }
-
-  return result;
-}
-
-parse_tree::expr_node *parser::factor() {
-
-  if (parse_tree::expr_node *primary_item = parser::primary()) {
-    return primary_item;
-  }
-
-  if (parse_tree::expr_node *function_call = parser::function_call()) {
-    return function_call;
-  }
-
-  Token current_token = _tokens->at(_idx).token;
-  parse_tree::expr_node *result = new parse_tree::expr_node();
-
-  advance();
-
-  parse_tree::expr_node *e = nullptr;
-
-  switch (current_token) {
-  case Token::L_PAREN:
-    e = parser::expression();
-    result->type = e->type;
-    expect(Token::R_PAREN, "Expected ')' following expression");
-    break;
-  case Token::TILDE:
-  case Token::EXCLAMATION:
-    result->type = e->type;
-    e = parser::factor();
-    break;
-  default:
-    break;
-  }
-
-  if (e == nullptr) {
-    die("Malformed expression. Expected 'factor' in expression");
-    delete result;
-    return nullptr;
-  }
-
-  result->left = e;
-  result->right = nullptr;
-  return result;
-}
-
-parse_tree::expr_node *parser::primary() {
-
-  parse_tree::expr_node *result = new parse_tree::expr_node();
-
-  switch (_tokens->at(_idx).token) {
-  case Token::LITERAL_NUMBER:
-  case Token::LITERAL_FLOAT:
-  case Token::IDENTIFIER:
-    result->value = _tokens->at(_idx).data;
-  default:
-    die("Unexpected token when expecting a 'primary' in expression");
-    delete result;
-    return nullptr;
-  }
-
-  result->left = nullptr;
-  result->right = nullptr;
-  return result;
-}
 
 parse_tree::expr_node *parser::function_call() {
 
@@ -612,7 +507,7 @@ std::vector<parse_tree::expr_node *> parser::function_call_params() {
 
   std::vector<parse_tree::expr_node *> results;
 
-  while (parse_tree::expr_node *expr = parser::expression()) {
+  while (parse_tree::expr_node *expr = parser::expression(precedence::LOWEST)) {
 
     results.emplace_back(expr);
 

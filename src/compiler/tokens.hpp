@@ -19,6 +19,8 @@ enum class Token {
   COMMA,
   GT,
   LT,
+  LTE,
+  GTE,
   ARROW,
   ADD,
   SUB,
@@ -104,6 +106,10 @@ static std::string token_to_str(const TD_Pair &td) {
     return "GT[" + std::to_string(line_no) + "]";
   case Token::LT:
     return "LT[" + std::to_string(line_no) + "]";
+  case Token::GTE:
+    return "GTE[" + std::to_string(line_no) + "]";
+  case Token::LTE:
+    return "LTE[" + std::to_string(line_no) + "]";
   case Token::SUB:
     return "SUB[" + std::to_string(line_no) + "]";
   case Token::ARROW:

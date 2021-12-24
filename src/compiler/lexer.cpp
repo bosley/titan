@@ -134,7 +134,14 @@ bool lexer::lex_line() {
         advance();
         _tokens->emplace_back(
             TD_Pair{Token::RSH, {}, &_current_line->file_line_no});
-      } else {
+      } 
+      else if (peek() == '=') {
+        advance();
+        _tokens->emplace_back(
+            TD_Pair{Token::GTE, {}, &_current_line->file_line_no});
+      } 
+      else {
+
         _tokens->emplace_back(
             TD_Pair{Token::GT, {}, &_current_line->file_line_no});
       }
@@ -145,7 +152,13 @@ bool lexer::lex_line() {
         advance();
         _tokens->emplace_back(
             TD_Pair{Token::LSH, {}, &_current_line->file_line_no});
-      } else {
+      }
+      else if (peek() == '=') {
+        advance();
+        _tokens->emplace_back(
+            TD_Pair{Token::LTE, {}, &_current_line->file_line_no});
+      } 
+      else {
         _tokens->emplace_back(
             TD_Pair{Token::LT, {}, &_current_line->file_line_no});
       }
