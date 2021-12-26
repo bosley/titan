@@ -10,28 +10,28 @@ namespace compiler {
 namespace {
 
 std::unordered_map<Token, parser::precedence> precedences = {
-  { Token::EQ_EQ, parser::precedence::EQUALS },
-  { Token::EXCLAMATION_EQ, parser::precedence::EQUALS },
-  { Token::LT,  parser::precedence::LESS_GREATER },
-  { Token::GT,  parser::precedence::LESS_GREATER },
-  { Token::LTE, parser::precedence::LESS_GREATER },
-  { Token::GTE, parser::precedence::LESS_GREATER },
-  { Token::ADD, parser::precedence::SUM },
-  { Token::SUB, parser::precedence::SUM},
-  { Token::DIV, parser::precedence::PROD},
-  { Token::MUL, parser::precedence::PROD },
-  { Token::MOD, parser::precedence::PROD },
-  { Token::L_PAREN, parser::precedence::CALL },
-  { Token::L_BRACKET, parser::precedence::INDEX },
+    {Token::EQ_EQ, parser::precedence::EQUALS},
+    {Token::EXCLAMATION_EQ, parser::precedence::EQUALS},
+    {Token::LT, parser::precedence::LESS_GREATER},
+    {Token::GT, parser::precedence::LESS_GREATER},
+    {Token::LTE, parser::precedence::LESS_GREATER},
+    {Token::GTE, parser::precedence::LESS_GREATER},
+    {Token::ADD, parser::precedence::SUM},
+    {Token::SUB, parser::precedence::SUM},
+    {Token::DIV, parser::precedence::PROD},
+    {Token::MUL, parser::precedence::PROD},
+    {Token::MOD, parser::precedence::PROD},
+    {Token::L_PAREN, parser::precedence::CALL},
+    {Token::L_BRACKET, parser::precedence::INDEX},
 };
-
 
 /* Stores files found [import target] => [location found from include dir] */
 static std::unordered_map<std::string, std::string> located_items;
 
 /* Finds an import */
 static std::tuple<bool, std::string>
-locate_import(std::vector<std::string> &paths, std::string &target) {
+locate_import(std::vector<std::string> &paths, std::string &target)
+{
 
   // Check the local directory first
   std::filesystem::path item_as_local = std::filesystem::current_path();
@@ -63,9 +63,10 @@ locate_import(std::vector<std::string> &paths, std::string &target) {
 }
 
 static void report_error(const std::string &filename, size_t *line,
-    const std::string error) {
+                         const std::string error)
+{
   std::cout << "Parse error [" << filename << "](" << *line << ") : " << error
-    << std::endl;
+            << std::endl;
 }
 } // namespace
 
@@ -73,12 +74,12 @@ parser::parser() : _parser_okay(true), _idx(0), _tokens(nullptr) {}
 
 std::vector<parse_tree::toplevel *>
 parser::parse(std::string filename,
-    std::vector<std::string> &include_directories,
-    std::function<std::vector<TD_Pair>(std::string)> import_file,
-    std::vector<TD_Pair> &tokens) {
+              std::vector<std::string> &include_directories,
+              std::function<std::vector<TD_Pair>(std::string)> import_file,
+              std::vector<TD_Pair> &tokens)
+{
   _tokens = &tokens;
   _filename = filename;
-
 
   _prefix_fns[Token::IDENTIFIER] = &parser::identifier;
   _prefix_fns[Token::LITERAL_NUMBER] = &parser::number;
@@ -103,7 +104,6 @@ parser::parse(std::string filename,
   _infix_fns[Token::L_PAREN] = &parser::call_expr;
   _infix_fns[Token::L_BRACKET] = &parser::index_expr;
 
-
   std::vector<parse_tree::toplevel *> top_level_items;
   parse_tree::toplevel *new_top_level_item;
 
@@ -119,7 +119,7 @@ parser::parse(std::string filename,
       }
 
       parse_tree::import_stmt *import_statement =
-        static_cast<parse_tree::import_stmt *>(new_top_level_item);
+          static_cast<parse_tree::import_stmt *>(new_top_level_item);
 
       // Ensure we haven't imported it yet
       if (_imported_objects.find(import_statement->target) !=
@@ -130,11 +130,11 @@ parser::parse(std::string filename,
       _imported_objects.insert(import_statement->target);
 
       auto [item_found, target_item] =
-        locate_import(include_directories, import_statement->target);
+          locate_import(include_directories, import_statement->target);
 
       if (!item_found) {
         std::cout << "Error : Unable to locate import \""
-          << import_statement->target << "\"" << std::endl;
+                  << import_statement->target << "\"" << std::endl;
         delete new_top_level_item;
         _parser_okay = false;
         continue;
@@ -153,7 +153,7 @@ parser::parse(std::string filename,
 
       // Add it to our top level objects
       top_level_items.insert(top_level_items.end(), parsed_file.begin(),
-          parsed_file.end());
+                             parsed_file.end());
     }
     if (!_parser_okay) {
       continue;
@@ -193,13 +193,15 @@ void parser::prev() { _idx--; }
 
 void parser::advance() { _idx++; }
 
-void parser::die(std::string error) {
+void parser::die(std::string error)
+{
 
   report_error(_filename, _tokens->at(_idx).line, error);
   _parser_okay = false;
 }
 
-void parser::expect(Token token, std::string error, size_t ahead) {
+void parser::expect(Token token, std::string error, size_t ahead)
+{
 
   if (_idx + ahead >= _tokens->size()) {
     die(error);
@@ -210,7 +212,8 @@ void parser::expect(Token token, std::string error, size_t ahead) {
   }
 }
 
-TD_Pair parser::peek(size_t ahead) {
+TD_Pair parser::peek(size_t ahead)
+{
   if (!_tokens) {
     return TD_Pair{Token::EOS, {}};
   }
@@ -220,14 +223,16 @@ TD_Pair parser::peek(size_t ahead) {
   return _tokens->at(_idx + ahead);
 }
 
-parser::precedence parser::peek_precedence() {
+parser::precedence parser::peek_precedence()
+{
   if (precedences.find(peek().token) != precedences.end()) {
     return precedences[peek().token];
   }
   return parser::precedence::LOWEST;
 }
 
-parse_tree::toplevel *parser::import_stmt() {
+parse_tree::toplevel *parser::import_stmt()
+{
 
   if (_tokens->at(_idx).token != Token::IMPORT) {
     return nullptr;
@@ -237,12 +242,14 @@ parse_tree::toplevel *parser::import_stmt() {
 
   if (_parser_okay) {
     return new parse_tree::import_stmt(_tokens->at(_idx).data);
-  } else {
+  }
+  else {
     return nullptr;
   }
 }
 
-parse_tree::toplevel *parser::function() {
+parse_tree::toplevel *parser::function()
+{
 
   // fn some_function
   if (_tokens->at(_idx).token != Token::FN) {
@@ -257,11 +264,11 @@ parse_tree::toplevel *parser::function() {
   std::vector<parse_tree::variable> parameters = function_params();
 
   expect(Token::ARROW,
-      "Expected '->' following function parameters to denote return type");
+         "Expected '->' following function parameters to denote return type");
 
   advance();
   expect(Token::IDENTIFIER,
-      "Expected return type following '->' in function declaration");
+         "Expected return type following '->' in function declaration");
   std::string return_type = _tokens->at(_idx).data;
 
   advance();
@@ -281,10 +288,11 @@ parse_tree::toplevel *parser::function() {
   return new_func;
 }
 
-std::vector<parse_tree::variable> parser::function_params() {
+std::vector<parse_tree::variable> parser::function_params()
+{
 
   expect(Token::L_PAREN,
-      "Expected '(' to mark beginning of function parameters");
+         "Expected '(' to mark beginning of function parameters");
 
   // Empty params
   if (peek().token == Token::R_PAREN) {
@@ -304,7 +312,7 @@ std::vector<parse_tree::variable> parser::function_params() {
 
     advance();
     expect(Token::COLON,
-        "Expected colon between name:type in parameter definition");
+           "Expected colon between name:type in parameter definition");
 
     advance();
     expect(Token::IDENTIFIER, "Expected variable type for parameter");
@@ -332,10 +340,11 @@ std::vector<parse_tree::variable> parser::function_params() {
   return parameters;
 }
 
-std::vector<parse_tree::element *> parser::statements() {
+std::vector<parse_tree::element *> parser::statements()
+{
 
   expect(Token::L_BRACE,
-      "Expected '{' to mark the beginning of a statement block");
+         "Expected '{' to mark the beginning of a statement block");
   advance();
 
   // Check for empty statement body
@@ -363,7 +372,8 @@ std::vector<parse_tree::element *> parser::statements() {
     // If a new item was gotten, add it to the list
     if (new_element) {
       elements.push_back(new_element);
-    } else {
+    }
+    else {
       check_for_statement = false;
     }
   }
@@ -372,7 +382,8 @@ std::vector<parse_tree::element *> parser::statements() {
   return elements;
 }
 
-parse_tree::element *parser::statement() {
+parse_tree::element *parser::statement()
+{
   if (parse_tree::element *item = parser::assignment()) {
     return item;
   }
@@ -388,7 +399,8 @@ parse_tree::element *parser::statement() {
   return nullptr;
 }
 
-parse_tree::element *parser::assignment() {
+parse_tree::element *parser::assignment()
+{
 
   if (_tokens->at(_idx).token != Token::LET) {
     return nullptr;
@@ -401,7 +413,7 @@ parse_tree::element *parser::assignment() {
 
   advance();
   expect(Token::COLON,
-      "Expected colon between name:type in varialbe assignment");
+         "Expected colon between name:type in varialbe assignment");
 
   advance();
   expect(Token::IDENTIFIER, "Expected variable type");
@@ -426,7 +438,8 @@ parse_tree::element *parser::assignment() {
       if (peek().token != Token::L_BRACKET) {
         consume = false;
         advance();
-      } else {
+      }
+      else {
         advance(); // Eat the '['
       }
     }
@@ -441,7 +454,7 @@ parse_tree::element *parser::assignment() {
 
   advance();
   expect(Token::SEMICOLON, "Expected semicolon at end of variable assignment");
-  
+
   advance();
   if (_parser_okay) {
     return new parse_tree::assignment(
@@ -453,7 +466,8 @@ parse_tree::element *parser::assignment() {
   return nullptr;
 }
 
-parse_tree::expression *parser::expression(parser::precedence precedence) {
+parse_tree::expression *parser::expression(parser::precedence precedence)
+{
 
   if (_prefix_fns.find(_tokens->at(_idx).token) == _prefix_fns.end()) {
     die("No prefix function for given token");
@@ -463,7 +477,7 @@ parse_tree::expression *parser::expression(parser::precedence precedence) {
   auto fn = _prefix_fns[_tokens->at(_idx).token];
   parse_tree::expression *left = (this->*fn)();
 
-  while(peek().token != Token::SEMICOLON && precedence < peek_precedence()) {
+  while (peek().token != Token::SEMICOLON && precedence < peek_precedence()) {
     if (_infix_fns.find(peek().token) == _infix_fns.end()) {
       return left;
     }
@@ -475,19 +489,22 @@ parse_tree::expression *parser::expression(parser::precedence precedence) {
   return left;
 }
 
-parse_tree::expression *parser::prefix_expr() { 
+parse_tree::expression *parser::prefix_expr()
+{
 
   auto result = new parse_tree::prefix_expr(_tokens->at(_idx).data, nullptr);
 
   advance();
 
-  result->right = expression(precedence::PREFIX); 
+  result->right = expression(precedence::PREFIX);
   return result;
 }
 
-parse_tree::expression *parser::infix_expr(parse_tree::expression *left) { 
+parse_tree::expression *parser::infix_expr(parse_tree::expression *left)
+{
 
-  auto result = new parse_tree::infix_expr(_tokens->at(_idx).data, left, nullptr);
+  auto result =
+      new parse_tree::infix_expr(_tokens->at(_idx).data, left, nullptr);
 
   precedence p = precedence::LOWEST;
   if (precedences.find(_tokens->at(_idx).token) != precedences.end()) {
@@ -500,28 +517,24 @@ parse_tree::expression *parser::infix_expr(parse_tree::expression *left) {
   return result;
 }
 
-parse_tree::expression *parser::identifier() { 
+parse_tree::expression *parser::identifier()
+{
 
   // Sanity check
   expect(Token::IDENTIFIER, "Expected identifier in expression");
-  return new parse_tree::expression(
-      parse_tree::node_type::ID, 
-      _tokens->at(_idx).data
-  );
+  return new parse_tree::expression(parse_tree::node_type::ID,
+                                    _tokens->at(_idx).data);
 }
 
-parse_tree::expression *parser::number() {
-  if(_tokens->at(_idx).token == Token::LITERAL_NUMBER) {
-    return new parse_tree::expression(
-        parse_tree::node_type::RAW_NUMBER, 
-        _tokens->at(_idx).data
-    );
+parse_tree::expression *parser::number()
+{
+  if (_tokens->at(_idx).token == Token::LITERAL_NUMBER) {
+    return new parse_tree::expression(parse_tree::node_type::RAW_NUMBER,
+                                      _tokens->at(_idx).data);
   }
   else if (_tokens->at(_idx).token == Token::LITERAL_FLOAT) {
-    return new parse_tree::expression(
-        parse_tree::node_type::RAW_FLOAT, 
-        _tokens->at(_idx).data
-    );
+    return new parse_tree::expression(parse_tree::node_type::RAW_FLOAT,
+                                      _tokens->at(_idx).data);
   }
   else {
     die("Expected numerical item");
@@ -529,32 +542,31 @@ parse_tree::expression *parser::number() {
   }
 }
 
-parse_tree::expression *parser::str() { 
+parse_tree::expression *parser::str()
+{
 
   // Sanity check
   expect(Token::STRING, "Expected string in expression");
 
-  return new parse_tree::expression(
-      parse_tree::node_type::RAW_STRING, 
-      _tokens->at(_idx).data
-  );
+  return new parse_tree::expression(parse_tree::node_type::RAW_STRING,
+                                    _tokens->at(_idx).data);
 }
 
-parse_tree::expression *parser::call_expr(parse_tree::expression *fn) {
-  
-  parse_tree::function_call_expr *result =
-      new parse_tree::function_call_expr();
-  
+parse_tree::expression *parser::call_expr(parse_tree::expression *fn)
+{
+
+  parse_tree::function_call_expr *result = new parse_tree::function_call_expr();
+
   result->fn = fn;
 
-  if(peek().token == Token::R_PAREN) {
+  if (peek().token == Token::R_PAREN) {
     advance();
     return result;
   }
 
   result->params = parser::expression_list();
 
-  if(!_parser_okay) {
+  if (!_parser_okay) {
     delete result;
     return nullptr;
   }
@@ -562,21 +574,21 @@ parse_tree::expression *parser::call_expr(parse_tree::expression *fn) {
   return result;
 }
 
-std::vector<parse_tree::expression *> parser::expression_list() {
-
+std::vector<parse_tree::expression *> parser::expression_list()
+{
 
   std::vector<parse_tree::expression *> results;
 
   results.emplace_back(expression(precedence::LOWEST));
 
-  while(peek().token == Token::COMMA) {
+  while (peek().token == Token::COMMA) {
     advance();
     advance();
     results.emplace_back(expression(precedence::LOWEST));
   }
 
-  if(!_parser_okay) {
-    for(auto &e : results) {
+  if (!_parser_okay) {
+    for (auto &e : results) {
       delete e;
     }
     results.clear();
@@ -585,7 +597,8 @@ std::vector<parse_tree::expression *> parser::expression_list() {
   return results;
 }
 
-parse_tree::expression *parser::grouped_expr() { 
+parse_tree::expression *parser::grouped_expr()
+{
   advance();
   parse_tree::expression *expr = expression(precedence::LOWEST);
 
@@ -594,12 +607,13 @@ parse_tree::expression *parser::grouped_expr() {
     return nullptr;
   }
   advance();
-  return expr; 
+  return expr;
 }
 
-parse_tree::expression *parser::array() { 
+parse_tree::expression *parser::array()
+{
 
-  parse_tree::array_literal_expr* arr = new parse_tree::array_literal_expr();
+  parse_tree::array_literal_expr *arr = new parse_tree::array_literal_expr();
 
   if (peek().token == Token::R_BRACKET) {
     advance();
@@ -616,7 +630,8 @@ parse_tree::expression *parser::array() {
   return arr;
 }
 
-parse_tree::expression *parser::index_expr(parse_tree::expression *arr) {
+parse_tree::expression *parser::index_expr(parse_tree::expression *arr)
+{
 
   parse_tree::array_index_expr *idx = new parse_tree::array_index_expr();
   idx->arr = arr;
@@ -627,7 +642,7 @@ parse_tree::expression *parser::index_expr(parse_tree::expression *arr) {
   advance();
   expect(Token::R_BRACKET, "Expected ']' following index into array");
 
-  if(!_parser_okay) {
+  if (!_parser_okay) {
     delete idx;
     return nullptr;
   }
@@ -635,12 +650,10 @@ parse_tree::expression *parser::index_expr(parse_tree::expression *arr) {
   return idx;
 }
 
-
 parse_tree::element *parser::if_statement() { return nullptr; }
 parse_tree::element *parser::else_if_statement() { return nullptr; }
 parse_tree::element *parser::else_statement() { return nullptr; }
 parse_tree::element *parser::loop() { return nullptr; }
 parse_tree::element *parser::expression_statement() { return nullptr; }
-
 
 } // namespace compiler

@@ -1,11 +1,11 @@
 #ifndef COMPILER_PARSER_HPP
 #define COMPILER_PARSER_HPP
 
+#include <functional>
 #include <set>
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include <functional>
 
 #include "common.hpp"
 #include "parsetree.hpp"
@@ -35,15 +35,15 @@ public:
   bool is_okay() const { return _parser_okay; }
 
 private:
-  typedef parse_tree::expression* (parser::*prefix_parse_fn)();
-  typedef parse_tree::expression* (parser::*infix_parse_fn)(parse_tree::expression* );
-
+  typedef parse_tree::expression *(parser::*prefix_parse_fn)();
+  typedef parse_tree::expression *(parser::*infix_parse_fn)(
+      parse_tree::expression *);
 
   bool _parser_okay;
   size_t _idx;
   std::vector<TD_Pair> *_tokens;
-  std::unordered_map<Token, prefix_parse_fn> _prefix_fns; 
-  std::unordered_map<Token, infix_parse_fn>  _infix_fns; 
+  std::unordered_map<Token, prefix_parse_fn> _prefix_fns;
+  std::unordered_map<Token, infix_parse_fn> _infix_fns;
   std::set<std::string> _imported_objects;
   std::string _filename;
   void prev();
@@ -65,18 +65,16 @@ private:
   parse_tree::element *expression_statement();
   parse_tree::expression *expression(precedence precedence);
   parse_tree::expression *identifier();
-  parse_tree::expression *number(); 
+  parse_tree::expression *number();
   parse_tree::expression *str();
   parse_tree::expression *prefix_expr();
   parse_tree::expression *grouped_expr();
   parse_tree::expression *array();
-  parse_tree::expression *infix_expr(parse_tree::expression* left);
-  parse_tree::expression *index_expr(parse_tree::expression* array);
-  parse_tree::expression *call_expr(parse_tree::expression* function);
+  parse_tree::expression *infix_expr(parse_tree::expression *left);
+  parse_tree::expression *index_expr(parse_tree::expression *array);
+  parse_tree::expression *call_expr(parse_tree::expression *function);
   std::vector<parse_tree::expression *> expression_list();
 };
 } // namespace compiler
 
 #endif
-
-

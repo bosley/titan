@@ -93,7 +93,8 @@ TEST_GROUP(lexer_tests){};
 
 //  Load the text files and ensure the expected tokens match the input
 //
-TEST(lexer_tests, all_tokens) {
+TEST(lexer_tests, all_tokens)
+{
   compiler::lexer lexer;
   for (auto &tc : tcs) {
     std::vector<compiler::TD_Pair> tokens;
@@ -103,7 +104,7 @@ TEST(lexer_tests, all_tokens) {
     for (size_t i = 0; i < tokens.size(); i++) {
       CHECK_EQUAL(static_cast<int>(tokens[i].token),
                   static_cast<int>(tc.tdp[i].token));
-      if(!tc.tdp[i].data.empty()){
+      if (!tc.tdp[i].data.empty()) {
         CHECK_EQUAL(tc.tdp[i].data, tokens[i].data);
       }
     }

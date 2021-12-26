@@ -8,10 +8,12 @@
 
 namespace compiler {
 
-lexer::lexer()
-    : _tokens(nullptr), _current_line(nullptr), _line_len(0), _idx(0) {}
+lexer::lexer() : _tokens(nullptr), _current_line(nullptr), _line_len(0), _idx(0)
+{
+}
 
-bool lexer::load_file(std::string &file) {
+bool lexer::load_file(std::string &file)
+{
   clear();
 
   constexpr auto trim_line = [](std::string &line) -> void {
@@ -58,7 +60,8 @@ bool lexer::load_file(std::string &file) {
   return true;
 }
 
-bool lexer::lex(std::vector<TD_Pair> &tokens) {
+bool lexer::lex(std::vector<TD_Pair> &tokens)
+{
   tokens.clear();
   _tokens = &tokens;
   for (auto &current_line : _program_lines) {
@@ -72,7 +75,8 @@ bool lexer::lex(std::vector<TD_Pair> &tokens) {
   return true;
 }
 
-void lexer::clear() {
+void lexer::clear()
+{
   _program_lines.clear();
   _current_line = nullptr;
   _tokens = nullptr;
@@ -80,7 +84,8 @@ void lexer::clear() {
   _idx = 0;
 }
 
-bool lexer::lex_line() {
+bool lexer::lex_line()
+{
 
   _line_len = _current_line->data.size();
   for (_idx = 0; _idx < _line_len; advance()) {
@@ -135,12 +140,12 @@ bool lexer::lex_line() {
         advance();
         _tokens->emplace_back(
             TD_Pair{Token::RSH, ">>", &_current_line->file_line_no});
-      } 
+      }
       else if (peek() == '=') {
         advance();
         _tokens->emplace_back(
             TD_Pair{Token::GTE, ">=", &_current_line->file_line_no});
-      } 
+      }
       else {
 
         _tokens->emplace_back(
@@ -158,7 +163,7 @@ bool lexer::lex_line() {
         advance();
         _tokens->emplace_back(
             TD_Pair{Token::LTE, "<=", &_current_line->file_line_no});
-      } 
+      }
       else {
         _tokens->emplace_back(
             TD_Pair{Token::LT, "<", &_current_line->file_line_no});
@@ -200,7 +205,8 @@ bool lexer::lex_line() {
         advance();
         _tokens->emplace_back(
             TD_Pair{Token::EXCLAMATION_EQ, "!=", &_current_line->file_line_no});
-      } else {
+      }
+      else {
         _tokens->emplace_back(
             TD_Pair{Token::EXCLAMATION, "!", &_current_line->file_line_no});
       }
@@ -211,11 +217,13 @@ bool lexer::lex_line() {
         advance();
         _tokens->emplace_back(
             TD_Pair{Token::ARROW, "->", &_current_line->file_line_no});
-      } else if (peek() == '=') {
+      }
+      else if (peek() == '=') {
         advance();
         _tokens->emplace_back(
             TD_Pair{Token::SUB_EQ, "-=", &_current_line->file_line_no});
-      } else {
+      }
+      else {
         _tokens->emplace_back(
             TD_Pair{Token::SUB, "-", &_current_line->file_line_no});
       }
@@ -226,7 +234,8 @@ bool lexer::lex_line() {
         advance();
         _tokens->emplace_back(
             TD_Pair{Token::ADD_EQ, "+=", &_current_line->file_line_no});
-      } else {
+      }
+      else {
         _tokens->emplace_back(
             TD_Pair{Token::ADD, "+", &_current_line->file_line_no});
       }
@@ -237,7 +246,8 @@ bool lexer::lex_line() {
         advance();
         _tokens->emplace_back(
             TD_Pair{Token::DIV_EQ, "/=", &_current_line->file_line_no});
-      } else {
+      }
+      else {
         _tokens->emplace_back(
             TD_Pair{Token::DIV, "/", &_current_line->file_line_no});
       }
@@ -248,17 +258,20 @@ bool lexer::lex_line() {
         advance();
         _tokens->emplace_back(
             TD_Pair{Token::MUL_EQ, "*=", &_current_line->file_line_no});
-      } else if (peek() == '*') {
+      }
+      else if (peek() == '*') {
         advance();
         if (peek() == '=') {
           advance();
           _tokens->emplace_back(
               TD_Pair{Token::POW_EQ, "**=", &_current_line->file_line_no});
-        } else {
+        }
+        else {
           _tokens->emplace_back(
               TD_Pair{Token::POW, "**", &_current_line->file_line_no});
         }
-      } else {
+      }
+      else {
         _tokens->emplace_back(
             TD_Pair{Token::MUL, "*", &_current_line->file_line_no});
       }
@@ -269,7 +282,8 @@ bool lexer::lex_line() {
         advance();
         _tokens->emplace_back(
             TD_Pair{Token::MOD_EQ, "%=", &_current_line->file_line_no});
-      } else {
+      }
+      else {
         _tokens->emplace_back(
             TD_Pair{Token::MOD, "%", &_current_line->file_line_no});
       }
@@ -280,11 +294,13 @@ bool lexer::lex_line() {
         advance();
         _tokens->emplace_back(
             TD_Pair{Token::AMPERSAND_EQ, "&=", &_current_line->file_line_no});
-      } else if (peek() == '&') {
+      }
+      else if (peek() == '&') {
         advance();
         _tokens->emplace_back(
             TD_Pair{Token::AND, "&&", &_current_line->file_line_no});
-      } else {
+      }
+      else {
         _tokens->emplace_back(
             TD_Pair{Token::AMPERSAND, "&", &_current_line->file_line_no});
       }
@@ -295,11 +311,13 @@ bool lexer::lex_line() {
         advance();
         _tokens->emplace_back(
             TD_Pair{Token::PIPE_EQ, "|=", &_current_line->file_line_no});
-      } else if (peek() == '|') {
+      }
+      else if (peek() == '|') {
         advance();
         _tokens->emplace_back(
             TD_Pair{Token::OR, "||", &_current_line->file_line_no});
-      } else {
+      }
+      else {
         _tokens->emplace_back(
             TD_Pair{Token::PIPE, "|", &_current_line->file_line_no});
       }
@@ -310,7 +328,8 @@ bool lexer::lex_line() {
         advance();
         _tokens->emplace_back(
             TD_Pair{Token::TILDE_EQ, "~=", &_current_line->file_line_no});
-      } else {
+      }
+      else {
         _tokens->emplace_back(
             TD_Pair{Token::TILDE, "~", &_current_line->file_line_no});
       }
@@ -321,7 +340,8 @@ bool lexer::lex_line() {
         advance();
         _tokens->emplace_back(
             TD_Pair{Token::HAT_EQ, "^=", &_current_line->file_line_no});
-      } else {
+      }
+      else {
         _tokens->emplace_back(
             TD_Pair{Token::HAT, "^", &_current_line->file_line_no});
       }
@@ -332,7 +352,8 @@ bool lexer::lex_line() {
         advance();
         _tokens->emplace_back(
             TD_Pair{Token::EQ_EQ, "==", &_current_line->file_line_no});
-      } else {
+      }
+      else {
         _tokens->emplace_back(
             TD_Pair{Token::EQ, "=", &_current_line->file_line_no});
       }
@@ -387,7 +408,8 @@ bool lexer::lex_line() {
         if (is_float) {
           _tokens->emplace_back(TD_Pair{Token::LITERAL_FLOAT, item,
                                         &_current_line->file_line_no});
-        } else {
+        }
+        else {
           _tokens->emplace_back(TD_Pair{Token::LITERAL_NUMBER, item,
                                         &_current_line->file_line_no});
         }
@@ -406,31 +428,40 @@ bool lexer::lex_line() {
       if (word == "fn") {
         _tokens->emplace_back(
             TD_Pair{Token::FN, {}, &_current_line->file_line_no});
-      } else if (word == "while") {
+      }
+      else if (word == "while") {
         _tokens->emplace_back(
             TD_Pair{Token::WHILE, {}, &_current_line->file_line_no});
-      } else if (word == "for") {
+      }
+      else if (word == "for") {
         _tokens->emplace_back(
             TD_Pair{Token::FOR, {}, &_current_line->file_line_no});
-      } else if (word == "if") {
+      }
+      else if (word == "if") {
         _tokens->emplace_back(
             TD_Pair{Token::IF, {}, &_current_line->file_line_no});
-      } else if (word == "else") {
+      }
+      else if (word == "else") {
         _tokens->emplace_back(
             TD_Pair{Token::ELSE, {}, &_current_line->file_line_no});
-      } else if (word == "return") {
+      }
+      else if (word == "return") {
         _tokens->emplace_back(
             TD_Pair{Token::RETURN, {}, &_current_line->file_line_no});
-      } else if (word == "break") {
+      }
+      else if (word == "break") {
         _tokens->emplace_back(
             TD_Pair{Token::BREAK, {}, &_current_line->file_line_no});
-      } else if (word == "let") {
+      }
+      else if (word == "let") {
         _tokens->emplace_back(
             TD_Pair{Token::LET, {}, &_current_line->file_line_no});
-      } else if (word == "import") {
+      }
+      else if (word == "import") {
         _tokens->emplace_back(
             TD_Pair{Token::IMPORT, {}, &_current_line->file_line_no});
-      } else {
+      }
+      else {
         _tokens->emplace_back(
             TD_Pair{Token::IDENTIFIER, word, &_current_line->file_line_no});
       }
@@ -443,7 +474,8 @@ bool lexer::lex_line() {
 
 void lexer::advance() { _idx++; }
 
-char lexer::peek(size_t ahead) {
+char lexer::peek(size_t ahead)
+{
   if (!_current_line) {
     return '\0';
   }
