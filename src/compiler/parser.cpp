@@ -340,6 +340,9 @@ std::vector<parse_tree::variable> parser::function_params()
   return parameters;
 }
 
+//  Eat all of { s, s+1, s+2 ... s+n }
+//  including '{' and '}'
+//
 std::vector<parse_tree::element *> parser::statements()
 {
 
@@ -379,6 +382,8 @@ std::vector<parse_tree::element *> parser::statements()
   }
 
   expect(Token::R_BRACE, "Expected '}' to mark the end of a statement block");
+  advance();
+
   return elements;
 }
 
@@ -390,9 +395,14 @@ parse_tree::element *parser::statement()
   if (parse_tree::element *item = parser::if_statement()) {
     return item;
   }
-  if (parse_tree::element *item = parser::loop()) {
+  if (parse_tree::element *item = parser::while_statement()) {
     return item;
   }
+  if (parse_tree::element *item = parser::return_statement()) {
+    return item;
+  }
+
+  // This should be last checked
   if (parse_tree::element *item = parser::expression_statement()) {
     return item;
   }
@@ -466,10 +476,201 @@ parse_tree::element *parser::assignment()
   return nullptr;
 }
 
+parse_tree::element *parser::if_statement()
+{
+  if (_tokens->at(_idx).token != Token::IF) {
+    return nullptr;
+  }
+
+  size_t line_no = *_tokens->at(_idx).line;
+
+  advance();
+
+  parse_tree::expression *condition = parser::conditional();
+
+  if (!condition) {
+    die("Expected conditional for given if statement");
+    return nullptr;
+  }
+
+  parse_tree::if_statement *if_stmt = new parse_tree::if_statement(line_no);
+
+  bool construct_segments = true;
+
+  while (construct_segments && _parser_okay) {
+
+    std::vector<parse_tree::element *> if_body = statements();
+
+    if (!_parser_okay) {
+      delete if_stmt;
+      for (auto &el : if_body) {
+        delete el;
+      }
+      delete condition;
+      return nullptr;
+    }
+
+    if_stmt->segments.push_back({condition, if_body});
+
+    if (_tokens->at(_idx).token == Token::ELSE) {
+
+      advance();
+
+      // Else-if Condition
+      if (_tokens->at(_idx).token == Token::IF) {
+
+        advance();
+
+        condition = parser::conditional();
+
+        if (!condition) {
+          _parser_okay = false;
+        }
+      }
+      else {
+
+        // TRUE for last else statement
+        condition =
+            new parse_tree::expression(parse_tree::node_type::RAW_NUMBER, "1");
+      }
+    }
+    else {
+      // No continuing segments
+      construct_segments = false;
+    }
+  }
+
+  if (!_parser_okay) {
+    delete if_stmt;
+    delete condition;
+    return nullptr;
+  }
+
+  return if_stmt;
+}
+
+parse_tree::element *parser::while_statement()
+{
+  if (_tokens->at(_idx).token != Token::WHILE) {
+    return nullptr;
+  }
+
+  size_t line_no = *_tokens->at(_idx).line;
+
+  advance();
+
+  parse_tree::expression *condition = parser::conditional();
+
+  if (!condition) {
+    return nullptr;
+  }
+
+  std::vector<parse_tree::element *> body = parser::statements();
+
+  if (!_parser_okay) {
+    for (auto &e : body) {
+      delete e;
+    }
+    delete condition;
+    return nullptr;
+  }
+
+  return new parse_tree::while_statement(line_no, condition, body);
+}
+
+parse_tree::element *parser::return_statement()
+{
+  if (_tokens->at(_idx).token != Token::RETURN) {
+    return nullptr;
+  }
+
+  size_t line_no = *_tokens->at(_idx).line;
+
+  advance();
+
+  parse_tree::expression *return_expr = nullptr;
+
+  // Optional '(' and ')' around statement?
+  if (_tokens->at(_idx).token == Token::L_PAREN) {
+    advance();
+    return_expr = parser::expression(parser::precedence::LOWEST);
+    advance();
+    expect(Token::R_PAREN, "Expected ')' following return expression");
+    advance();
+  }
+  else if (_tokens->at(_idx).token == Token::SEMICOLON) {
+    advance();
+    return new parse_tree::return_statement(line_no, nullptr);
+  }
+  else {
+    return_expr = parser::expression(parser::precedence::LOWEST);
+    advance();
+  }
+  expect(Token::SEMICOLON, "Expected semicolon at end of return statement");
+  advance();
+
+  if (!_parser_okay) {
+    delete return_expr;
+    return nullptr;
+  }
+
+  return new parse_tree::return_statement(line_no, return_expr);
+}
+
+// Expects expression to exist, if not this will kill the parser
+parse_tree::element *parser::expression_statement()
+{
+  if (_tokens->at(_idx).token == Token::R_BRACE) {
+    return nullptr;
+  }
+  if (_tokens->at(_idx).token == Token::SEMICOLON) {
+    return nullptr;
+  }
+
+  size_t line_no = *_tokens->at(_idx).line;
+  parse_tree::expression *expr = parser::expression(parser::precedence::LOWEST);
+
+  advance();
+
+  expect(Token::SEMICOLON, "Expected semicolon at end of expression");
+
+  advance();
+
+  if (!_parser_okay) {
+    delete expr;
+    return nullptr;
+  }
+
+  return new parse_tree::expression_statement(line_no, expr);
+}
+
+parse_tree::expression *parser::conditional()
+{
+  expect(Token::L_PAREN, "Expected '(' to mark beginning of conditional");
+  advance();
+
+  parse_tree::expression *conditional_expression =
+      parser::expression(parser::precedence::LOWEST);
+
+  advance();
+
+  expect(Token::R_PAREN, "Expected ')' to mark end of conditional");
+
+  if (!_parser_okay) {
+    delete conditional_expression;
+    return nullptr;
+  }
+
+  advance();
+
+  return conditional_expression;
+}
+
 parse_tree::expression *parser::expression(parser::precedence precedence)
 {
 
   if (_prefix_fns.find(_tokens->at(_idx).token) == _prefix_fns.end()) {
+    std::cout << ">>>>>" << token_to_str(_tokens->at(_idx)) << std::endl;
     die("No prefix function for given token");
     return nullptr;
   }
@@ -477,7 +678,8 @@ parse_tree::expression *parser::expression(parser::precedence precedence)
   auto fn = _prefix_fns[_tokens->at(_idx).token];
   parse_tree::expression *left = (this->*fn)();
 
-  while (peek().token != Token::SEMICOLON && precedence < peek_precedence()) {
+  while (peek().token != Token::SEMICOLON && peek().token != Token::R_BRACE &&
+         precedence < peek_precedence()) {
     if (_infix_fns.find(peek().token) == _infix_fns.end()) {
       return left;
     }
@@ -649,11 +851,5 @@ parse_tree::expression *parser::index_expr(parse_tree::expression *arr)
 
   return idx;
 }
-
-parse_tree::element *parser::if_statement() { return nullptr; }
-parse_tree::element *parser::else_if_statement() { return nullptr; }
-parse_tree::element *parser::else_statement() { return nullptr; }
-parse_tree::element *parser::loop() { return nullptr; }
-parse_tree::element *parser::expression_statement() { return nullptr; }
 
 } // namespace compiler

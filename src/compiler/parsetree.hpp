@@ -184,12 +184,52 @@ public:
   virtual void visit(visitor &v) override;
 };
 
+class if_statement : public element {
+public:
+  struct segment {
+    expression *expr;
+    std::vector<element *> element_list;
+  };
+  if_statement(size_t line) : element(line) {}
+
+  if_statement(size_t line, expression *expr) : element(line)
+  {
+    segments.push_back({expr, {}});
+  }
+
+  std::vector<segment> segments;
+
+  virtual void visit(visitor &v) override;
+};
+
 class expression_statement : public element {
 public:
   expression_statement(size_t line, expression *node)
       : element(line), expr(node)
   {
   }
+  expression *expr;
+
+  virtual void visit(visitor &v) override;
+};
+
+class while_statement : public element {
+public:
+  while_statement(size_t line) : element(line), condition(nullptr) {}
+  while_statement(size_t line, expression *c, std::vector<element *> body)
+      : element(line), condition(c), body(body)
+  {
+  }
+
+  expression *condition;
+  std::vector<element *> body;
+
+  virtual void visit(visitor &v) override;
+};
+
+class return_statement : public element {
+public:
+  return_statement(size_t line, expression *node) : element(line), expr(node) {}
   expression *expr;
 
   virtual void visit(visitor &v) override;
@@ -226,6 +266,9 @@ class visitor {
 public:
   virtual void accept(assignment &stmt) = 0;
   virtual void accept(expression_statement &stmt) = 0;
+  virtual void accept(if_statement &stmt) = 0;
+  virtual void accept(while_statement &stmt) = 0;
+  virtual void accept(return_statement &stmt) = 0;
 };
 
 static void display_expr_tree(const std::string &prefix, expression *n,

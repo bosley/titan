@@ -9,9 +9,41 @@
 
 namespace {
 
+std::vector<compiler::parse_tree::toplevel *> parse_file(std::string file)
+{
+  compiler::lexer lexer;
+  std::vector<compiler::TD_Pair> tokens;
+  if (!lexer.load_file(file)) {
+    std::cerr << "Lexer failed to load : " << file << std::endl;
+    return {};
+  }
+  if (!lexer.lex(tokens)) {
+    std::cerr << "Lexer failed to lex : " << file << std::endl;
+    return {};
+  }
+
+  constexpr auto import_file =
+      [](std::string file) -> std::vector<compiler::TD_Pair> {
+    //  Test files will not be importing
+    return {};
+  };
+
+  compiler::parser parser;
+  std::vector<std::string> include_directories;
+  return parser.parse(file, include_directories, import_file, tokens);
+}
+
 bool exprs_are_equal(compiler::parse_tree::expression *a,
                      compiler::parse_tree::expression *b)
 {
+  if (a == nullptr && b == nullptr) {
+    return true;
+  }
+
+  if (!a || !b) {
+    return false;
+  }
+
   if (a->type != b->type) {
     std::cout << "Expression type mismatch" << std::endl;
     return false;
@@ -119,27 +151,7 @@ TEST(parser_tests, basic_function)
        compiler::parse_tree::variable_types::I16},
   };
 
-  //  Lex the file(s)
-  //
-  std::string file = "test_files/parser_basic_function.tl";
-  compiler::lexer lexer;
-  std::vector<compiler::TD_Pair> tokens;
-  CHECK_TRUE(lexer.load_file(file));
-  CHECK_TRUE(lexer.lex(tokens));
-
-  //  Parse the Token Data pairs
-  //
-  constexpr auto import_file =
-      [](std::string file) -> std::vector<compiler::TD_Pair> {
-    //  Test file will not be importing
-    //
-    return {};
-  };
-
-  compiler::parser parser;
-  std::vector<std::string> include_directories;
-  std::vector<compiler::parse_tree::toplevel *> functions =
-      parser.parse(file, include_directories, import_file, tokens);
+  auto functions = parse_file("test_files/parser_basic_function.tl");
 
   CHECK_EQUAL(tcs.size(), functions.size());
 
@@ -164,6 +176,7 @@ TEST(parser_tests, basic_function)
     }
   }
 }
+
 TEST(parser_tests, assignments)
 {
 
@@ -178,27 +191,7 @@ TEST(parser_tests, assignments)
   expected.push_back(compiler::parse_tree::assignment(
       8, {"g", compiler::parse_tree::variable_types::I8, 0}, nullptr));
 
-  //  Lex the file(s)
-  //
-  std::string file = "test_files/parser_assignments.tl";
-  compiler::lexer lexer;
-  std::vector<compiler::TD_Pair> tokens;
-  CHECK_TRUE(lexer.load_file(file));
-  CHECK_TRUE(lexer.lex(tokens));
-
-  //  Parse the Token Data pairs
-  //
-  constexpr auto import_file =
-      [](std::string file) -> std::vector<compiler::TD_Pair> {
-    //  Test file will not be importing
-    //
-    return {};
-  };
-
-  compiler::parser parser;
-  std::vector<std::string> include_directories;
-  std::vector<compiler::parse_tree::toplevel *> functions =
-      parser.parse(file, include_directories, import_file, tokens);
+  auto functions = parse_file("test_files/parser_assignments.tl");
 
   CHECK_EQUAL(1, functions.size());
   CHECK_EQUAL((int)compiler::parse_tree::toplevel::tl_type::FUNCTION,
@@ -254,27 +247,7 @@ TEST(parser_tests, expr)
               new compiler::parse_tree::expression(
                   compiler::parse_tree::node_type::RAW_NUMBER, "0")))};
 
-  //  Lex the file(s)
-  //
-  std::string file = "test_files/exprs.tl";
-  compiler::lexer lexer;
-  std::vector<compiler::TD_Pair> tokens;
-  CHECK_TRUE(lexer.load_file(file));
-  CHECK_TRUE(lexer.lex(tokens));
-
-  //  Parse the Token Data pairs
-  //
-  constexpr auto import_file =
-      [](std::string file) -> std::vector<compiler::TD_Pair> {
-    //  Test file will not be importing
-    //
-    return {};
-  };
-
-  compiler::parser parser;
-  std::vector<std::string> include_directories;
-  std::vector<compiler::parse_tree::toplevel *> functions =
-      parser.parse(file, include_directories, import_file, tokens);
+  auto functions = parse_file("test_files/exprs.tl");
 
   CHECK_EQUAL(1, functions.size());
   CHECK_EQUAL((int)compiler::parse_tree::toplevel::tl_type::FUNCTION,
@@ -301,4 +274,188 @@ TEST(parser_tests, expr)
 
     //    compiler::parse_tree::display_expr_tree("", assign->expr, false);
   }
+}
+
+TEST(parser_tests, if_statements)
+{
+  auto functions = parse_file("test_files/ifs.tl");
+
+  CHECK_EQUAL(1, functions.size());
+  CHECK_EQUAL((int)compiler::parse_tree::toplevel::tl_type::FUNCTION,
+              (int)functions[0]->type);
+
+  auto func = reinterpret_cast<compiler::parse_tree::function *>(functions[0]);
+
+  std::vector<size_t> expected_segments = {5, 3, 2, 1};
+
+  // 4 Assignments, 4 if statements
+  CHECK_EQUAL(8, func->element_list.size());
+
+  for (size_t i = 4; i < func->element_list.size(); i++) {
+
+    auto if_stmt = reinterpret_cast<compiler::parse_tree::if_statement *>(
+        func->element_list[i]);
+    CHECK_EQUAL(expected_segments[i - 4], if_stmt->segments.size());
+
+    if (i == 4) {
+      compiler::parse_tree::expression *expr =
+          new compiler::parse_tree::expression(
+              compiler::parse_tree::node_type::RAW_NUMBER, "0");
+
+      for (auto &e : if_stmt->segments[i].element_list) {
+        auto a = reinterpret_cast<compiler::parse_tree::assignment *>(e);
+        CHECK_TRUE(exprs_are_equal(expr, a->expr));
+        CHECK_TRUE(("e" == a->var.name));
+      }
+    }
+  }
+}
+
+TEST(parser_tests, while_statements)
+{
+  std::vector<compiler::parse_tree::while_statement *> expected = {
+
+      new compiler::parse_tree::while_statement(
+          3,
+          new compiler::parse_tree::expression(
+              compiler::parse_tree::node_type::RAW_NUMBER, "1"),
+          {new compiler::parse_tree::while_statement(
+              4,
+              new compiler::parse_tree::expression(
+                  compiler::parse_tree::node_type::RAW_NUMBER, "0"),
+              {})}),
+
+      new compiler::parse_tree::while_statement(
+          8,
+          new compiler::parse_tree::expression(
+              compiler::parse_tree::node_type::RAW_NUMBER, "1"),
+          {new compiler::parse_tree::assignment(
+               9,
+               compiler::parse_tree::variable{
+                   "a", compiler::parse_tree::variable_types::U8, 0},
+               new compiler::parse_tree::expression(
+                   compiler::parse_tree::node_type::RAW_NUMBER, "2")),
+           new compiler::parse_tree::assignment(
+               10,
+               compiler::parse_tree::variable{
+                   "b", compiler::parse_tree::variable_types::U16, 0},
+               new compiler::parse_tree::expression(
+                   compiler::parse_tree::node_type::RAW_NUMBER, "4")),
+           new compiler::parse_tree::assignment(
+               11,
+               compiler::parse_tree::variable{
+                   "c", compiler::parse_tree::variable_types::U32, 0},
+               new compiler::parse_tree::expression(
+                   compiler::parse_tree::node_type::RAW_NUMBER, "6")),
+           new compiler::parse_tree::assignment(
+               12,
+               compiler::parse_tree::variable{
+                   "d", compiler::parse_tree::variable_types::U64, 0},
+               new compiler::parse_tree::expression(
+                   compiler::parse_tree::node_type::RAW_NUMBER, "8"))})};
+
+  auto functions = parse_file("test_files/while.tl");
+
+  CHECK_EQUAL(1, functions.size());
+  CHECK_EQUAL((int)compiler::parse_tree::toplevel::tl_type::FUNCTION,
+              (int)functions[0]->type);
+
+  auto func = reinterpret_cast<compiler::parse_tree::function *>(functions[0]);
+
+  CHECK_EQUAL(expected.size(), func->element_list.size());
+
+  for (size_t i = 0; i < expected.size(); i++) {
+
+    auto ws = reinterpret_cast<compiler::parse_tree::while_statement *>(
+        func->element_list[i]);
+    CHECK_TRUE(exprs_are_equal(expected[i]->condition, ws->condition));
+
+    CHECK_EQUAL(expected[i]->body.size(), ws->body.size());
+
+    for (size_t j = 0; j < expected[i]->body.size(); j++) {
+
+      if (ws->body[j]->line_number == 4) {
+
+        auto expected_ws =
+            reinterpret_cast<compiler::parse_tree::while_statement *>(
+                expected[i]->body[j]);
+        auto inner_ws =
+            reinterpret_cast<compiler::parse_tree::while_statement *>(
+                ws->body[j]);
+
+        CHECK_EQUAL(expected_ws->body.size(), inner_ws->body.size());
+        CHECK_TRUE(
+            exprs_are_equal(expected_ws->condition, inner_ws->condition));
+      }
+      else {
+
+        auto expected_a = reinterpret_cast<compiler::parse_tree::assignment *>(
+            expected[i]->body[j]);
+        auto inner_a =
+            reinterpret_cast<compiler::parse_tree::assignment *>(ws->body[j]);
+
+        CHECK_TRUE(expected_a->var.name == inner_a->var.name);
+        CHECK_EQUAL((int)expected_a->var.type, (int)inner_a->var.type);
+        CHECK_EQUAL(expected_a->var.depth, inner_a->var.depth);
+        CHECK_TRUE(exprs_are_equal(expected_a->expr, inner_a->expr));
+      }
+    }
+  }
+}
+
+TEST(parser_tests, return_tests)
+{
+  auto functions = parse_file("test_files/return.tl");
+  CHECK_EQUAL(3, functions.size());
+
+  for (size_t i = 0; i < 3; i++) {
+    CHECK_EQUAL((int)compiler::parse_tree::toplevel::tl_type::FUNCTION,
+                (int)functions[i]->type);
+
+    auto func =
+        reinterpret_cast<compiler::parse_tree::function *>(functions[i]);
+    CHECK_EQUAL(1, func->element_list.size());
+
+    auto return_stmt =
+        reinterpret_cast<compiler::parse_tree::return_statement *>(
+            func->element_list[0]);
+
+    compiler::parse_tree::expression *expected_expr = nullptr;
+    if (i == 0) {
+      expected_expr = new compiler::parse_tree::expression(
+          compiler::parse_tree::node_type::RAW_NUMBER, "0");
+    }
+    else if (i == 2) {
+      expected_expr = new compiler::parse_tree::expression(
+          compiler::parse_tree::node_type::RAW_NUMBER, "8");
+    }
+
+    CHECK_TRUE(exprs_are_equal(expected_expr, return_stmt->expr));
+  }
+}
+
+TEST(parser_tests, expression_statement)
+{
+  auto functions = parse_file("test_files/expr_stmt.tl");
+
+  CHECK_EQUAL(2, functions.size());
+  CHECK_EQUAL((int)compiler::parse_tree::toplevel::tl_type::FUNCTION,
+              (int)functions[0]->type);
+  CHECK_EQUAL((int)compiler::parse_tree::toplevel::tl_type::FUNCTION,
+              (int)functions[1]->type);
+
+  auto func = reinterpret_cast<compiler::parse_tree::function *>(functions[1]);
+
+  CHECK_EQUAL(1, func->element_list.size());
+
+  compiler::parse_tree::expression *expected =
+      new compiler::parse_tree::function_call_expr(
+          new compiler::parse_tree::expression(
+              compiler::parse_tree::node_type::ID, "new"));
+
+  auto expr_stmt =
+      reinterpret_cast<compiler::parse_tree::expression_statement *>(
+          func->element_list[0]);
+
+  CHECK_TRUE(exprs_are_equal(expected, expr_stmt->expr));
 }
