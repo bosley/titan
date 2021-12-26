@@ -15,7 +15,8 @@ std::vector<std::string> include_directories;
 
 } // namespace
 
-void show_usage() {
+void show_usage()
+{
   std::cout << program_name << std::endl;
   std::cout << "\nUsage:\n";
   std::cout << "  " << program_name
@@ -34,7 +35,8 @@ void show_usage() {
   Builds the list of include directories from -i or --include and ensures
   that each item given is a directory
 */
-void parse_includes(std::string includes) {
+void parse_includes(std::string includes)
+{
   size_t pos = 0;
   std::string directory;
   while ((pos = includes.find(":")) != std::string::npos) {
@@ -54,7 +56,8 @@ void parse_includes(std::string includes) {
 /*
   Parses input arguments
 */
-void parse_args(std::vector<std::string> args) {
+void parse_args(std::vector<std::string> args)
+{
   program_name = args[0];
   for (size_t idx = 1; idx < args.size(); idx++) {
     auto &arg = args[idx];
@@ -76,7 +79,8 @@ void parse_args(std::vector<std::string> args) {
   }
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char **argv)
+{
 
   parse_args(std::vector<std::string>(argv, argv + argc));
 

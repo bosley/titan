@@ -10,7 +10,8 @@
 namespace {
 
 bool exprs_are_equal(compiler::parse_tree::expression *a,
-                     compiler::parse_tree::expression *b) {
+                     compiler::parse_tree::expression *b)
+{
   if (a->type != b->type) {
     std::cout << "Expression type mismatch" << std::endl;
     return false;
@@ -78,7 +79,8 @@ TEST_GROUP(parser_tests){};
 
 //  Load the text files and ensure the expected tokens match the input
 //
-TEST(parser_tests, basic_function) {
+TEST(parser_tests, basic_function)
+{
 
   struct TestCase {
     compiler::parse_tree::toplevel::tl_type type;
@@ -162,7 +164,8 @@ TEST(parser_tests, basic_function) {
     }
   }
 }
-TEST(parser_tests, assignments) {
+TEST(parser_tests, assignments)
+{
 
   std::vector<compiler::parse_tree::assignment> expected;
 
@@ -215,7 +218,8 @@ TEST(parser_tests, assignments) {
   }
 }
 
-TEST(parser_tests, expr) {
+TEST(parser_tests, expr)
+{
   std::vector<compiler::parse_tree::expression *> expected = {
       new compiler::parse_tree::infix_expr(
           "+",

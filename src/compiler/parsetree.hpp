@@ -26,7 +26,8 @@ enum class variable_types {
   EXPR
 };
 
-static variable_types string_to_variable_type(const std::string &s) {
+static variable_types string_to_variable_type(const std::string &s)
+{
   if (s == "u8") {
     return variable_types::U8;
   }
@@ -93,7 +94,9 @@ public:
 class prefix_expr : public expression {
 public:
   prefix_expr(std::string op, expression *right)
-      : expression(node_type::PREFIX), op(op), right(right) {}
+      : expression(node_type::PREFIX), op(op), right(right)
+  {
+  }
   ~prefix_expr() { delete right; }
   std::string op;
   expression *right;
@@ -102,8 +105,11 @@ public:
 class infix_expr : public expression {
 public:
   infix_expr(std::string op, expression *left, expression *right)
-      : expression(node_type::INFIX), op(op), left(left), right(right) {}
-  ~infix_expr() {
+      : expression(node_type::INFIX), op(op), left(left), right(right)
+  {
+  }
+  ~infix_expr()
+  {
     delete left;
     delete right;
   }
@@ -115,7 +121,8 @@ public:
 class array_literal_expr : public expression {
 public:
   array_literal_expr() : expression(node_type::ARRAY) {}
-  ~array_literal_expr() {
+  ~array_literal_expr()
+  {
     for (auto &e : expressions) {
       delete e;
     }
@@ -127,8 +134,11 @@ class array_index_expr : public expression {
 public:
   array_index_expr() : expression(node_type::ARRAY_IDX) {}
   array_index_expr(expression *arr, expression *idx)
-      : expression(node_type::ARRAY_IDX), arr(arr), index(idx) {}
-  ~array_index_expr() {
+      : expression(node_type::ARRAY_IDX), arr(arr), index(idx)
+  {
+  }
+  ~array_index_expr()
+  {
     delete index;
     delete arr;
   }
@@ -140,7 +150,8 @@ class function_call_expr : public expression {
 public:
   function_call_expr() : expression(node_type::CALL) {}
   function_call_expr(expression *fn) : expression(node_type::CALL), fn(fn) {}
-  ~function_call_expr() {
+  ~function_call_expr()
+  {
     for (auto &e : params) {
       delete e;
     }
@@ -164,7 +175,9 @@ public:
 class assignment : public element {
 public:
   assignment(size_t line, variable var, expression *node)
-      : element(line), var(var), expr(node) {}
+      : element(line), var(var), expr(node)
+  {
+  }
   variable var;
   expression *expr;
 
@@ -174,7 +187,9 @@ public:
 class expression_statement : public element {
 public:
   expression_statement(size_t line, expression *node)
-      : element(line), expr(node) {}
+      : element(line), expr(node)
+  {
+  }
   expression *expr;
 
   virtual void visit(visitor &v) override;
@@ -191,7 +206,9 @@ public:
 class import_stmt : public toplevel {
 public:
   import_stmt(std::string target)
-      : toplevel(toplevel::tl_type::IMPORT), target(target) {}
+      : toplevel(toplevel::tl_type::IMPORT), target(target)
+  {
+  }
   import_stmt() : toplevel(toplevel::tl_type::IMPORT) {}
   std::string target;
 };
@@ -212,7 +229,8 @@ public:
 };
 
 static void display_expr_tree(const std::string &prefix, expression *n,
-                              bool is_left) {
+                              bool is_left)
+{
   if (!n) {
     return;
   }
@@ -223,27 +241,33 @@ static void display_expr_tree(const std::string &prefix, expression *n,
     auto i = reinterpret_cast<function_call_expr *>(n);
     if (i->fn) {
       std::cout << " call<" << i->fn->value << ">" << std::endl;
-    } else {
+    }
+    else {
       std::cout << " call " << std::endl;
     }
-  } else if (n->type == node_type::ARRAY_IDX) {
+  }
+  else if (n->type == node_type::ARRAY_IDX) {
     auto i = reinterpret_cast<array_index_expr *>(n);
     if (i->arr && i->index) {
       std::cout << " " << i->arr->value << "[" << i->index->value << "]"
                 << std::endl;
-    } else {
+    }
+    else {
       std::cout << " array[] " << std::endl;
     }
-  } else if (n->type == node_type::INFIX) {
+  }
+  else if (n->type == node_type::INFIX) {
     auto i = reinterpret_cast<infix_expr *>(n);
     std::cout << " " << i->op << std::endl;
     display_expr_tree(prefix + (is_left ? "│   " : "    "), i->left, true);
     display_expr_tree(prefix + (is_left ? "│   " : "    "), i->right, false);
-  } else if (n->type == node_type::PREFIX) {
+  }
+  else if (n->type == node_type::PREFIX) {
     auto i = reinterpret_cast<prefix_expr *>(n);
     std::cout << " " << i->op << std::endl;
     display_expr_tree(prefix + (is_left ? "│   " : "    "), i->right, false);
-  } else {
+  }
+  else {
     std::cout << " " << n->value << std::endl;
   }
 }

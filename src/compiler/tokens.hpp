@@ -76,7 +76,8 @@ struct TD_Pair {
   size_t *line;
 };
 
-static std::string token_to_str(const TD_Pair &td) {
+static std::string token_to_str(const TD_Pair &td)
+{
 
   size_t line_no = (td.line) ? *td.line : 0;
   switch (td.token) {
