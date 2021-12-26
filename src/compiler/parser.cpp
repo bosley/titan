@@ -63,9 +63,9 @@ locate_import(std::vector<std::string> &paths, std::string &target) {
 }
 
 static void report_error(const std::string &filename, size_t *line,
-                         const std::string error) {
+    const std::string error) {
   std::cout << "Parse error [" << filename << "](" << *line << ") : " << error
-            << std::endl;
+    << std::endl;
 }
 } // namespace
 
@@ -73,9 +73,9 @@ parser::parser() : _parser_okay(true), _idx(0), _tokens(nullptr) {}
 
 std::vector<parse_tree::toplevel *>
 parser::parse(std::string filename,
-              std::vector<std::string> &include_directories,
-              std::function<std::vector<TD_Pair>(std::string)> import_file,
-              std::vector<TD_Pair> &tokens) {
+    std::vector<std::string> &include_directories,
+    std::function<std::vector<TD_Pair>(std::string)> import_file,
+    std::vector<TD_Pair> &tokens) {
   _tokens = &tokens;
   _filename = filename;
 
@@ -110,8 +110,8 @@ parser::parse(std::string filename,
   while (_parser_okay && _idx < _tokens->size()) {
 
     /*
-        Check for an import statement
-    */
+       Check for an import statement
+       */
     new_top_level_item = import_stmt();
     if (new_top_level_item) {
       if (!_parser_okay) {
@@ -119,7 +119,7 @@ parser::parse(std::string filename,
       }
 
       parse_tree::import_stmt *import_statement =
-          static_cast<parse_tree::import_stmt *>(new_top_level_item);
+        static_cast<parse_tree::import_stmt *>(new_top_level_item);
 
       // Ensure we haven't imported it yet
       if (_imported_objects.find(import_statement->target) !=
@@ -130,11 +130,11 @@ parser::parse(std::string filename,
       _imported_objects.insert(import_statement->target);
 
       auto [item_found, target_item] =
-          locate_import(include_directories, import_statement->target);
+        locate_import(include_directories, import_statement->target);
 
       if (!item_found) {
         std::cout << "Error : Unable to locate import \""
-                  << import_statement->target << "\"" << std::endl;
+          << import_statement->target << "\"" << std::endl;
         delete new_top_level_item;
         _parser_okay = false;
         continue;
@@ -153,15 +153,15 @@ parser::parse(std::string filename,
 
       // Add it to our top level objects
       top_level_items.insert(top_level_items.end(), parsed_file.begin(),
-                             parsed_file.end());
+          parsed_file.end());
     }
     if (!_parser_okay) {
       continue;
     }
 
     /*
-        Check for a function declaration
-    */
+       Check for a function declaration
+       */
     new_top_level_item = function();
     if (new_top_level_item) {
       top_level_items.push_back(new_top_level_item);
@@ -257,11 +257,11 @@ parse_tree::toplevel *parser::function() {
   std::vector<parse_tree::variable> parameters = function_params();
 
   expect(Token::ARROW,
-         "Expected '->' following function parameters to denote return type");
+      "Expected '->' following function parameters to denote return type");
 
   advance();
   expect(Token::IDENTIFIER,
-         "Expected return type following '->' in function declaration");
+      "Expected return type following '->' in function declaration");
   std::string return_type = _tokens->at(_idx).data;
 
   advance();
@@ -284,7 +284,7 @@ parse_tree::toplevel *parser::function() {
 std::vector<parse_tree::variable> parser::function_params() {
 
   expect(Token::L_PAREN,
-         "Expected '(' to mark beginning of function parameters");
+      "Expected '(' to mark beginning of function parameters");
 
   // Empty params
   if (peek().token == Token::R_PAREN) {
@@ -304,7 +304,7 @@ std::vector<parse_tree::variable> parser::function_params() {
 
     advance();
     expect(Token::COLON,
-           "Expected colon between name:type in parameter definition");
+        "Expected colon between name:type in parameter definition");
 
     advance();
     expect(Token::IDENTIFIER, "Expected variable type for parameter");
@@ -335,7 +335,7 @@ std::vector<parse_tree::variable> parser::function_params() {
 std::vector<parse_tree::element *> parser::statements() {
 
   expect(Token::L_BRACE,
-         "Expected '{' to mark the beginning of a statement block");
+      "Expected '{' to mark the beginning of a statement block");
   advance();
 
   // Check for empty statement body
@@ -401,16 +401,16 @@ parse_tree::element *parser::assignment() {
 
   advance();
   expect(Token::COLON,
-         "Expected colon between name:type in varialbe assignment");
+      "Expected colon between name:type in varialbe assignment");
 
   advance();
   expect(Token::IDENTIFIER, "Expected variable type");
   std::string variable_type = _tokens->at(_idx).data;
 
   /*
-      Consume [100][3][3]... [?]
-      and calculate the number of items that would represent i.e [10][10] = 100
-  */
+     Consume [100][3][3]... [?]
+     and calculate the number of items that would represent i.e [10][10] = 100
+     */
   advance();
   uint64_t depth = 0;
   if (_tokens->at(_idx).token == Token::L_BRACKET) {
@@ -436,13 +436,11 @@ parse_tree::element *parser::assignment() {
 
   advance();
 
-  parse_tree::expr_node *tree = new parse_tree::expr_node();
-  parse_tree::expr_node *exp = expression(parser::precedence::LOWEST);
+  parse_tree::expr *tree = new parse_tree::expr();
+  parse_tree::expr *exp = expression(parser::precedence::LOWEST);
 
   advance();
   expect(Token::SEMICOLON, "Expected semicolon at end of variable assignment");
-
-  std::cout << "Current token : " << token_to_str(_tokens->at(_idx)) << std::endl;
   
   advance();
   if (_parser_okay) {
@@ -455,7 +453,7 @@ parse_tree::element *parser::assignment() {
   return nullptr;
 }
 
-parse_tree::expr_node *parser::expression(parser::precedence precedence) {
+parse_tree::expr *parser::expression(parser::precedence precedence) {
 
   if (_prefix_fns.find(_tokens->at(_idx).token) == _prefix_fns.end()) {
     die("No prefix function for given token");
@@ -463,7 +461,7 @@ parse_tree::expr_node *parser::expression(parser::precedence precedence) {
   }
 
   auto fn = _prefix_fns[_tokens->at(_idx).token];
-  parse_tree::expr_node *left = (this->*fn)();
+  parse_tree::expr *left = (this->*fn)();
 
   while(peek().token != Token::SEMICOLON && precedence < peek_precedence()) {
     if (_infix_fns.find(peek().token) == _infix_fns.end()) {
@@ -477,25 +475,9 @@ parse_tree::expr_node *parser::expression(parser::precedence precedence) {
   return left;
 }
 
-parse_tree::expr_node *parser::prefix_expr() { 
+parse_tree::expr *parser::prefix_expr() { 
 
-  parse_tree::node_type nt;
-  parse_tree::variable_types vt;
-  switch(_tokens->at(_idx).token) {
-    case Token::IDENTIFIER:     nt = parse_tree::node_type::ID;         vt = parse_tree::variable_types::USER_DEFINED; break;
-    case Token::LITERAL_NUMBER: nt = parse_tree::node_type::RAW_NUMBER; vt = parse_tree::variable_types::RAW_NUMBER;   break;
-    case Token::LITERAL_FLOAT:  nt = parse_tree::node_type::RAW_FLOAT;  vt = parse_tree::variable_types::FLOAT;        break;
-    case Token::STRING:         nt = parse_tree::node_type::RAW_STRING; vt = parse_tree::variable_types::STRING;       break;
-    case Token::EXCLAMATION:    nt = parse_tree::node_type::NOT;        vt = parse_tree::variable_types::OP;           break;
-    case Token::SUB:            nt = parse_tree::node_type::SUB;        vt = parse_tree::variable_types::OP;           break;
-    case Token::L_PAREN:        nt = parse_tree::node_type::LP;         vt = parse_tree::variable_types::OP;           break;
-    case Token::L_BRACKET:      nt = parse_tree::node_type::LB;         vt = parse_tree::variable_types::OP;           break;
-    default:
-      die("Internal Error : Unable to convert token for prefix_expr()");
-      return nullptr;
-  };
-
-  auto result = new parse_tree::expr_node(nt, vt, _tokens->at(_idx).data);
+  auto result = new parse_tree::prefix_expr(_tokens->at(_idx).data, nullptr);
 
   advance();
 
@@ -503,31 +485,9 @@ parse_tree::expr_node *parser::prefix_expr() {
   return result;
 }
 
-parse_tree::expr_node *parser::infix_expr(parse_tree::expr_node *left) { 
+parse_tree::expr *parser::infix_expr(parse_tree::expr *left) { 
 
-  parse_tree::node_type nt;
-  parse_tree::variable_types vt;
-  switch(_tokens->at(_idx).token) {
-    case Token::ADD:     nt = parse_tree::node_type::ADD;  vt = parse_tree::variable_types::OP; break;
-    case Token::SUB:     nt = parse_tree::node_type::SUB;  vt = parse_tree::variable_types::OP; break;
-    case Token::DIV:     nt = parse_tree::node_type::DIV;  vt = parse_tree::variable_types::OP; break;
-    case Token::MUL:     nt = parse_tree::node_type::MUL;  vt = parse_tree::variable_types::OP; break;
-    case Token::MOD:     nt = parse_tree::node_type::MOD;  vt = parse_tree::variable_types::OP; break;
-    case Token::EQ_EQ:   nt = parse_tree::node_type::EQ_EQ;  vt = parse_tree::variable_types::OP; break;
-    case Token::LT:      nt = parse_tree::node_type::LT;   vt = parse_tree::variable_types::OP; break;
-    case Token::LTE:     nt = parse_tree::node_type::LTE;  vt = parse_tree::variable_types::OP; break;
-    case Token::GT:      nt = parse_tree::node_type::GT;   vt = parse_tree::variable_types::OP; break;
-    case Token::GTE:     nt = parse_tree::node_type::GTE;  vt = parse_tree::variable_types::OP; break;
-    case Token::L_PAREN: nt = parse_tree::node_type::LP;   vt = parse_tree::variable_types::OP; break;
-    case Token::L_BRACKET: nt = parse_tree::node_type::LB; vt = parse_tree::variable_types::OP; break;
-    case Token::EXCLAMATION_EQ: nt = parse_tree::node_type::NE;  vt = parse_tree::variable_types::OP; break;
-    default:
-      die("Internal Error : Unable to convert token for infix_expr()");
-      return nullptr;
-  }
-
-  auto result = new parse_tree::expr_node(nt, vt, _tokens->at(_idx).data);
-  result->left = left;
+  auto result = new parse_tree::infix_expr(_tokens->at(_idx).data, left, nullptr);
 
   precedence p = precedence::LOWEST;
   if (precedences.find(_tokens->at(_idx).token) != precedences.end()) {
@@ -540,29 +500,26 @@ parse_tree::expr_node *parser::infix_expr(parse_tree::expr_node *left) {
   return result;
 }
 
-parse_tree::expr_node *parser::identifier() { 
+parse_tree::expr *parser::identifier() { 
 
   // Sanity check
   expect(Token::IDENTIFIER, "Expected identifier in expression");
-  return new parse_tree::expr_node(
+  return new parse_tree::expr(
       parse_tree::node_type::ID, 
-      parse_tree::variable_types::USER_DEFINED, 
       _tokens->at(_idx).data
   );
 }
 
-parse_tree::expr_node *parser::number() {
+parse_tree::expr *parser::number() {
   if(_tokens->at(_idx).token == Token::LITERAL_NUMBER) {
-    return new parse_tree::expr_node(
+    return new parse_tree::expr(
         parse_tree::node_type::RAW_NUMBER, 
-        parse_tree::variable_types::RAW_NUMBER, 
         _tokens->at(_idx).data
     );
   }
   else if (_tokens->at(_idx).token == Token::LITERAL_FLOAT) {
-    return new parse_tree::expr_node(
+    return new parse_tree::expr(
         parse_tree::node_type::RAW_FLOAT, 
-        parse_tree::variable_types::FLOAT, 
         _tokens->at(_idx).data
     );
   }
@@ -572,23 +529,21 @@ parse_tree::expr_node *parser::number() {
   }
 }
 
-parse_tree::expr_node *parser::str() { 
+parse_tree::expr *parser::str() { 
 
   // Sanity check
   expect(Token::STRING, "Expected string in expression");
 
-  return new parse_tree::expr_node(
+  return new parse_tree::expr(
       parse_tree::node_type::RAW_STRING, 
-      parse_tree::variable_types::STRING, 
       _tokens->at(_idx).data
   );
 }
 
-parse_tree::expr_node *parser::call_expr(parse_tree::expr_node *fn) {
-
+parse_tree::expr *parser::call_expr(parse_tree::expr *fn) {
   
-  parse_tree::expr_function_call *result =
-      new parse_tree::expr_function_call();
+  parse_tree::function_call_expr *result =
+      new parse_tree::function_call_expr();
   
   result->fn = fn;
 
@@ -600,19 +555,17 @@ parse_tree::expr_node *parser::call_expr(parse_tree::expr_node *fn) {
   result->params = parser::expression_list();
 
   if(!_parser_okay) {
-    for(auto& e: result->params) {
-      delete e;
-    }
+    delete result;
     return nullptr;
   }
 
   return result;
 }
 
-std::vector<parse_tree::expr_node *> parser::expression_list() {
+std::vector<parse_tree::expr *> parser::expression_list() {
 
 
-  std::vector<parse_tree::expr_node *> results;
+  std::vector<parse_tree::expr *> results;
 
   results.emplace_back(expression(precedence::LOWEST));
 
@@ -632,9 +585,9 @@ std::vector<parse_tree::expr_node *> parser::expression_list() {
   return results;
 }
 
-parse_tree::expr_node *parser::grouped_expr() { 
+parse_tree::expr *parser::grouped_expr() { 
   advance();
-  parse_tree::expr_node *expr = expression(precedence::LOWEST);
+  parse_tree::expr *expr = expression(precedence::LOWEST);
 
   if (peek().token != Token::R_PAREN) {
     delete expr;
@@ -644,9 +597,9 @@ parse_tree::expr_node *parser::grouped_expr() {
   return expr; 
 }
 
-parse_tree::expr_node *parser::array() { 
+parse_tree::expr *parser::array() { 
 
-  parse_tree::expr_array_lit* arr = new parse_tree::expr_array_lit();
+  parse_tree::array_literal_expr* arr = new parse_tree::array_literal_expr();
 
   if (peek().token == Token::R_BRACKET) {
     advance();
@@ -656,18 +609,16 @@ parse_tree::expr_node *parser::array() {
   arr->exprs = expression_list();
 
   if (peek().token != Token::R_BRACKET) {
-    for (auto &e : arr->exprs) {
-      delete e;
-    }
-    arr->exprs = {};
+    delete arr;
+    return nullptr;
   }
 
   return arr;
 }
 
-parse_tree::expr_node *parser::index_expr(parse_tree::expr_node *arr) {
+parse_tree::expr *parser::index_expr(parse_tree::expr *arr) {
 
-  parse_tree::expr_index *idx = new parse_tree::expr_index();
+  parse_tree::array_index_expr *idx = new parse_tree::array_index_expr();
   idx->arr = arr;
 
   advance();
@@ -677,7 +628,6 @@ parse_tree::expr_node *parser::index_expr(parse_tree::expr_node *arr) {
   expect(Token::R_BRACKET, "Expected ']' following index into array");
 
   if(!_parser_okay) {
-    if(idx->index){ delete idx->index; }
     delete idx;
     return nullptr;
   }

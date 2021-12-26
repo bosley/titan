@@ -7,6 +7,74 @@
 
 #include <CppUTest/TestHarness.h>
 
+namespace 
+{
+
+  bool exprs_are_equal(compiler::parse_tree::expr* a, compiler::parse_tree::expr* b) {
+    if(a->type != b->type) {
+      std::cout << "Expression type mismatch" << std::endl;
+      return false;
+    }
+
+    switch(a->type) {
+      case compiler::parse_tree::node_type::ID:
+      case compiler::parse_tree::node_type::RAW_FLOAT:
+      case compiler::parse_tree::node_type::RAW_NUMBER:
+      case compiler::parse_tree::node_type::RAW_STRING:
+      case compiler::parse_tree::node_type::CALL:
+        if(a->value != b->value) {
+          std::cout << "Expression value mismatch (" << a->value << " != " << b->value << ")" << std::endl;
+          return false;
+        }
+        return true;
+
+      case compiler::parse_tree::node_type::INFIX:
+      {
+        auto a_infix_expr = reinterpret_cast<compiler::parse_tree::infix_expr*>(a);
+        auto b_infix_expr = reinterpret_cast<compiler::parse_tree::infix_expr*>(b);
+        
+        if(!exprs_are_equal(a_infix_expr->left, b_infix_expr->left)) {
+          return false;
+        }
+        if(!exprs_are_equal(a_infix_expr->right, b_infix_expr->right)) {
+          return false;
+        }
+        return true;
+      }
+      case compiler::parse_tree::node_type::PREFIX:
+      {
+        auto a_prefix_expr = reinterpret_cast<compiler::parse_tree::prefix_expr*>(a);
+        auto b_prefix_expr = reinterpret_cast<compiler::parse_tree::prefix_expr*>(b);
+        if(!exprs_are_equal(a_prefix_expr->right, b_prefix_expr->right)) {
+          return false;
+        }
+        break;
+      }
+      case compiler::parse_tree::node_type::ARRAY_IDX:
+      {
+        auto a_array_idx_expr = reinterpret_cast<compiler::parse_tree::array_index_expr*>(a);
+        auto b_array_idx_expr = reinterpret_cast<compiler::parse_tree::array_index_expr*>(b);
+         
+        if(!exprs_are_equal(a_array_idx_expr->arr, b_array_idx_expr->arr)) {
+          return false;
+        }
+        if(!exprs_are_equal(a_array_idx_expr->index, b_array_idx_expr->index)) {
+          return false;
+        }
+        return true;
+      }
+      default:
+        std::cout << "Unhandled expression node type" << std::endl;
+        return false;
+    }
+    return false;
+  }
+
+
+}
+
+
+
 TEST_GROUP(parser_tests){};
 
 //  Load the text files and ensure the expected tokens match the input
@@ -150,6 +218,48 @@ TEST(parser_tests, assignments) {
 
 TEST(parser_tests, expr) 
 {
+  std::vector<compiler::parse_tree::expr *> expected = 
+  {
+    new compiler::parse_tree::infix_expr("+", 
+        new compiler::parse_tree::expr(
+          compiler::parse_tree::node_type::RAW_NUMBER,
+          "6"),
+        new compiler::parse_tree::expr(
+          compiler::parse_tree::node_type::RAW_NUMBER,
+          "2")),
+    new compiler::parse_tree::infix_expr("*", 
+        new compiler::parse_tree::infix_expr("+",
+          new compiler::parse_tree::expr(
+            compiler::parse_tree::node_type::RAW_NUMBER,
+            "4"),
+          new compiler::parse_tree::expr(
+            compiler::parse_tree::node_type::RAW_NUMBER,
+            "2")),
+        new compiler::parse_tree::expr(
+          compiler::parse_tree::node_type::RAW_NUMBER,
+          "3")),
+    new compiler::parse_tree::infix_expr("+", 
+        new compiler::parse_tree::expr(
+          compiler::parse_tree::node_type::RAW_NUMBER,
+          "3"),
+        new compiler::parse_tree::function_call_expr(
+          new compiler::parse_tree::expr(
+            compiler::parse_tree::node_type::ID,
+            "moot"))),
+    new compiler::parse_tree::infix_expr("+", 
+        new compiler::parse_tree::expr(
+          compiler::parse_tree::node_type::RAW_NUMBER,
+          "3"),
+        new compiler::parse_tree::array_index_expr(
+          new compiler::parse_tree::expr(
+            compiler::parse_tree::node_type::ID,
+            "x"),
+          new compiler::parse_tree::expr(
+            compiler::parse_tree::node_type::RAW_NUMBER,
+            "0")))
+  };
+
+
   //  Lex the file(s)
   //
   std::string file = "test_files/exprs.tl";
@@ -177,20 +287,22 @@ TEST(parser_tests, expr)
               (int)functions[0]->type);
 
   auto func = reinterpret_cast<compiler::parse_tree::function*>(functions[0]);
-  for (auto &el : func->element_list) {
-    
-    auto assign = reinterpret_cast<compiler::parse_tree::assignment*>(el);
-    
-    /*
-     *      TODO:
-     *
-     *          Create tests that verifies that the values read in are what we expect.
-     *
-     *          Suggest making the structures that they create by hand and ensuring 
-     *          that each field matches 
-     * */
 
-    //compiler::parse_tree::display_expr_node_tree("", assign->expr, false);
+  CHECK_EQUAL(expected.size(), func->element_list.size());
+
+  for (size_t i = 0; i < expected.size(); i++) {
+    
+    auto assign = reinterpret_cast<compiler::parse_tree::assignment*>(func->element_list[i]);
+    
+    CHECK_EQUAL((int)expected[i]->type, (int)assign->expr->type);
+
+    auto expected_infix_expr = reinterpret_cast<compiler::parse_tree::infix_expr*>(expected[i]);
+    auto infix_expr = reinterpret_cast<compiler::parse_tree::infix_expr*>(assign->expr);
+
+    CHECK_TRUE(exprs_are_equal(expected_infix_expr->left, infix_expr->left));
+    CHECK_TRUE(exprs_are_equal(expected_infix_expr->right, infix_expr->right));
+
+//    compiler::parse_tree::display_expr_tree("", assign->expr, false);
   }
 }
 

@@ -74,71 +74,77 @@ enum class node_type {
   RAW_FLOAT,
   RAW_NUMBER,
   RAW_STRING,
-  ADD,
-  SUB,
-  DIV,
-  MUL,
-  MOD,
-  GT,
-  LT,
-  LTE,
-  GTE,
-  EQ_EQ,
-  LSH,
-  RSH,
-  BW_XOR,
-  BW_NOT,
-  BW_OR,
-  BW_AND,
-  AND,
-  OR,
-  NOT,// !
-  LP, // (
-  LB, // [
+  PREFIX,
+  INFIX,
   ARRAY,
   ARRAY_IDX,
-  NE
 };
 
-class expr_node {
+class expr {
 public:
-  expr_node()
-      : type(node_type::ROOT), val_type(variable_types::USER_DEFINED),
-        left(nullptr), right(nullptr) {}
-  expr_node(node_type t, variable_types nvt)
-      : type(t), val_type(nvt), left(nullptr), right(nullptr) {}
-  expr_node(node_type t, variable_types nvt, std::string val)
-      : type(t), val_type(nvt), value(val), left(nullptr), right(nullptr) {}
-  expr_node(node_type t, variable_types nvt, expr_node *left, expr_node *right)
-      : type(t), val_type(nvt), left(left), right(right) {}
+  expr()
+      : type(node_type::ROOT) {}
+  expr(node_type t)
+      : type(t) {}
+  expr(node_type t, std::string val)
+      : type(t), value(val) {}
 
   node_type type;
-  variable_types val_type;
   std::string value;
-
-  expr_node *left;
-  expr_node *right;
 };
 
-class expr_array_lit : public expr_node {
+class prefix_expr : public expr {
 public:
-  expr_array_lit() : expr_node(node_type::ARRAY, variable_types::EXPR) {}
-  std::vector<expr_node*> exprs;
+  prefix_expr(std::string op, expr *right) : expr(node_type::PREFIX), op(op), right(right) {}
+  ~prefix_expr() { delete right; }
+  std::string op;
+  expr *right;
 };
 
-class expr_index : public expr_node {
+class infix_expr : public expr {
 public:
-  expr_index() : expr_node(node_type::ARRAY_IDX, variable_types::EXPR) {}
-  expr_node* arr;
-  expr_node* index;
+  infix_expr(std::string op, expr *left, expr *right) : expr(node_type::INFIX), op(op), left(left), right(right) {}
+  ~infix_expr() { delete left; delete right; }
+  std::string op;
+  expr *left;
+  expr *right;
 };
 
-class expr_function_call : public expr_node {
+class array_literal_expr : public expr {
 public:
-  expr_function_call() : expr_node(node_type::CALL, variable_types::USER_DEFINED) {}
+  array_literal_expr() : expr(node_type::ARRAY) {}
+  ~array_literal_expr() {
+    for(auto& e : exprs) {
+      delete e;
+    }
+  }
+  std::vector<expr*> exprs;
+};
 
-  expr_node* fn;
-  std::vector<expr_node*> params;
+class array_index_expr : public expr {
+public:
+  array_index_expr() : expr(node_type::ARRAY_IDX) {}
+  array_index_expr(expr *arr, expr *idx) : expr(node_type::ARRAY_IDX), arr(arr), index(idx) {}
+  ~array_index_expr() {
+    delete index;
+    delete arr;
+  }
+  expr* arr;
+  expr* index;
+};
+
+class function_call_expr : public expr {
+public:
+  function_call_expr() : expr(node_type::CALL) {}
+  function_call_expr(expr *fn) : expr(node_type::CALL), fn(fn) {}
+  ~function_call_expr() {
+    for(auto& e : params) {
+      delete e;
+    }
+    delete fn;
+  }
+  expr* fn;
+  std::vector<expr*> params;
 };
 
 class visitor;
@@ -154,18 +160,18 @@ public:
 
 class assignment : public element {
 public:
-  assignment(size_t line, variable var, expr_node *node)
+  assignment(size_t line, variable var, expr *node)
       : element(line), var(var), expr(node) {}
   variable var;
-  expr_node *expr;
+  expr *expr;
 
   virtual void visit(visitor &v) override;
 };
 
 class expr_statement : public element {
 public:
-  expr_statement(size_t line, expr_node *node) : element(line), expr(node) {}
-  expr_node *expr;
+  expr_statement(size_t line, expr *node) : element(line), expr(node) {}
+  expr *expr;
 
   virtual void visit(visitor &v) override;
 };
@@ -202,14 +208,13 @@ public:
 };
 
 
-static void display_expr_node_tree(const std::string& prefix, expr_node *n, bool is_left) {
+static void display_expr_tree(const std::string& prefix, expr *n, bool is_left) {
   if(!n){ return; } 
   std::cout << prefix;    
   std::cout << (is_left ? "├──" : "└──" );
 
-
   if(n->type == node_type::CALL) {
-    auto i = reinterpret_cast<expr_function_call*>(n);
+    auto i = reinterpret_cast<function_call_expr*>(n);
     if(i->fn) {
       std::cout << " call<" << i->fn->value << ">" << std::endl;
     }
@@ -218,7 +223,7 @@ static void display_expr_node_tree(const std::string& prefix, expr_node *n, bool
     }
   }
   else if(n->type == node_type::ARRAY_IDX) {
-    auto i = reinterpret_cast<expr_index*>(n);
+    auto i = reinterpret_cast<array_index_expr*>(n);
     if(i->arr && i->index) {
       std::cout << " " << i->arr->value << "[" << i->index->value << "]" << std::endl;
     } 
@@ -226,11 +231,20 @@ static void display_expr_node_tree(const std::string& prefix, expr_node *n, bool
       std::cout << " array[] " << std::endl;
     }
   }
+  else if(n->type == node_type::INFIX) {
+    auto i = reinterpret_cast<infix_expr*>(n);
+    std::cout << " " << i->op << std::endl;
+    display_expr_tree(prefix + (is_left ? "│   " : "    "), i->left, true);
+    display_expr_tree(prefix + (is_left ? "│   " : "    "), i->right, false);
+  }
+  else if(n->type == node_type::PREFIX) {
+    auto i = reinterpret_cast<prefix_expr*>(n);
+    std::cout << " " << i->op << std::endl;
+    display_expr_tree(prefix + (is_left ? "│   " : "    "), i->right, false);
+  }
   else {
     std::cout << " " << n->value << std::endl;
   }
-  display_expr_node_tree(prefix + (is_left ? "│   " : "    "), n->left, true);
-  display_expr_node_tree(prefix + (is_left ? "│   " : "    "), n->right, false);
 }
 
 
