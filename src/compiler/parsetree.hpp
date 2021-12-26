@@ -2,6 +2,7 @@
 #define COMPILER_PARSE_TREE_HPP
 
 #include "tokens.hpp"
+#include <iostream> 
 #include <vector>
 
 namespace compiler {
@@ -17,9 +18,12 @@ enum class variable_types {
   I16,
   I32,
   I64,
-  DOUBLE,
+  RAW_NUMBER, // Literal number with no assigned type
+  FLOAT,
   STRING,
-  USER_DEFINED
+  USER_DEFINED,
+  OP,
+  EXPR
 };
 
 static variable_types string_to_variable_type(const std::string &s) {
@@ -47,8 +51,8 @@ static variable_types string_to_variable_type(const std::string &s) {
   if (s == "i64") {
     return variable_types::I64;
   }
-  if (s == "double") {
-    return variable_types::DOUBLE;
+  if (s == "float") {
+    return variable_types::FLOAT;
   }
   if (s == "string") {
     return variable_types::STRING;
@@ -63,26 +67,84 @@ struct variable {
                   // uint64_t::max() for unknown size
 };
 
-enum class node_type { ROOT, ADD, SUB, DIV, MUL };
+enum class node_type {
+  ROOT,
+  ID,
+  CALL,
+  RAW_FLOAT,
+  RAW_NUMBER,
+  RAW_STRING,
+  PREFIX,
+  INFIX,
+  ARRAY,
+  ARRAY_IDX,
+};
 
-enum class node_value_type { NIL, INTEGER, FLOAT, STRING };
-
-class expr_node {
+class expr {
 public:
-  expr_node()
-      : type(node_type::ROOT), val_type(node_value_type::NIL), left(nullptr),
-        right(nullptr) {}
-  expr_node(node_type t, node_value_type nvt)
-      : type(t), val_type(nvt), left(nullptr), right(nullptr) {}
-  expr_node(node_type t, node_value_type nvt, expr_node *left, expr_node *right)
-      : type(t), val_type(nvt), left(left), right(right) {}
+  expr()
+      : type(node_type::ROOT) {}
+  expr(node_type t)
+      : type(t) {}
+  expr(node_type t, std::string val)
+      : type(t), value(val) {}
 
   node_type type;
-  node_value_type val_type;
   std::string value;
+};
 
-  expr_node *left;
-  expr_node *right;
+class prefix_expr : public expr {
+public:
+  prefix_expr(std::string op, expr *right) : expr(node_type::PREFIX), op(op), right(right) {}
+  ~prefix_expr() { delete right; }
+  std::string op;
+  expr *right;
+};
+
+class infix_expr : public expr {
+public:
+  infix_expr(std::string op, expr *left, expr *right) : expr(node_type::INFIX), op(op), left(left), right(right) {}
+  ~infix_expr() { delete left; delete right; }
+  std::string op;
+  expr *left;
+  expr *right;
+};
+
+class array_literal_expr : public expr {
+public:
+  array_literal_expr() : expr(node_type::ARRAY) {}
+  ~array_literal_expr() {
+    for(auto& e : exprs) {
+      delete e;
+    }
+  }
+  std::vector<expr*> exprs;
+};
+
+class array_index_expr : public expr {
+public:
+  array_index_expr() : expr(node_type::ARRAY_IDX) {}
+  array_index_expr(expr *arr, expr *idx) : expr(node_type::ARRAY_IDX), arr(arr), index(idx) {}
+  ~array_index_expr() {
+    delete index;
+    delete arr;
+  }
+  expr* arr;
+  expr* index;
+};
+
+class function_call_expr : public expr {
+public:
+  function_call_expr() : expr(node_type::CALL) {}
+  function_call_expr(expr *fn) : expr(node_type::CALL), fn(fn) {}
+  ~function_call_expr() {
+    for(auto& e : params) {
+      delete e;
+    }
+    delete fn;
+  }
+  expr* fn;
+  std::vector<expr*> params;
 };
 
 class visitor;
@@ -98,18 +160,18 @@ public:
 
 class assignment : public element {
 public:
-  assignment(size_t line, variable var, expr_node *node)
+  assignment(size_t line, variable var, expr *node)
       : element(line), var(var), expr(node) {}
   variable var;
-  expr_node *expr;
+  expr *expr;
 
   virtual void visit(visitor &v) override;
 };
 
 class expr_statement : public element {
 public:
-  expr_statement(size_t line, expr_node *node) : element(line), expr(node) {}
-  expr_node *expr;
+  expr_statement(size_t line, expr *node) : element(line), expr(node) {}
+  expr *expr;
 
   virtual void visit(visitor &v) override;
 };
@@ -144,6 +206,47 @@ public:
   virtual void accept(assignment &stmt) = 0;
   virtual void accept(expr_statement &stmt) = 0;
 };
+
+
+static void display_expr_tree(const std::string& prefix, expr *n, bool is_left) {
+  if(!n){ return; } 
+  std::cout << prefix;    
+  std::cout << (is_left ? "├──" : "└──" );
+
+  if(n->type == node_type::CALL) {
+    auto i = reinterpret_cast<function_call_expr*>(n);
+    if(i->fn) {
+      std::cout << " call<" << i->fn->value << ">" << std::endl;
+    }
+    else {
+      std::cout << " call " << std::endl;
+    }
+  }
+  else if(n->type == node_type::ARRAY_IDX) {
+    auto i = reinterpret_cast<array_index_expr*>(n);
+    if(i->arr && i->index) {
+      std::cout << " " << i->arr->value << "[" << i->index->value << "]" << std::endl;
+    } 
+    else {
+      std::cout << " array[] " << std::endl;
+    }
+  }
+  else if(n->type == node_type::INFIX) {
+    auto i = reinterpret_cast<infix_expr*>(n);
+    std::cout << " " << i->op << std::endl;
+    display_expr_tree(prefix + (is_left ? "│   " : "    "), i->left, true);
+    display_expr_tree(prefix + (is_left ? "│   " : "    "), i->right, false);
+  }
+  else if(n->type == node_type::PREFIX) {
+    auto i = reinterpret_cast<prefix_expr*>(n);
+    std::cout << " " << i->op << std::endl;
+    display_expr_tree(prefix + (is_left ? "│   " : "    "), i->right, false);
+  }
+  else {
+    std::cout << " " << n->value << std::endl;
+  }
+}
+
 
 } // namespace parse_tree
 

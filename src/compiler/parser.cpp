@@ -9,6 +9,23 @@ namespace compiler {
 
 namespace {
 
+std::unordered_map<Token, parser::precedence> precedences = {
+  { Token::EQ_EQ, parser::precedence::EQUALS },
+  { Token::EXCLAMATION_EQ, parser::precedence::EQUALS },
+  { Token::LT,  parser::precedence::LESS_GREATER },
+  { Token::GT,  parser::precedence::LESS_GREATER },
+  { Token::LTE, parser::precedence::LESS_GREATER },
+  { Token::GTE, parser::precedence::LESS_GREATER },
+  { Token::ADD, parser::precedence::SUM },
+  { Token::SUB, parser::precedence::SUM},
+  { Token::DIV, parser::precedence::PROD},
+  { Token::MUL, parser::precedence::PROD },
+  { Token::MOD, parser::precedence::PROD },
+  { Token::L_PAREN, parser::precedence::CALL },
+  { Token::L_BRACKET, parser::precedence::INDEX },
+};
+
+
 /* Stores files found [import target] => [location found from include dir] */
 static std::unordered_map<std::string, std::string> located_items;
 
@@ -46,9 +63,9 @@ locate_import(std::vector<std::string> &paths, std::string &target) {
 }
 
 static void report_error(const std::string &filename, size_t *line,
-                         const std::string error) {
+    const std::string error) {
   std::cout << "Parse error [" << filename << "](" << *line << ") : " << error
-            << std::endl;
+    << std::endl;
 }
 } // namespace
 
@@ -56,20 +73,45 @@ parser::parser() : _parser_okay(true), _idx(0), _tokens(nullptr) {}
 
 std::vector<parse_tree::toplevel *>
 parser::parse(std::string filename,
-              std::vector<std::string> &include_directories,
-              std::function<std::vector<TD_Pair>(std::string)> import_file,
-              std::vector<TD_Pair> &tokens) {
+    std::vector<std::string> &include_directories,
+    std::function<std::vector<TD_Pair>(std::string)> import_file,
+    std::vector<TD_Pair> &tokens) {
   _tokens = &tokens;
   _filename = filename;
-  std::vector<parse_tree::toplevel *> top_level_items;
 
+
+  _prefix_fns[Token::IDENTIFIER] = &parser::identifier;
+  _prefix_fns[Token::LITERAL_NUMBER] = &parser::number;
+  _prefix_fns[Token::LITERAL_FLOAT] = &parser::number;
+  _prefix_fns[Token::STRING] = &parser::str;
+  _prefix_fns[Token::EXCLAMATION] = &parser::prefix_expr;
+  _prefix_fns[Token::SUB] = &parser::prefix_expr;
+  _prefix_fns[Token::L_PAREN] = &parser::grouped_expr;
+  _prefix_fns[Token::L_BRACKET] = &parser::array;
+
+  _infix_fns[Token::ADD] = &parser::infix_expr;
+  _infix_fns[Token::SUB] = &parser::infix_expr;
+  _infix_fns[Token::DIV] = &parser::infix_expr;
+  _infix_fns[Token::MUL] = &parser::infix_expr;
+  _infix_fns[Token::MOD] = &parser::infix_expr;
+  _infix_fns[Token::EQ_EQ] = &parser::infix_expr;
+  _infix_fns[Token::EXCLAMATION_EQ] = &parser::infix_expr;
+  _infix_fns[Token::LT] = &parser::infix_expr;
+  _infix_fns[Token::LTE] = &parser::infix_expr;
+  _infix_fns[Token::GT] = &parser::infix_expr;
+  _infix_fns[Token::GTE] = &parser::infix_expr;
+  _infix_fns[Token::L_PAREN] = &parser::call_expr;
+  _infix_fns[Token::L_BRACKET] = &parser::index_expr;
+
+
+  std::vector<parse_tree::toplevel *> top_level_items;
   parse_tree::toplevel *new_top_level_item;
 
   while (_parser_okay && _idx < _tokens->size()) {
 
     /*
-        Check for an import statement
-    */
+       Check for an import statement
+       */
     new_top_level_item = import_stmt();
     if (new_top_level_item) {
       if (!_parser_okay) {
@@ -77,7 +119,7 @@ parser::parse(std::string filename,
       }
 
       parse_tree::import_stmt *import_statement =
-          static_cast<parse_tree::import_stmt *>(new_top_level_item);
+        static_cast<parse_tree::import_stmt *>(new_top_level_item);
 
       // Ensure we haven't imported it yet
       if (_imported_objects.find(import_statement->target) !=
@@ -88,11 +130,11 @@ parser::parse(std::string filename,
       _imported_objects.insert(import_statement->target);
 
       auto [item_found, target_item] =
-          locate_import(include_directories, import_statement->target);
+        locate_import(include_directories, import_statement->target);
 
       if (!item_found) {
         std::cout << "Error : Unable to locate import \""
-                  << import_statement->target << "\"" << std::endl;
+          << import_statement->target << "\"" << std::endl;
         delete new_top_level_item;
         _parser_okay = false;
         continue;
@@ -111,15 +153,15 @@ parser::parse(std::string filename,
 
       // Add it to our top level objects
       top_level_items.insert(top_level_items.end(), parsed_file.begin(),
-                             parsed_file.end());
+          parsed_file.end());
     }
     if (!_parser_okay) {
       continue;
     }
 
     /*
-        Check for a function declaration
-    */
+       Check for a function declaration
+       */
     new_top_level_item = function();
     if (new_top_level_item) {
       top_level_items.push_back(new_top_level_item);
@@ -147,18 +189,24 @@ parser::parse(std::string filename,
   return top_level_items;
 }
 
+void parser::prev() { _idx--; }
+
 void parser::advance() { _idx++; }
+
+void parser::die(std::string error) {
+
+  report_error(_filename, _tokens->at(_idx).line, error);
+  _parser_okay = false;
+}
 
 void parser::expect(Token token, std::string error, size_t ahead) {
 
   if (_idx + ahead >= _tokens->size()) {
-    report_error(_filename, _tokens->at(_idx).line, error);
-    _parser_okay = false;
+    die(error);
   }
 
   if (_tokens->at(_idx + ahead).token != token) {
-    report_error(_filename, _tokens->at(_idx).line, error);
-    _parser_okay = false;
+    die(error);
   }
 }
 
@@ -170,6 +218,13 @@ TD_Pair parser::peek(size_t ahead) {
     return TD_Pair{Token::EOS, {}};
   }
   return _tokens->at(_idx + ahead);
+}
+
+parser::precedence parser::peek_precedence() {
+  if (precedences.find(peek().token) != precedences.end()) {
+    return precedences[peek().token];
+  }
+  return parser::precedence::LOWEST;
 }
 
 parse_tree::toplevel *parser::import_stmt() {
@@ -202,11 +257,11 @@ parse_tree::toplevel *parser::function() {
   std::vector<parse_tree::variable> parameters = function_params();
 
   expect(Token::ARROW,
-         "Expected '->' following function parameters to denote return type");
+      "Expected '->' following function parameters to denote return type");
 
   advance();
   expect(Token::IDENTIFIER,
-         "Expected return type following '->' in function declaration");
+      "Expected return type following '->' in function declaration");
   std::string return_type = _tokens->at(_idx).data;
 
   advance();
@@ -229,7 +284,7 @@ parse_tree::toplevel *parser::function() {
 std::vector<parse_tree::variable> parser::function_params() {
 
   expect(Token::L_PAREN,
-         "Expected '(' to mark beginning of function parameters");
+      "Expected '(' to mark beginning of function parameters");
 
   // Empty params
   if (peek().token == Token::R_PAREN) {
@@ -249,7 +304,7 @@ std::vector<parse_tree::variable> parser::function_params() {
 
     advance();
     expect(Token::COLON,
-           "Expected colon between name:type in parameter definition");
+        "Expected colon between name:type in parameter definition");
 
     advance();
     expect(Token::IDENTIFIER, "Expected variable type for parameter");
@@ -280,7 +335,7 @@ std::vector<parse_tree::variable> parser::function_params() {
 std::vector<parse_tree::element *> parser::statements() {
 
   expect(Token::L_BRACE,
-         "Expected '{' to mark the beginning of a statement block");
+      "Expected '{' to mark the beginning of a statement block");
   advance();
 
   // Check for empty statement body
@@ -346,16 +401,16 @@ parse_tree::element *parser::assignment() {
 
   advance();
   expect(Token::COLON,
-         "Expected colon between name:type in varialbe assignment");
+      "Expected colon between name:type in varialbe assignment");
 
   advance();
   expect(Token::IDENTIFIER, "Expected variable type");
   std::string variable_type = _tokens->at(_idx).data;
 
   /*
-      Consume [100][3][3]... [?]
-      and calculate the number of items that would represent i.e [10][10] = 100
-  */
+     Consume [100][3][3]... [?]
+     and calculate the number of items that would represent i.e [10][10] = 100
+     */
   advance();
   uint64_t depth = 0;
   if (_tokens->at(_idx).token == Token::L_BRACKET) {
@@ -380,11 +435,13 @@ parse_tree::element *parser::assignment() {
   expect(Token::EQ, "Expected '=' in variable assignment");
 
   advance();
-  parse_tree::expr_node *exp = expression();
+
+  parse_tree::expr *tree = new parse_tree::expr();
+  parse_tree::expr *exp = expression(parser::precedence::LOWEST);
 
   advance();
   expect(Token::SEMICOLON, "Expected semicolon at end of variable assignment");
-
+  
   advance();
   if (_parser_okay) {
     return new parse_tree::assignment(
@@ -392,48 +449,198 @@ parse_tree::element *parser::assignment() {
         {name, parse_tree::string_to_variable_type(variable_type), depth}, exp);
   }
 
+  delete tree;
   return nullptr;
 }
+
+parse_tree::expr *parser::expression(parser::precedence precedence) {
+
+  if (_prefix_fns.find(_tokens->at(_idx).token) == _prefix_fns.end()) {
+    die("No prefix function for given token");
+    return nullptr;
+  }
+
+  auto fn = _prefix_fns[_tokens->at(_idx).token];
+  parse_tree::expr *left = (this->*fn)();
+
+  while(peek().token != Token::SEMICOLON && precedence < peek_precedence()) {
+    if (_infix_fns.find(peek().token) == _infix_fns.end()) {
+      return left;
+    }
+    auto i_fn = _infix_fns[peek().token];
+    advance();
+    left = (this->*i_fn)(left);
+  }
+
+  return left;
+}
+
+parse_tree::expr *parser::prefix_expr() { 
+
+  auto result = new parse_tree::prefix_expr(_tokens->at(_idx).data, nullptr);
+
+  advance();
+
+  result->right = expression(precedence::PREFIX); 
+  return result;
+}
+
+parse_tree::expr *parser::infix_expr(parse_tree::expr *left) { 
+
+  auto result = new parse_tree::infix_expr(_tokens->at(_idx).data, left, nullptr);
+
+  precedence p = precedence::LOWEST;
+  if (precedences.find(_tokens->at(_idx).token) != precedences.end()) {
+    p = precedences[_tokens->at(_idx).token];
+  }
+
+  advance();
+
+  result->right = expression(p);
+  return result;
+}
+
+parse_tree::expr *parser::identifier() { 
+
+  // Sanity check
+  expect(Token::IDENTIFIER, "Expected identifier in expression");
+  return new parse_tree::expr(
+      parse_tree::node_type::ID, 
+      _tokens->at(_idx).data
+  );
+}
+
+parse_tree::expr *parser::number() {
+  if(_tokens->at(_idx).token == Token::LITERAL_NUMBER) {
+    return new parse_tree::expr(
+        parse_tree::node_type::RAW_NUMBER, 
+        _tokens->at(_idx).data
+    );
+  }
+  else if (_tokens->at(_idx).token == Token::LITERAL_FLOAT) {
+    return new parse_tree::expr(
+        parse_tree::node_type::RAW_FLOAT, 
+        _tokens->at(_idx).data
+    );
+  }
+  else {
+    die("Expected numerical item");
+    return nullptr;
+  }
+}
+
+parse_tree::expr *parser::str() { 
+
+  // Sanity check
+  expect(Token::STRING, "Expected string in expression");
+
+  return new parse_tree::expr(
+      parse_tree::node_type::RAW_STRING, 
+      _tokens->at(_idx).data
+  );
+}
+
+parse_tree::expr *parser::call_expr(parse_tree::expr *fn) {
+  
+  parse_tree::function_call_expr *result =
+      new parse_tree::function_call_expr();
+  
+  result->fn = fn;
+
+  if(peek().token == Token::R_PAREN) {
+    advance();
+    return result;
+  }
+
+  result->params = parser::expression_list();
+
+  if(!_parser_okay) {
+    delete result;
+    return nullptr;
+  }
+
+  return result;
+}
+
+std::vector<parse_tree::expr *> parser::expression_list() {
+
+
+  std::vector<parse_tree::expr *> results;
+
+  results.emplace_back(expression(precedence::LOWEST));
+
+  while(peek().token == Token::COMMA) {
+    advance();
+    advance();
+    results.emplace_back(expression(precedence::LOWEST));
+  }
+
+  if(!_parser_okay) {
+    for(auto &e : results) {
+      delete e;
+    }
+    results.clear();
+  }
+
+  return results;
+}
+
+parse_tree::expr *parser::grouped_expr() { 
+  advance();
+  parse_tree::expr *expr = expression(precedence::LOWEST);
+
+  if (peek().token != Token::R_PAREN) {
+    delete expr;
+    return nullptr;
+  }
+  advance();
+  return expr; 
+}
+
+parse_tree::expr *parser::array() { 
+
+  parse_tree::array_literal_expr* arr = new parse_tree::array_literal_expr();
+
+  if (peek().token == Token::R_BRACKET) {
+    advance();
+    return arr;
+  }
+
+  arr->exprs = expression_list();
+
+  if (peek().token != Token::R_BRACKET) {
+    delete arr;
+    return nullptr;
+  }
+
+  return arr;
+}
+
+parse_tree::expr *parser::index_expr(parse_tree::expr *arr) {
+
+  parse_tree::array_index_expr *idx = new parse_tree::array_index_expr();
+  idx->arr = arr;
+
+  advance();
+  idx->index = expression(precedence::LOWEST);
+
+  advance();
+  expect(Token::R_BRACKET, "Expected ']' following index into array");
+
+  if(!_parser_okay) {
+    delete idx;
+    return nullptr;
+  }
+
+  return idx;
+}
+
+
 parse_tree::element *parser::if_statement() { return nullptr; }
 parse_tree::element *parser::else_if_statement() { return nullptr; }
 parse_tree::element *parser::else_statement() { return nullptr; }
 parse_tree::element *parser::loop() { return nullptr; }
 parse_tree::element *parser::expression_statement() { return nullptr; }
-parse_tree::expr_node *parser::expression() {
 
-  // NUMBER || FLOAT || IDENTIFIER || FUNCTION CALL
-
-  /*
-      This will take some thought.
-
-      In the mean time 'advance()' until we get a ';'
-
-  */
-
-  size_t wd = 0;
-  while (wd < 200) {
-    if (peek().token == Token::SEMICOLON || peek().token == Token::EOS) {
-      break;
-    }
-    advance();
-    if (++wd == 200) {
-      std::cout << "Either a large expression is being parsed OR there was an "
-                   "internal error in the temporary parser::expression() "
-                   "implementation"
-                << std::endl;
-      std::exit(1);
-    }
-  }
-
-  return nullptr;
-}
-parse_tree::expr_node *parser::term() { return nullptr; }
-parse_tree::expr_node *parser::factor() { return nullptr; }
-parse_tree::expr_node *parser::primary() { return nullptr; }
-parse_tree::expr_node *parser::function_call() { return nullptr; }
-std::vector<parse_tree::expr_node *> parser::function_call_params() {
-  return {};
-}
-std::string parser::identifier() { return {}; };
 
 } // namespace compiler
