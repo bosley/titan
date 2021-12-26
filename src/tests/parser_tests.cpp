@@ -10,7 +10,7 @@
 namespace 
 {
 
-  bool exprs_are_equal(compiler::parse_tree::expr* a, compiler::parse_tree::expr* b) {
+  bool exprs_are_equal(compiler::parse_tree::expression* a, compiler::parse_tree::expression* b) {
     if(a->type != b->type) {
       std::cout << "Expression type mismatch" << std::endl;
       return false;
@@ -218,43 +218,43 @@ TEST(parser_tests, assignments) {
 
 TEST(parser_tests, expr) 
 {
-  std::vector<compiler::parse_tree::expr *> expected = 
+  std::vector<compiler::parse_tree::expression *> expected = 
   {
     new compiler::parse_tree::infix_expr("+", 
-        new compiler::parse_tree::expr(
+        new compiler::parse_tree::expression(
           compiler::parse_tree::node_type::RAW_NUMBER,
           "6"),
-        new compiler::parse_tree::expr(
+        new compiler::parse_tree::expression(
           compiler::parse_tree::node_type::RAW_NUMBER,
           "2")),
     new compiler::parse_tree::infix_expr("*", 
         new compiler::parse_tree::infix_expr("+",
-          new compiler::parse_tree::expr(
+          new compiler::parse_tree::expression(
             compiler::parse_tree::node_type::RAW_NUMBER,
             "4"),
-          new compiler::parse_tree::expr(
+          new compiler::parse_tree::expression(
             compiler::parse_tree::node_type::RAW_NUMBER,
             "2")),
-        new compiler::parse_tree::expr(
+        new compiler::parse_tree::expression(
           compiler::parse_tree::node_type::RAW_NUMBER,
           "3")),
     new compiler::parse_tree::infix_expr("+", 
-        new compiler::parse_tree::expr(
+        new compiler::parse_tree::expression(
           compiler::parse_tree::node_type::RAW_NUMBER,
           "3"),
         new compiler::parse_tree::function_call_expr(
-          new compiler::parse_tree::expr(
+          new compiler::parse_tree::expression(
             compiler::parse_tree::node_type::ID,
             "moot"))),
     new compiler::parse_tree::infix_expr("+", 
-        new compiler::parse_tree::expr(
+        new compiler::parse_tree::expression(
           compiler::parse_tree::node_type::RAW_NUMBER,
           "3"),
         new compiler::parse_tree::array_index_expr(
-          new compiler::parse_tree::expr(
+          new compiler::parse_tree::expression(
             compiler::parse_tree::node_type::ID,
             "x"),
-          new compiler::parse_tree::expr(
+          new compiler::parse_tree::expression(
             compiler::parse_tree::node_type::RAW_NUMBER,
             "0")))
   };

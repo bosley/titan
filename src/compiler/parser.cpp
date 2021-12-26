@@ -436,8 +436,8 @@ parse_tree::element *parser::assignment() {
 
   advance();
 
-  parse_tree::expr *tree = new parse_tree::expr();
-  parse_tree::expr *exp = expression(parser::precedence::LOWEST);
+  parse_tree::expression *tree = new parse_tree::expression();
+  parse_tree::expression *exp = expression(parser::precedence::LOWEST);
 
   advance();
   expect(Token::SEMICOLON, "Expected semicolon at end of variable assignment");
@@ -453,7 +453,7 @@ parse_tree::element *parser::assignment() {
   return nullptr;
 }
 
-parse_tree::expr *parser::expression(parser::precedence precedence) {
+parse_tree::expression *parser::expression(parser::precedence precedence) {
 
   if (_prefix_fns.find(_tokens->at(_idx).token) == _prefix_fns.end()) {
     die("No prefix function for given token");
@@ -461,7 +461,7 @@ parse_tree::expr *parser::expression(parser::precedence precedence) {
   }
 
   auto fn = _prefix_fns[_tokens->at(_idx).token];
-  parse_tree::expr *left = (this->*fn)();
+  parse_tree::expression *left = (this->*fn)();
 
   while(peek().token != Token::SEMICOLON && precedence < peek_precedence()) {
     if (_infix_fns.find(peek().token) == _infix_fns.end()) {
@@ -475,7 +475,7 @@ parse_tree::expr *parser::expression(parser::precedence precedence) {
   return left;
 }
 
-parse_tree::expr *parser::prefix_expr() { 
+parse_tree::expression *parser::prefix_expr() { 
 
   auto result = new parse_tree::prefix_expr(_tokens->at(_idx).data, nullptr);
 
@@ -485,7 +485,7 @@ parse_tree::expr *parser::prefix_expr() {
   return result;
 }
 
-parse_tree::expr *parser::infix_expr(parse_tree::expr *left) { 
+parse_tree::expression *parser::infix_expr(parse_tree::expression *left) { 
 
   auto result = new parse_tree::infix_expr(_tokens->at(_idx).data, left, nullptr);
 
@@ -500,25 +500,25 @@ parse_tree::expr *parser::infix_expr(parse_tree::expr *left) {
   return result;
 }
 
-parse_tree::expr *parser::identifier() { 
+parse_tree::expression *parser::identifier() { 
 
   // Sanity check
   expect(Token::IDENTIFIER, "Expected identifier in expression");
-  return new parse_tree::expr(
+  return new parse_tree::expression(
       parse_tree::node_type::ID, 
       _tokens->at(_idx).data
   );
 }
 
-parse_tree::expr *parser::number() {
+parse_tree::expression *parser::number() {
   if(_tokens->at(_idx).token == Token::LITERAL_NUMBER) {
-    return new parse_tree::expr(
+    return new parse_tree::expression(
         parse_tree::node_type::RAW_NUMBER, 
         _tokens->at(_idx).data
     );
   }
   else if (_tokens->at(_idx).token == Token::LITERAL_FLOAT) {
-    return new parse_tree::expr(
+    return new parse_tree::expression(
         parse_tree::node_type::RAW_FLOAT, 
         _tokens->at(_idx).data
     );
@@ -529,18 +529,18 @@ parse_tree::expr *parser::number() {
   }
 }
 
-parse_tree::expr *parser::str() { 
+parse_tree::expression *parser::str() { 
 
   // Sanity check
   expect(Token::STRING, "Expected string in expression");
 
-  return new parse_tree::expr(
+  return new parse_tree::expression(
       parse_tree::node_type::RAW_STRING, 
       _tokens->at(_idx).data
   );
 }
 
-parse_tree::expr *parser::call_expr(parse_tree::expr *fn) {
+parse_tree::expression *parser::call_expr(parse_tree::expression *fn) {
   
   parse_tree::function_call_expr *result =
       new parse_tree::function_call_expr();
@@ -562,10 +562,10 @@ parse_tree::expr *parser::call_expr(parse_tree::expr *fn) {
   return result;
 }
 
-std::vector<parse_tree::expr *> parser::expression_list() {
+std::vector<parse_tree::expression *> parser::expression_list() {
 
 
-  std::vector<parse_tree::expr *> results;
+  std::vector<parse_tree::expression *> results;
 
   results.emplace_back(expression(precedence::LOWEST));
 
@@ -585,9 +585,9 @@ std::vector<parse_tree::expr *> parser::expression_list() {
   return results;
 }
 
-parse_tree::expr *parser::grouped_expr() { 
+parse_tree::expression *parser::grouped_expr() { 
   advance();
-  parse_tree::expr *expr = expression(precedence::LOWEST);
+  parse_tree::expression *expr = expression(precedence::LOWEST);
 
   if (peek().token != Token::R_PAREN) {
     delete expr;
@@ -597,7 +597,7 @@ parse_tree::expr *parser::grouped_expr() {
   return expr; 
 }
 
-parse_tree::expr *parser::array() { 
+parse_tree::expression *parser::array() { 
 
   parse_tree::array_literal_expr* arr = new parse_tree::array_literal_expr();
 
@@ -606,7 +606,7 @@ parse_tree::expr *parser::array() {
     return arr;
   }
 
-  arr->exprs = expression_list();
+  arr->expressions = expression_list();
 
   if (peek().token != Token::R_BRACKET) {
     delete arr;
@@ -616,7 +616,7 @@ parse_tree::expr *parser::array() {
   return arr;
 }
 
-parse_tree::expr *parser::index_expr(parse_tree::expr *arr) {
+parse_tree::expression *parser::index_expr(parse_tree::expression *arr) {
 
   parse_tree::array_index_expr *idx = new parse_tree::array_index_expr();
   idx->arr = arr;

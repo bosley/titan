@@ -80,71 +80,71 @@ enum class node_type {
   ARRAY_IDX,
 };
 
-class expr {
+class expression {
 public:
-  expr()
+  expression()
       : type(node_type::ROOT) {}
-  expr(node_type t)
+  expression(node_type t)
       : type(t) {}
-  expr(node_type t, std::string val)
+  expression(node_type t, std::string val)
       : type(t), value(val) {}
 
   node_type type;
   std::string value;
 };
 
-class prefix_expr : public expr {
+class prefix_expr : public expression {
 public:
-  prefix_expr(std::string op, expr *right) : expr(node_type::PREFIX), op(op), right(right) {}
+  prefix_expr(std::string op, expression *right) : expression(node_type::PREFIX), op(op), right(right) {}
   ~prefix_expr() { delete right; }
   std::string op;
-  expr *right;
+  expression *right;
 };
 
-class infix_expr : public expr {
+class infix_expr : public expression {
 public:
-  infix_expr(std::string op, expr *left, expr *right) : expr(node_type::INFIX), op(op), left(left), right(right) {}
+  infix_expr(std::string op, expression *left, expression *right) : expression(node_type::INFIX), op(op), left(left), right(right) {}
   ~infix_expr() { delete left; delete right; }
   std::string op;
-  expr *left;
-  expr *right;
+  expression *left;
+  expression *right;
 };
 
-class array_literal_expr : public expr {
+class array_literal_expr : public expression {
 public:
-  array_literal_expr() : expr(node_type::ARRAY) {}
+  array_literal_expr() : expression(node_type::ARRAY) {}
   ~array_literal_expr() {
-    for(auto& e : exprs) {
+    for(auto& e : expressions) {
       delete e;
     }
   }
-  std::vector<expr*> exprs;
+  std::vector<expression*> expressions;
 };
 
-class array_index_expr : public expr {
+class array_index_expr : public expression {
 public:
-  array_index_expr() : expr(node_type::ARRAY_IDX) {}
-  array_index_expr(expr *arr, expr *idx) : expr(node_type::ARRAY_IDX), arr(arr), index(idx) {}
+  array_index_expr() : expression(node_type::ARRAY_IDX) {}
+  array_index_expr(expression *arr, expression *idx) : expression(node_type::ARRAY_IDX), arr(arr), index(idx) {}
   ~array_index_expr() {
     delete index;
     delete arr;
   }
-  expr* arr;
-  expr* index;
+  expression* arr;
+  expression* index;
 };
 
-class function_call_expr : public expr {
+class function_call_expr : public expression {
 public:
-  function_call_expr() : expr(node_type::CALL) {}
-  function_call_expr(expr *fn) : expr(node_type::CALL), fn(fn) {}
+  function_call_expr() : expression(node_type::CALL) {}
+  function_call_expr(expression *fn) : expression(node_type::CALL), fn(fn) {}
   ~function_call_expr() {
     for(auto& e : params) {
       delete e;
     }
     delete fn;
   }
-  expr* fn;
-  std::vector<expr*> params;
+  expression* fn;
+  std::vector<expression*> params;
 };
 
 class visitor;
@@ -160,18 +160,18 @@ public:
 
 class assignment : public element {
 public:
-  assignment(size_t line, variable var, expr *node)
+  assignment(size_t line, variable var, expression *node)
       : element(line), var(var), expr(node) {}
   variable var;
-  expr *expr;
+  expression *expr;
 
   virtual void visit(visitor &v) override;
 };
 
-class expr_statement : public element {
+class expression_statement : public element {
 public:
-  expr_statement(size_t line, expr *node) : element(line), expr(node) {}
-  expr *expr;
+  expression_statement(size_t line, expression *node) : element(line), expr(node) {}
+  expression *expr;
 
   virtual void visit(visitor &v) override;
 };
@@ -204,11 +204,11 @@ public:
 class visitor {
 public:
   virtual void accept(assignment &stmt) = 0;
-  virtual void accept(expr_statement &stmt) = 0;
+  virtual void accept(expression_statement &stmt) = 0;
 };
 
 
-static void display_expr_tree(const std::string& prefix, expr *n, bool is_left) {
+static void display_expr_tree(const std::string& prefix, expression *n, bool is_left) {
   if(!n){ return; } 
   std::cout << prefix;    
   std::cout << (is_left ? "├──" : "└──" );
