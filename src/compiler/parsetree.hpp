@@ -186,7 +186,10 @@ public:
 
 class reassignment_statement : public element {
 public:
-  reassignment_statement(size_t line, variable var, expression *node) : element(line), var(var), expr(node) {}
+  reassignment_statement(size_t line, variable var, expression *node)
+      : element(line), var(var), expr(node)
+  {
+  }
 
   variable var;
   expression *expr;
