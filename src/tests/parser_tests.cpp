@@ -480,17 +480,69 @@ TEST(parser_tests, reassignment_statement)
   CHECK_EQUAL(2, func->element_list.size());
 
   auto reassign =
-      reinterpret_cast<compiler::parse_tree::reassignment_statement *>(
+      reinterpret_cast<compiler::parse_tree::expression_statement *>(
           func->element_list[1]);
 
-  compiler::parse_tree::expression *expected_expr =
+  compiler::parse_tree::expression *expected =
       new compiler::parse_tree::infix_expr(
-          "+",
+          "=",
           new compiler::parse_tree::expression(
-              compiler::parse_tree::node_type::RAW_NUMBER, "22"),
-          new compiler::parse_tree::expression(
-              compiler::parse_tree::node_type::ID, "x"));
+              compiler::parse_tree::node_type::ID, "x"),
+          new compiler::parse_tree::infix_expr(
+              "+",
+              new compiler::parse_tree::expression(
+                  compiler::parse_tree::node_type::RAW_NUMBER, "22"),
+              new compiler::parse_tree::expression(
+                  compiler::parse_tree::node_type::ID, "x")));
 
-  CHECK_TRUE("x" == reassign->var.name);
-  CHECK_TRUE(exprs_are_equal(expected_expr, reassign->expr));
+  CHECK_TRUE(exprs_are_equal(expected, reassign->expr));
+}
+
+TEST(parser_tests, for_statement)
+{
+  auto functions = parse_file("test_files/for.tl");
+
+  CHECK_EQUAL(1, functions.size());
+  CHECK_EQUAL((int)compiler::parse_tree::toplevel::tl_type::FUNCTION,
+              (int)functions[0]->type);
+
+  auto func = reinterpret_cast<compiler::parse_tree::function *>(functions[0]);
+
+  CHECK_EQUAL(1, func->element_list.size());
+
+  compiler::parse_tree::assignment *expected_assign =
+      new compiler::parse_tree::assignment(
+          5, {"i", compiler::parse_tree::variable_types::U8, 0},
+          new compiler::parse_tree::expression(
+              compiler::parse_tree::node_type::RAW_NUMBER, "0"));
+
+  compiler::parse_tree::expression *expected_condition =
+      new compiler::parse_tree::infix_expr(
+          "<",
+          new compiler::parse_tree::expression(
+              compiler::parse_tree::node_type::ID, "i"),
+          new compiler::parse_tree::expression(
+              compiler::parse_tree::node_type::RAW_NUMBER, "10"));
+
+  compiler::parse_tree::expression *expected_modifier =
+      new compiler::parse_tree::infix_expr(
+          "=",
+          new compiler::parse_tree::expression(
+              compiler::parse_tree::node_type::ID, "i"),
+          new compiler::parse_tree::infix_expr(
+              "+",
+              new compiler::parse_tree::expression(
+                  compiler::parse_tree::node_type::ID, "i"),
+              new compiler::parse_tree::expression(
+                  compiler::parse_tree::node_type::RAW_NUMBER, "1")));
+
+  auto actual = reinterpret_cast<compiler::parse_tree::for_statement *>(
+      func->element_list[0]);
+
+  auto actual_assign =
+      reinterpret_cast<compiler::parse_tree::assignment *>(actual->assign);
+
+  CHECK_TRUE(exprs_are_equal(expected_assign->expr, actual_assign->expr));
+  CHECK_TRUE(exprs_are_equal(expected_condition, actual->condition));
+  CHECK_TRUE(exprs_are_equal(expected_modifier, actual->modifier));
 }

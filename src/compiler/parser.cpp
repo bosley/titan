@@ -12,6 +12,7 @@ namespace compiler {
 namespace {
 
 std::unordered_map<Token, parser::precedence> precedences = {
+    {Token::EQ, parser::precedence::ASSIGN},
     {Token::EQ_EQ, parser::precedence::EQUALS},
     {Token::EXCLAMATION_EQ, parser::precedence::EQUALS},
     {Token::LT, parser::precedence::LESS_GREATER},
@@ -30,8 +31,8 @@ std::unordered_map<Token, parser::precedence> precedences = {
 /* Error TD pairs line data */
 static size_t __empty_line = 0;
 
-TD_Pair error_token   = { Token::ERT, {}, &__empty_line };
-TD_Pair end_of_stream = { Token::EOS, {}, &__empty_line };
+TD_Pair error_token = {Token::ERT, {}, &__empty_line};
+TD_Pair end_of_stream = {Token::EOS, {}, &__empty_line};
 
 /* Stores files found [import target] => [location found from include dir] */
 static std::unordered_map<std::string, std::string> located_items;
@@ -110,6 +111,7 @@ parser::parse(std::string filename,
   _infix_fns[Token::DIV] = &parser::infix_expr;
   _infix_fns[Token::MUL] = &parser::infix_expr;
   _infix_fns[Token::MOD] = &parser::infix_expr;
+  _infix_fns[Token::EQ] = &parser::infix_expr;
   _infix_fns[Token::EQ_EQ] = &parser::infix_expr;
   _infix_fns[Token::EXCLAMATION_EQ] = &parser::infix_expr;
   _infix_fns[Token::LT] = &parser::infix_expr;
@@ -212,15 +214,15 @@ void parser::mark() { _mark = _idx; }
 
 void parser::unset() { _mark = std::numeric_limits<uint64_t>::max(); }
 
-const TD_Pair& parser::current_td_pair() const
+const TD_Pair &parser::current_td_pair() const
 {
-  if(!_tokens) {
+  if (!_tokens) {
     LOG(FATAL) << COLOR(red) << "(parser) : _tokens not set" << COLOR(none)
                << std::endl;
     return error_token;
   }
 
-  if(_idx >= _tokens->size()) {
+  if (_idx >= _tokens->size()) {
     LOG(DEBUG) << "(parser) : End of token stream" << std::endl;
     return error_token;
   }
@@ -261,7 +263,7 @@ void parser::expect(Token token, std::string error, size_t ahead)
   }
 }
 
-const TD_Pair& parser::peek(size_t ahead) const
+const TD_Pair &parser::peek(size_t ahead) const
 {
   if (!_tokens) {
     LOG(FATAL) << COLOR(red) << "(parser) : _tokens not set" << COLOR(none)
@@ -480,10 +482,10 @@ parse_tree::element *parser::statement()
   if (parse_tree::element *item = parser::while_statement()) {
     return item;
   }
-  if (parse_tree::element *item = parser::return_statement()) {
+  if (parse_tree::element *item = parser::for_statement()) {
     return item;
   }
-  if (parse_tree::element *item = parser::reassignment_statement()) {
+  if (parse_tree::element *item = parser::return_statement()) {
     return item;
   }
 
@@ -528,44 +530,6 @@ parse_tree::element *parser::assignment()
     return new parse_tree::assignment(
         line_no,
         {name, parse_tree::string_to_variable_type(variable_type), depth}, exp);
-  }
-
-  delete exp;
-  return nullptr;
-}
-
-parse_tree::element *parser::reassignment_statement()
-{
-  if (current_td_pair().token != Token::IDENTIFIER) {
-    return nullptr;
-  }
-
-  std::string name = current_td_pair().data;
-  size_t line_no = *current_td_pair().line;
-
-  mark();    // Save _idx location
-  advance(); // id
-
-  size_t depth = parser::accessor_depth();
-
-  // Ensure we don't have a call
-  if (current_td_pair().token == Token::L_PAREN) {
-    reset(); // Go back to identifier
-    return nullptr;
-  }
-  unset(); // Unset the mark();
-
-  advance();
-
-  parse_tree::expression *exp = expression(parser::precedence::LOWEST);
-  advance();
-  expect(Token::SEMICOLON, "Expected semicolon at end of variable assignment");
-
-  advance();
-
-  if (_parser_okay) {
-    return new parse_tree::reassignment_statement(
-        line_no, {name, parse_tree::variable_types::USER_DEFINED, depth}, exp);
   }
 
   delete exp;
@@ -672,6 +636,61 @@ parse_tree::element *parser::while_statement()
   }
 
   return new parse_tree::while_statement(line_no, condition, body);
+}
+
+parse_tree::element *parser::for_statement()
+{
+  if (current_td_pair().token != Token::FOR) {
+    return nullptr;
+  }
+
+  size_t line_no = *current_td_pair().line;
+
+  advance();
+
+  expect(Token::L_PAREN, "Expected '('");
+
+  advance();
+
+  auto assignment = parser::assignment();
+
+  if (!assignment) {
+    die("Expected assignment as first part of for loop");
+    return nullptr;
+  }
+
+  parse_tree::expression *conditional =
+      parser::expression(parser::precedence::LOWEST);
+
+  advance();
+
+  expect(Token::SEMICOLON, "Expected ';' to mark end of conditional");
+
+  advance();
+
+  parse_tree::expression *modifier =
+      parser::expression(parser::precedence::LOWEST);
+
+  advance();
+
+  expect(Token::R_PAREN, "Expected ')'");
+
+  advance();
+
+  std::vector<parse_tree::element *> body = parser::statements();
+
+  if (!_parser_okay) {
+    delete assignment;
+    delete conditional;
+    delete modifier;
+    for (auto &e : body) {
+      delete e;
+    }
+    return nullptr;
+  }
+
+  return new parse_tree::for_statement(line_no, assignment, conditional,
+                                       modifier, body);
 }
 
 parse_tree::element *parser::return_statement()
@@ -816,11 +835,23 @@ parse_tree::expression *parser::infix_expr(parse_tree::expression *left)
 
 parse_tree::expression *parser::identifier()
 {
-
   // Sanity check
   expect(Token::IDENTIFIER, "Expected identifier in expression");
-  return new parse_tree::expression(parse_tree::node_type::ID,
-                                    current_td_pair().data);
+
+  std::string name = current_td_pair().data;
+
+  // Check for '  i[0] ' etc
+  //
+  //  TODO : This call to accessor_depth with DEMAND that the indicies be raw
+  //  numbers
+  //          This SHOULD take any expression in each pair of [].
+  //          That means the following call should be modified to take one or
+  //          the other and that the object accessor_depth needs to be updated
+  //          to have depth be a series of expressions to locate the offset
+  //
+  size_t depth = parser::accessor_depth();
+
+  return new parse_tree::identifier_expr(depth, name);
 }
 
 parse_tree::expression *parser::number()

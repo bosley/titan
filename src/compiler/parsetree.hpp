@@ -79,6 +79,7 @@ enum class node_type {
   INFIX,
   ARRAY,
   ARRAY_IDX,
+  REASSIGN
 };
 
 class expression {
@@ -89,6 +90,16 @@ public:
 
   node_type type;
   std::string value;
+};
+
+class identifier_expr : public expression {
+public:
+  identifier_expr(uint64_t depth, std::string value)
+      : expression(node_type::ID, value), depth(depth)
+  {
+  }
+  ~identifier_expr() {}
+  uint64_t depth;
 };
 
 class prefix_expr : public expression {
@@ -184,19 +195,6 @@ public:
   virtual void visit(visitor &v) override;
 };
 
-class reassignment_statement : public element {
-public:
-  reassignment_statement(size_t line, variable var, expression *node)
-      : element(line), var(var), expr(node)
-  {
-  }
-
-  variable var;
-  expression *expr;
-
-  virtual void visit(visitor &v) override;
-};
-
 class if_statement : public element {
 public:
   struct segment {
@@ -240,6 +238,23 @@ public:
   virtual void visit(visitor &v) override;
 };
 
+class for_statement : public element {
+public:
+  for_statement(size_t line) : element(line), condition(nullptr) {}
+  for_statement(size_t line, element *assign, expression *condition,
+                expression *modifier, std::vector<element *> body)
+      : element(line), assign(assign), condition(condition), modifier(modifier),
+        body(body)
+  {
+  }
+
+  element *assign;
+  expression *condition;
+  expression *modifier;
+  std::vector<element *> body;
+
+  virtual void visit(visitor &v) override;
+};
 class return_statement : public element {
 public:
   return_statement(size_t line, expression *node) : element(line), expr(node) {}
@@ -278,10 +293,10 @@ public:
 class visitor {
 public:
   virtual void accept(assignment &stmt) = 0;
-  virtual void accept(reassignment_statement &stmt) = 0;
   virtual void accept(expression_statement &stmt) = 0;
   virtual void accept(if_statement &stmt) = 0;
   virtual void accept(while_statement &stmt) = 0;
+  virtual void accept(for_statement &stmt) = 0;
   virtual void accept(return_statement &stmt) = 0;
 };
 
