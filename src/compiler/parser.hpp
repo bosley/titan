@@ -41,6 +41,7 @@ private:
 
   bool _parser_okay;
   size_t _idx;
+  size_t _mark;
   std::vector<TD_Pair> *_tokens;
   std::unordered_map<Token, prefix_parse_fn> _prefix_fns;
   std::unordered_map<Token, infix_parse_fn> _infix_fns;
@@ -48,6 +49,9 @@ private:
   std::string _filename;
   void prev();
   void advance();
+  void mark();
+  void reset();
+  void unset();
   void die(std::string error);
   void expect(Token token, std::string error, size_t ahead = 0);
   TD_Pair peek(size_t ahead = 1);
@@ -56,8 +60,10 @@ private:
   parse_tree::toplevel *import_stmt();
   std::vector<parse_tree::variable> function_params();
   std::vector<parse_tree::element *> statements();
+  uint64_t accessor_depth();
   parse_tree::element *statement();
   parse_tree::element *assignment();
+  parse_tree::element *reassignment_statement();
   parse_tree::element *if_statement();
   parse_tree::element *while_statement();
   parse_tree::element *expression_statement();

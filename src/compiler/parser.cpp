@@ -2,6 +2,7 @@
 
 #include <filesystem>
 #include <iostream>
+#include <limits>
 #include <tuple>
 #include <unordered_map>
 
@@ -70,7 +71,7 @@ static void report_error(const std::string &filename, size_t *line,
 }
 } // namespace
 
-parser::parser() : _parser_okay(true), _idx(0), _tokens(nullptr) {}
+parser::parser() : _parser_okay(true), _idx(0), _mark(std::numeric_limits<uint64_t>::max()), _tokens(nullptr) {}
 
 std::vector<parse_tree::toplevel *>
 parser::parse(std::string filename,
@@ -192,6 +193,27 @@ parser::parse(std::string filename,
 void parser::prev() { _idx--; }
 
 void parser::advance() { _idx++; }
+
+void parser::mark() { _mark = _idx; }
+
+void parser::unset() { 
+  _mark = std::numeric_limits<uint64_t>::max();
+}
+
+void parser::reset() {
+
+  if ( _mark > _idx ) {
+    die("Internal error - Attempting to reset with unset _mark"); 
+    unset(); // ensure its set to max, not some other num
+    return;
+  }
+
+  while(_idx != _mark) {
+    prev();
+  }
+
+  unset();
+}
 
 void parser::die(std::string error)
 {
@@ -387,53 +409,12 @@ std::vector<parse_tree::element *> parser::statements()
   return elements;
 }
 
-parse_tree::element *parser::statement()
-{
-  if (parse_tree::element *item = parser::assignment()) {
-    return item;
-  }
-  if (parse_tree::element *item = parser::if_statement()) {
-    return item;
-  }
-  if (parse_tree::element *item = parser::while_statement()) {
-    return item;
-  }
-  if (parse_tree::element *item = parser::return_statement()) {
-    return item;
-  }
-
-  // This should be last checked
-  if (parse_tree::element *item = parser::expression_statement()) {
-    return item;
-  }
-  return nullptr;
-}
-
-parse_tree::element *parser::assignment()
-{
-
-  if (_tokens->at(_idx).token != Token::LET) {
-    return nullptr;
-  }
-
-  advance();
-  expect(Token::IDENTIFIER, "Expected variable name in assignmnet");
-  std::string name = _tokens->at(_idx).data;
-  size_t line_no = *_tokens->at(_idx).line;
-
-  advance();
-  expect(Token::COLON,
-         "Expected colon between name:type in varialbe assignment");
-
-  advance();
-  expect(Token::IDENTIFIER, "Expected variable type");
-  std::string variable_type = _tokens->at(_idx).data;
+uint64_t parser::accessor_depth() {
 
   /*
      Consume [100][3][3]... [?]
      and calculate the number of items that would represent i.e [10][10] = 100
      */
-  advance();
   uint64_t depth = 0;
   if (_tokens->at(_idx).token == Token::L_BRACKET) {
     depth = 1;
@@ -454,14 +435,60 @@ parse_tree::element *parser::assignment()
       }
     }
   }
+  return depth;
+}
 
-  expect(Token::EQ, "Expected '=' in variable assignment");
+parse_tree::element *parser::statement()
+{
+  if (parse_tree::element *item = parser::assignment()) {
+    return item;
+  }
+  if (parse_tree::element *item = parser::if_statement()) {
+    return item;
+  }
+  if (parse_tree::element *item = parser::while_statement()) {
+    return item;
+  }
+  if (parse_tree::element *item = parser::return_statement()) {
+    return item;
+  }
+  if (parse_tree::element *item = parser::reassignment_statement()) {
+    return item;
+  }
+
+  // This should be last checked
+  if (parse_tree::element *item = parser::expression_statement()) {
+    return item;
+  }
+  return nullptr;
+}
+
+parse_tree::element *parser::assignment()
+{
+  if (_tokens->at(_idx).token != Token::LET) {
+    return nullptr;
+  }
 
   advance();
+  expect(Token::IDENTIFIER, "Expected variable name in assignmnet");
+  std::string name = _tokens->at(_idx).data;
+  size_t line_no = *_tokens->at(_idx).line;
 
-  parse_tree::expression *tree = new parse_tree::expression();
+  advance();
+  expect(Token::COLON,
+         "Expected colon between name:type in varialbe assignment");
+
+  advance();
+  expect(Token::IDENTIFIER, "Expected variable type");
+  std::string variable_type = _tokens->at(_idx).data;
+
+  advance();
+  uint64_t depth = parser::accessor_depth();
+
+  expect(Token::EQ, "Expected '=' in variable assignment");
+  advance();
+
   parse_tree::expression *exp = expression(parser::precedence::LOWEST);
-
   advance();
   expect(Token::SEMICOLON, "Expected semicolon at end of variable assignment");
 
@@ -472,7 +499,46 @@ parse_tree::element *parser::assignment()
         {name, parse_tree::string_to_variable_type(variable_type), depth}, exp);
   }
 
-  delete tree;
+  delete exp;
+  return nullptr;
+}
+
+parse_tree::element *parser::reassignment_statement()
+{
+  if (_tokens->at(_idx).token != Token::IDENTIFIER) {
+    return nullptr;
+  }
+
+  std::string name = _tokens->at(_idx).data;
+  size_t line_no = *_tokens->at(_idx).line;
+
+  mark();     // Save _idx location
+  advance();  // id
+  
+  size_t depth = parser::accessor_depth();
+
+  // Ensure we don't have a call
+  if (_tokens->at(_idx).token == Token::L_PAREN) {
+    reset(); // Go back to identifier
+    return nullptr;
+  }
+  unset(); // Unset the mark();
+
+  advance();
+
+  parse_tree::expression *exp = expression(parser::precedence::LOWEST);
+  advance();
+  expect(Token::SEMICOLON, "Expected semicolon at end of variable assignment");
+
+  advance();
+  
+  if (_parser_okay) {
+    return new parse_tree::reassignment_statement(
+        line_no,
+        {name, parse_tree::variable_types::USER_DEFINED, depth}, exp);
+  }
+
+  delete exp;
   return nullptr;
 }
 

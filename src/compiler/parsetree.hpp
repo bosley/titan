@@ -184,6 +184,16 @@ public:
   virtual void visit(visitor &v) override;
 };
 
+class reassignment_statement : public element {
+public:
+  reassignment_statement(size_t line, variable var, expression *node) : element(line), var(var), expr(node) {}
+
+  variable var;
+  expression *expr;
+
+  virtual void visit(visitor &v) override;
+};
+
 class if_statement : public element {
 public:
   struct segment {
@@ -265,6 +275,7 @@ public:
 class visitor {
 public:
   virtual void accept(assignment &stmt) = 0;
+  virtual void accept(reassignment_statement &stmt) = 0;
   virtual void accept(expression_statement &stmt) = 0;
   virtual void accept(if_statement &stmt) = 0;
   virtual void accept(while_statement &stmt) = 0;
