@@ -59,10 +59,10 @@ private:
   parse_tree::element *statement();
   parse_tree::element *assignment();
   parse_tree::element *if_statement();
-  parse_tree::element *else_if_statement();
-  parse_tree::element *else_statement();
-  parse_tree::element *loop();
+  parse_tree::element *while_statement();
   parse_tree::element *expression_statement();
+  parse_tree::element *return_statement();
+  parse_tree::expression *conditional();
   parse_tree::expression *expression(precedence precedence);
   parse_tree::expression *identifier();
   parse_tree::expression *number();
