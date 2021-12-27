@@ -67,8 +67,8 @@ enum class Token {
   IMPORT,
   LSH,
   RSH,
-  ERT,// Error token
-  EOS // End of stream
+  ERT, // Error token
+  EOS  // End of stream
 };
 
 struct TD_Pair {

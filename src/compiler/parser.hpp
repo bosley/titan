@@ -2,11 +2,11 @@
 #define COMPILER_PARSER_HPP
 
 #include <functional>
+#include <optional>
 #include <set>
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include <optional>
 
 #include "common.hpp"
 #include "parsetree.hpp"
@@ -18,6 +18,7 @@ class parser {
 public:
   enum class precedence {
     LOWEST,
+    ASSIGN,       // =
     EQUALS,       // ==
     LESS_GREATER, // > <
     SUM,          // +
@@ -53,10 +54,10 @@ private:
   void mark();
   void reset();
   void unset();
-  const TD_Pair& current_td_pair() const;
+  const TD_Pair &current_td_pair() const;
   void die(std::string error);
   void expect(Token token, std::string error, size_t ahead = 0);
-  const TD_Pair& peek(size_t ahead = 1) const;
+  const TD_Pair &peek(size_t ahead = 1) const;
   precedence peek_precedence();
   parse_tree::toplevel *function();
   parse_tree::toplevel *import_stmt();
@@ -65,9 +66,9 @@ private:
   uint64_t accessor_depth();
   parse_tree::element *statement();
   parse_tree::element *assignment();
-  parse_tree::element *reassignment_statement();
   parse_tree::element *if_statement();
   parse_tree::element *while_statement();
+  parse_tree::element *for_statement();
   parse_tree::element *expression_statement();
   parse_tree::element *return_statement();
   parse_tree::expression *conditional();
