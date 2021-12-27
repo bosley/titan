@@ -67,6 +67,7 @@ enum class Token {
   IMPORT,
   LSH,
   RSH,
+  ERT,// Error token
   EOS // End of stream
 };
 
@@ -205,6 +206,8 @@ static std::string token_to_str(const TD_Pair &td)
     return "RSH[" + std::to_string(line_no) + "]";
   case Token::EOS:
     return "EOS[" + std::to_string(line_no) + "]";
+  case Token::ERT:
+    return "ERT";
   }
 
   return "UNKNOWN[" + std::to_string(line_no) + "]";

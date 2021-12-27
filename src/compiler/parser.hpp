@@ -6,6 +6,7 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <optional>
 
 #include "common.hpp"
 #include "parsetree.hpp"
@@ -52,9 +53,10 @@ private:
   void mark();
   void reset();
   void unset();
+  const TD_Pair& current_td_pair() const;
   void die(std::string error);
   void expect(Token token, std::string error, size_t ahead = 0);
-  TD_Pair peek(size_t ahead = 1);
+  const TD_Pair& peek(size_t ahead = 1) const;
   precedence peek_precedence();
   parse_tree::toplevel *function();
   parse_tree::toplevel *import_stmt();

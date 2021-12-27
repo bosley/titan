@@ -27,6 +27,12 @@ std::unordered_map<Token, parser::precedence> precedences = {
     {Token::L_BRACKET, parser::precedence::INDEX},
 };
 
+/* Error TD pairs line data */
+static size_t __empty_line = 0;
+
+TD_Pair error_token   = { Token::ERT, {}, &__empty_line };
+TD_Pair end_of_stream = { Token::EOS, {}, &__empty_line };
+
 /* Stores files found [import target] => [location found from include dir] */
 static std::unordered_map<std::string, std::string> located_items;
 
@@ -206,6 +212,22 @@ void parser::mark() { _mark = _idx; }
 
 void parser::unset() { _mark = std::numeric_limits<uint64_t>::max(); }
 
+const TD_Pair& parser::current_td_pair() const
+{
+  if(!_tokens) {
+    LOG(FATAL) << COLOR(red) << "(parser) : _tokens not set" << COLOR(none)
+               << std::endl;
+    return error_token;
+  }
+
+  if(_idx >= _tokens->size()) {
+    LOG(DEBUG) << "(parser) : End of token stream" << std::endl;
+    return error_token;
+  }
+
+  return _tokens->at(_idx);
+}
+
 void parser::reset()
 {
 
@@ -224,38 +246,31 @@ void parser::reset()
 
 void parser::die(std::string error)
 {
-  report_error(_filename, _tokens->at(_idx).line, error);
+  report_error(_filename, current_td_pair().line, error);
   _parser_okay = false;
 
   LOG(DEBUG) << COLOR(magenta)
-             << "(parser) : Curernt token : " << token_to_str(_tokens->at(_idx))
+             << "(parser) : Curernt token : " << token_to_str(current_td_pair())
              << COLOR(none) << std::endl;
 }
 
 void parser::expect(Token token, std::string error, size_t ahead)
 {
-
-  if (_idx + ahead >= _tokens->size()) {
-    LOG(FATAL) << COLOR(red) << "(parser) : _idx + ahead >= remaining tokens"
-               << COLOR(none) << std::endl;
-    die(error);
-  }
-
-  if (_tokens->at(_idx + ahead).token != token) {
+  if (peek(ahead).token != token) {
     die(error);
   }
 }
 
-TD_Pair parser::peek(size_t ahead)
+const TD_Pair& parser::peek(size_t ahead) const
 {
   if (!_tokens) {
     LOG(FATAL) << COLOR(red) << "(parser) : _tokens not set" << COLOR(none)
                << std::endl;
-    return TD_Pair{Token::EOS, {}};
+    return end_of_stream;
   }
   if (_idx + ahead >= _tokens->size()) {
     LOG(DEBUG) << "(parser) : End of token stream" << std::endl;
-    return TD_Pair{Token::EOS, {}};
+    return end_of_stream;
   }
   return _tokens->at(_idx + ahead);
 }
@@ -271,14 +286,14 @@ parser::precedence parser::peek_precedence()
 parse_tree::toplevel *parser::import_stmt()
 {
 
-  if (_tokens->at(_idx).token != Token::IMPORT) {
+  if (current_td_pair().token != Token::IMPORT) {
     return nullptr;
   }
   expect(Token::STRING, "Expected string value for given import", 1);
   advance();
 
   if (_parser_okay) {
-    return new parse_tree::import_stmt(_tokens->at(_idx).data);
+    return new parse_tree::import_stmt(current_td_pair().data);
   }
   else {
     return nullptr;
@@ -289,13 +304,13 @@ parse_tree::toplevel *parser::function()
 {
 
   // fn some_function
-  if (_tokens->at(_idx).token != Token::FN) {
+  if (current_td_pair().token != Token::FN) {
     return nullptr;
   }
 
   advance();
   expect(Token::IDENTIFIER, "Expected function name following 'fn'");
-  std::string function_name = _tokens->at(_idx).data;
+  std::string function_name = current_td_pair().data;
 
   advance();
   std::vector<parse_tree::variable> parameters = function_params();
@@ -306,7 +321,7 @@ parse_tree::toplevel *parser::function()
   advance();
   expect(Token::IDENTIFIER,
          "Expected return type following '->' in function declaration");
-  std::string return_type = _tokens->at(_idx).data;
+  std::string return_type = current_td_pair().data;
 
   advance();
   std::vector<parse_tree::element *> element_list = statements();
@@ -345,7 +360,7 @@ std::vector<parse_tree::variable> parser::function_params()
 
     advance();
     expect(Token::IDENTIFIER, "Expected variable name for parameter");
-    std::string param_name = _tokens->at(_idx).data;
+    std::string param_name = current_td_pair().data;
 
     advance();
     expect(Token::COLON,
@@ -353,11 +368,11 @@ std::vector<parse_tree::variable> parser::function_params()
 
     advance();
     expect(Token::IDENTIFIER, "Expected variable type for parameter");
-    std::string param_type = _tokens->at(_idx).data;
+    std::string param_type = current_td_pair().data;
 
     advance();
     uint64_t depth = 0;
-    if (_tokens->at(_idx).token == Token::L_BRACKET) {
+    if (current_td_pair().token == Token::L_BRACKET) {
       depth = std::numeric_limits<uint64_t>::max();
       advance();
       expect(Token::R_BRACKET, "Expected closing bracket for array parameter");
@@ -367,7 +382,7 @@ std::vector<parse_tree::variable> parser::function_params()
     parameters.push_back(parse_tree::variable{
         param_name, parse_tree::string_to_variable_type(param_type), depth});
 
-    if (_tokens->at(_idx).token != Token::COMMA) {
+    if (current_td_pair().token != Token::COMMA) {
       eat_params = false;
     }
   }
@@ -388,7 +403,7 @@ std::vector<parse_tree::element *> parser::statements()
   advance();
 
   // Check for empty statement body
-  if (_tokens->at(_idx).token == Token::R_BRACE) {
+  if (current_td_pair().token == Token::R_BRACE) {
     advance();
     return {};
   }
@@ -432,13 +447,13 @@ uint64_t parser::accessor_depth()
      and calculate the number of items that would represent i.e [10][10] = 100
      */
   uint64_t depth = 0;
-  if (_tokens->at(_idx).token == Token::L_BRACKET) {
+  if (current_td_pair().token == Token::L_BRACKET) {
     depth = 1;
     bool consume = true;
     while (consume) {
       advance();
       expect(Token::LITERAL_NUMBER, "Literal number expected");
-      depth *= std::stoull(_tokens->at(_idx).data);
+      depth *= std::stoull(current_td_pair().data);
 
       advance();
       expect(Token::R_BRACKET, "Ending bracket expected");
@@ -481,14 +496,14 @@ parse_tree::element *parser::statement()
 
 parse_tree::element *parser::assignment()
 {
-  if (_tokens->at(_idx).token != Token::LET) {
+  if (current_td_pair().token != Token::LET) {
     return nullptr;
   }
 
   advance();
   expect(Token::IDENTIFIER, "Expected variable name in assignmnet");
-  std::string name = _tokens->at(_idx).data;
-  size_t line_no = *_tokens->at(_idx).line;
+  std::string name = current_td_pair().data;
+  size_t line_no = *current_td_pair().line;
 
   advance();
   expect(Token::COLON,
@@ -496,7 +511,7 @@ parse_tree::element *parser::assignment()
 
   advance();
   expect(Token::IDENTIFIER, "Expected variable type");
-  std::string variable_type = _tokens->at(_idx).data;
+  std::string variable_type = current_td_pair().data;
 
   advance();
   uint64_t depth = parser::accessor_depth();
@@ -521,12 +536,12 @@ parse_tree::element *parser::assignment()
 
 parse_tree::element *parser::reassignment_statement()
 {
-  if (_tokens->at(_idx).token != Token::IDENTIFIER) {
+  if (current_td_pair().token != Token::IDENTIFIER) {
     return nullptr;
   }
 
-  std::string name = _tokens->at(_idx).data;
-  size_t line_no = *_tokens->at(_idx).line;
+  std::string name = current_td_pair().data;
+  size_t line_no = *current_td_pair().line;
 
   mark();    // Save _idx location
   advance(); // id
@@ -534,7 +549,7 @@ parse_tree::element *parser::reassignment_statement()
   size_t depth = parser::accessor_depth();
 
   // Ensure we don't have a call
-  if (_tokens->at(_idx).token == Token::L_PAREN) {
+  if (current_td_pair().token == Token::L_PAREN) {
     reset(); // Go back to identifier
     return nullptr;
   }
@@ -559,11 +574,11 @@ parse_tree::element *parser::reassignment_statement()
 
 parse_tree::element *parser::if_statement()
 {
-  if (_tokens->at(_idx).token != Token::IF) {
+  if (current_td_pair().token != Token::IF) {
     return nullptr;
   }
 
-  size_t line_no = *_tokens->at(_idx).line;
+  size_t line_no = *current_td_pair().line;
 
   advance();
 
@@ -593,12 +608,12 @@ parse_tree::element *parser::if_statement()
 
     if_stmt->segments.push_back({condition, if_body});
 
-    if (_tokens->at(_idx).token == Token::ELSE) {
+    if (current_td_pair().token == Token::ELSE) {
 
       advance();
 
       // Else-if Condition
-      if (_tokens->at(_idx).token == Token::IF) {
+      if (current_td_pair().token == Token::IF) {
 
         advance();
 
@@ -632,11 +647,11 @@ parse_tree::element *parser::if_statement()
 
 parse_tree::element *parser::while_statement()
 {
-  if (_tokens->at(_idx).token != Token::WHILE) {
+  if (current_td_pair().token != Token::WHILE) {
     return nullptr;
   }
 
-  size_t line_no = *_tokens->at(_idx).line;
+  size_t line_no = *current_td_pair().line;
 
   advance();
 
@@ -661,25 +676,25 @@ parse_tree::element *parser::while_statement()
 
 parse_tree::element *parser::return_statement()
 {
-  if (_tokens->at(_idx).token != Token::RETURN) {
+  if (current_td_pair().token != Token::RETURN) {
     return nullptr;
   }
 
-  size_t line_no = *_tokens->at(_idx).line;
+  size_t line_no = *current_td_pair().line;
 
   advance();
 
   parse_tree::expression *return_expr = nullptr;
 
   // Optional '(' and ')' around statement?
-  if (_tokens->at(_idx).token == Token::L_PAREN) {
+  if (current_td_pair().token == Token::L_PAREN) {
     advance();
     return_expr = parser::expression(parser::precedence::LOWEST);
     advance();
     expect(Token::R_PAREN, "Expected ')' following return expression");
     advance();
   }
-  else if (_tokens->at(_idx).token == Token::SEMICOLON) {
+  else if (current_td_pair().token == Token::SEMICOLON) {
     advance();
     return new parse_tree::return_statement(line_no, nullptr);
   }
@@ -701,14 +716,14 @@ parse_tree::element *parser::return_statement()
 // Expects expression to exist, if not this will kill the parser
 parse_tree::element *parser::expression_statement()
 {
-  if (_tokens->at(_idx).token == Token::R_BRACE) {
+  if (current_td_pair().token == Token::R_BRACE) {
     return nullptr;
   }
-  if (_tokens->at(_idx).token == Token::SEMICOLON) {
+  if (current_td_pair().token == Token::SEMICOLON) {
     return nullptr;
   }
 
-  size_t line_no = *_tokens->at(_idx).line;
+  size_t line_no = *current_td_pair().line;
   parse_tree::expression *expr = parser::expression(parser::precedence::LOWEST);
 
   advance();
@@ -750,12 +765,12 @@ parse_tree::expression *parser::conditional()
 parse_tree::expression *parser::expression(parser::precedence precedence)
 {
 
-  if (_prefix_fns.find(_tokens->at(_idx).token) == _prefix_fns.end()) {
+  if (_prefix_fns.find(current_td_pair().token) == _prefix_fns.end()) {
     die("No prefix function for given token");
     return nullptr;
   }
 
-  auto fn = _prefix_fns[_tokens->at(_idx).token];
+  auto fn = _prefix_fns[current_td_pair().token];
   parse_tree::expression *left = (this->*fn)();
 
   while (peek().token != Token::SEMICOLON && peek().token != Token::R_BRACE &&
@@ -774,7 +789,7 @@ parse_tree::expression *parser::expression(parser::precedence precedence)
 parse_tree::expression *parser::prefix_expr()
 {
 
-  auto result = new parse_tree::prefix_expr(_tokens->at(_idx).data, nullptr);
+  auto result = new parse_tree::prefix_expr(current_td_pair().data, nullptr);
 
   advance();
 
@@ -786,11 +801,11 @@ parse_tree::expression *parser::infix_expr(parse_tree::expression *left)
 {
 
   auto result =
-      new parse_tree::infix_expr(_tokens->at(_idx).data, left, nullptr);
+      new parse_tree::infix_expr(current_td_pair().data, left, nullptr);
 
   precedence p = precedence::LOWEST;
-  if (precedences.find(_tokens->at(_idx).token) != precedences.end()) {
-    p = precedences[_tokens->at(_idx).token];
+  if (precedences.find(current_td_pair().token) != precedences.end()) {
+    p = precedences[current_td_pair().token];
   }
 
   advance();
@@ -805,18 +820,18 @@ parse_tree::expression *parser::identifier()
   // Sanity check
   expect(Token::IDENTIFIER, "Expected identifier in expression");
   return new parse_tree::expression(parse_tree::node_type::ID,
-                                    _tokens->at(_idx).data);
+                                    current_td_pair().data);
 }
 
 parse_tree::expression *parser::number()
 {
-  if (_tokens->at(_idx).token == Token::LITERAL_NUMBER) {
+  if (current_td_pair().token == Token::LITERAL_NUMBER) {
     return new parse_tree::expression(parse_tree::node_type::RAW_NUMBER,
-                                      _tokens->at(_idx).data);
+                                      current_td_pair().data);
   }
-  else if (_tokens->at(_idx).token == Token::LITERAL_FLOAT) {
+  else if (current_td_pair().token == Token::LITERAL_FLOAT) {
     return new parse_tree::expression(parse_tree::node_type::RAW_FLOAT,
-                                      _tokens->at(_idx).data);
+                                      current_td_pair().data);
   }
   else {
     die("Expected numerical item");
@@ -831,7 +846,7 @@ parse_tree::expression *parser::str()
   expect(Token::STRING, "Expected string in expression");
 
   return new parse_tree::expression(parse_tree::node_type::RAW_STRING,
-                                    _tokens->at(_idx).data);
+                                    current_td_pair().data);
 }
 
 parse_tree::expression *parser::call_expr(parse_tree::expression *fn)
