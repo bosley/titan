@@ -2,6 +2,7 @@
 
 #include "compiler/lexer.hpp"
 #include "compiler/parser.hpp"
+#include "log/log.hpp"
 #include <iostream>
 #include <vector>
 
@@ -107,7 +108,13 @@ bool exprs_are_equal(compiler::parse_tree::expression *a,
 
 } // namespace
 
-TEST_GROUP(parser_tests){};
+TEST_GROUP(parser_tests){
+    void setup(){AixLog::Log::init<AixLog::SinkCout>(AixLog::Severity::fatal);
+}
+
+void teardown() {}
+}
+;
 
 //  Load the text files and ensure the expected tokens match the input
 //
@@ -472,9 +479,11 @@ TEST(parser_tests, reassignment_statement)
 
   CHECK_EQUAL(2, func->element_list.size());
 
-  auto reassign = reinterpret_cast<compiler::parse_tree::reassignment_statement*>(func->element_list[1]);
+  auto reassign =
+      reinterpret_cast<compiler::parse_tree::reassignment_statement *>(
+          func->element_list[1]);
 
-  compiler::parse_tree::expression *expected_expr = 
+  compiler::parse_tree::expression *expected_expr =
       new compiler::parse_tree::infix_expr(
           "+",
           new compiler::parse_tree::expression(

@@ -1,4 +1,5 @@
 #include "lexer.hpp"
+#include "log/log.hpp"
 
 #include <algorithm>
 #include <filesystem>
@@ -14,6 +15,8 @@ lexer::lexer() : _tokens(nullptr), _current_line(nullptr), _line_len(0), _idx(0)
 
 bool lexer::load_file(std::string &file)
 {
+  LOG(DEBUG) << "(lexer) : " << file << "\n";
+
   clear();
 
   constexpr auto trim_line = [](std::string &line) -> void {

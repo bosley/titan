@@ -1,5 +1,6 @@
 #include "parser.hpp"
 
+#include "log/log.hpp"
 #include <filesystem>
 #include <iostream>
 #include <limits>
@@ -33,6 +34,9 @@ static std::unordered_map<std::string, std::string> located_items;
 static std::tuple<bool, std::string>
 locate_import(std::vector<std::string> &paths, std::string &target)
 {
+
+  LOG(DEBUG) << "(parser) : " << target << std::endl;
+  LOG(DEBUG) << "(parser) : [" << paths.size() << "] include directories\n";
 
   // Check the local directory first
   std::filesystem::path item_as_local = std::filesystem::current_path();
@@ -71,7 +75,11 @@ static void report_error(const std::string &filename, size_t *line,
 }
 } // namespace
 
-parser::parser() : _parser_okay(true), _idx(0), _mark(std::numeric_limits<uint64_t>::max()), _tokens(nullptr) {}
+parser::parser()
+    : _parser_okay(true), _idx(0), _mark(std::numeric_limits<uint64_t>::max()),
+      _tokens(nullptr)
+{
+}
 
 std::vector<parse_tree::toplevel *>
 parser::parse(std::string filename,
@@ -196,19 +204,18 @@ void parser::advance() { _idx++; }
 
 void parser::mark() { _mark = _idx; }
 
-void parser::unset() { 
-  _mark = std::numeric_limits<uint64_t>::max();
-}
+void parser::unset() { _mark = std::numeric_limits<uint64_t>::max(); }
 
-void parser::reset() {
+void parser::reset()
+{
 
-  if ( _mark > _idx ) {
-    die("Internal error - Attempting to reset with unset _mark"); 
+  if (_mark > _idx) {
+    die("Internal error - Attempting to reset with unset _mark");
     unset(); // ensure its set to max, not some other num
     return;
   }
 
-  while(_idx != _mark) {
+  while (_idx != _mark) {
     prev();
   }
 
@@ -217,15 +224,20 @@ void parser::reset() {
 
 void parser::die(std::string error)
 {
-
   report_error(_filename, _tokens->at(_idx).line, error);
   _parser_okay = false;
+
+  LOG(DEBUG) << COLOR(magenta)
+             << "(parser) : Curernt token : " << token_to_str(_tokens->at(_idx))
+             << COLOR(none) << std::endl;
 }
 
 void parser::expect(Token token, std::string error, size_t ahead)
 {
 
   if (_idx + ahead >= _tokens->size()) {
+    LOG(FATAL) << COLOR(red) << "(parser) : _idx + ahead >= remaining tokens"
+               << COLOR(none) << std::endl;
     die(error);
   }
 
@@ -237,9 +249,12 @@ void parser::expect(Token token, std::string error, size_t ahead)
 TD_Pair parser::peek(size_t ahead)
 {
   if (!_tokens) {
+    LOG(FATAL) << COLOR(red) << "(parser) : _tokens not set" << COLOR(none)
+               << std::endl;
     return TD_Pair{Token::EOS, {}};
   }
   if (_idx + ahead >= _tokens->size()) {
+    LOG(DEBUG) << "(parser) : End of token stream" << std::endl;
     return TD_Pair{Token::EOS, {}};
   }
   return _tokens->at(_idx + ahead);
@@ -409,7 +424,8 @@ std::vector<parse_tree::element *> parser::statements()
   return elements;
 }
 
-uint64_t parser::accessor_depth() {
+uint64_t parser::accessor_depth()
+{
 
   /*
      Consume [100][3][3]... [?]
@@ -512,9 +528,9 @@ parse_tree::element *parser::reassignment_statement()
   std::string name = _tokens->at(_idx).data;
   size_t line_no = *_tokens->at(_idx).line;
 
-  mark();     // Save _idx location
-  advance();  // id
-  
+  mark();    // Save _idx location
+  advance(); // id
+
   size_t depth = parser::accessor_depth();
 
   // Ensure we don't have a call
@@ -531,11 +547,10 @@ parse_tree::element *parser::reassignment_statement()
   expect(Token::SEMICOLON, "Expected semicolon at end of variable assignment");
 
   advance();
-  
+
   if (_parser_okay) {
     return new parse_tree::reassignment_statement(
-        line_no,
-        {name, parse_tree::variable_types::USER_DEFINED, depth}, exp);
+        line_no, {name, parse_tree::variable_types::USER_DEFINED, depth}, exp);
   }
 
   delete exp;
@@ -736,7 +751,6 @@ parse_tree::expression *parser::expression(parser::precedence precedence)
 {
 
   if (_prefix_fns.find(_tokens->at(_idx).token) == _prefix_fns.end()) {
-    std::cout << ">>>>>" << token_to_str(_tokens->at(_idx)) << std::endl;
     die("No prefix function for given token");
     return nullptr;
   }
