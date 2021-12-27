@@ -2,6 +2,7 @@
 
 #include <filesystem>
 #include <iostream>
+#include <limits>
 #include <tuple>
 #include <unordered_map>
 
@@ -70,7 +71,7 @@ static void report_error(const std::string &filename, size_t *line,
 }
 } // namespace
 
-parser::parser() : _parser_okay(true), _idx(0), _tokens(nullptr) {}
+parser::parser() : _parser_okay(true), _idx(0), _mark(std::numeric_limits<uint64_t>::max()), _tokens(nullptr) {}
 
 std::vector<parse_tree::toplevel *>
 parser::parse(std::string filename,
@@ -192,6 +193,27 @@ parser::parse(std::string filename,
 void parser::prev() { _idx--; }
 
 void parser::advance() { _idx++; }
+
+void parser::mark() { _mark = _idx; }
+
+void parser::unset() { 
+  _mark = std::numeric_limits<uint64_t>::max();
+}
+
+void parser::reset() {
+
+  if ( _mark > _idx ) {
+    die("Internal error - Attempting to reset with unset _mark"); 
+    unset(); // ensure its set to max, not some other num
+    return;
+  }
+
+  while(_idx != _mark) {
+    prev();
+  }
+
+  unset();
+}
 
 void parser::die(std::string error)
 {
@@ -387,6 +409,35 @@ std::vector<parse_tree::element *> parser::statements()
   return elements;
 }
 
+uint64_t parser::accessor_depth() {
+
+  /*
+     Consume [100][3][3]... [?]
+     and calculate the number of items that would represent i.e [10][10] = 100
+     */
+  uint64_t depth = 0;
+  if (_tokens->at(_idx).token == Token::L_BRACKET) {
+    depth = 1;
+    bool consume = true;
+    while (consume) {
+      advance();
+      expect(Token::LITERAL_NUMBER, "Literal number expected");
+      depth *= std::stoull(_tokens->at(_idx).data);
+
+      advance();
+      expect(Token::R_BRACKET, "Ending bracket expected");
+      if (peek().token != Token::L_BRACKET) {
+        consume = false;
+        advance();
+      }
+      else {
+        advance(); // Eat the '['
+      }
+    }
+  }
+  return depth;
+}
+
 parse_tree::element *parser::statement()
 {
   if (parse_tree::element *item = parser::assignment()) {
@@ -431,31 +482,8 @@ parse_tree::element *parser::assignment()
   expect(Token::IDENTIFIER, "Expected variable type");
   std::string variable_type = _tokens->at(_idx).data;
 
-  /*
-     Consume [100][3][3]... [?]
-     and calculate the number of items that would represent i.e [10][10] = 100
-     */
   advance();
-  uint64_t depth = 0;
-  if (_tokens->at(_idx).token == Token::L_BRACKET) {
-    depth = 1;
-    bool consume = true;
-    while (consume) {
-      advance();
-      expect(Token::LITERAL_NUMBER, "Literal number expected");
-      depth *= std::stoull(_tokens->at(_idx).data);
-
-      advance();
-      expect(Token::R_BRACKET, "Ending bracket expected");
-      if (peek().token != Token::L_BRACKET) {
-        consume = false;
-        advance();
-      }
-      else {
-        advance(); // Eat the '['
-      }
-    }
-  }
+  uint64_t depth = parser::accessor_depth();
 
   expect(Token::EQ, "Expected '=' in variable assignment");
   advance();
@@ -477,9 +505,6 @@ parse_tree::element *parser::assignment()
 
 parse_tree::element *parser::reassignment_statement()
 {
-  // TODO : Finish this and write a test
-  return nullptr;
-
   if (_tokens->at(_idx).token != Token::IDENTIFIER) {
     return nullptr;
   }
@@ -487,32 +512,17 @@ parse_tree::element *parser::reassignment_statement()
   std::string name = _tokens->at(_idx).data;
   size_t line_no = *_tokens->at(_idx).line;
 
+  mark();     // Save _idx location
   advance();  // id
+  
+  size_t depth = parser::accessor_depth();
 
-  uint64_t depth = 0;
-  if (_tokens->at(_idx).token == Token::L_BRACKET) {
-    depth = 1;
-    bool consume = true;
-    while (consume) {
-      advance();
-      expect(Token::LITERAL_NUMBER, "Literal number expected");
-      depth *= std::stoull(_tokens->at(_idx).data);
-
-      advance();
-      expect(Token::R_BRACKET, "Ending bracket expected");
-      if (peek().token != Token::L_BRACKET) {
-        consume = false;
-        advance();
-      }
-      else {
-        advance(); // Eat the '['
-      }
-    }
-  }
-
-  if (peek().token != Token::EQ) {
+  // Ensure we don't have a call
+  if (_tokens->at(_idx).token == Token::L_PAREN) {
+    reset(); // Go back to identifier
     return nullptr;
   }
+  unset(); // Unset the mark();
 
   advance();
 
