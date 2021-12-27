@@ -401,6 +401,9 @@ parse_tree::element *parser::statement()
   if (parse_tree::element *item = parser::return_statement()) {
     return item;
   }
+  if (parse_tree::element *item = parser::reassignment_statement()) {
+    return item;
+  }
 
   // This should be last checked
   if (parse_tree::element *item = parser::expression_statement()) {
@@ -411,7 +414,6 @@ parse_tree::element *parser::statement()
 
 parse_tree::element *parser::assignment()
 {
-
   if (_tokens->at(_idx).token != Token::LET) {
     return nullptr;
   }
@@ -456,12 +458,9 @@ parse_tree::element *parser::assignment()
   }
 
   expect(Token::EQ, "Expected '=' in variable assignment");
-
   advance();
 
-  parse_tree::expression *tree = new parse_tree::expression();
   parse_tree::expression *exp = expression(parser::precedence::LOWEST);
-
   advance();
   expect(Token::SEMICOLON, "Expected semicolon at end of variable assignment");
 
@@ -472,7 +471,64 @@ parse_tree::element *parser::assignment()
         {name, parse_tree::string_to_variable_type(variable_type), depth}, exp);
   }
 
-  delete tree;
+  delete exp;
+  return nullptr;
+}
+
+parse_tree::element *parser::reassignment_statement()
+{
+  // TODO : Finish this and write a test
+  return nullptr;
+
+  if (_tokens->at(_idx).token != Token::IDENTIFIER) {
+    return nullptr;
+  }
+
+  std::string name = _tokens->at(_idx).data;
+  size_t line_no = *_tokens->at(_idx).line;
+
+  advance();  // id
+
+  uint64_t depth = 0;
+  if (_tokens->at(_idx).token == Token::L_BRACKET) {
+    depth = 1;
+    bool consume = true;
+    while (consume) {
+      advance();
+      expect(Token::LITERAL_NUMBER, "Literal number expected");
+      depth *= std::stoull(_tokens->at(_idx).data);
+
+      advance();
+      expect(Token::R_BRACKET, "Ending bracket expected");
+      if (peek().token != Token::L_BRACKET) {
+        consume = false;
+        advance();
+      }
+      else {
+        advance(); // Eat the '['
+      }
+    }
+  }
+
+  if (peek().token != Token::EQ) {
+    return nullptr;
+  }
+
+  advance();
+
+  parse_tree::expression *exp = expression(parser::precedence::LOWEST);
+  advance();
+  expect(Token::SEMICOLON, "Expected semicolon at end of variable assignment");
+
+  advance();
+  
+  if (_parser_okay) {
+    return new parse_tree::reassignment_statement(
+        line_no,
+        {name, parse_tree::variable_types::USER_DEFINED, depth}, exp);
+  }
+
+  delete exp;
   return nullptr;
 }
 

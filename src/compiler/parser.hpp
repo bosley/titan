@@ -58,6 +58,7 @@ private:
   std::vector<parse_tree::element *> statements();
   parse_tree::element *statement();
   parse_tree::element *assignment();
+  parse_tree::element *reassignment_statement();
   parse_tree::element *if_statement();
   parse_tree::element *while_statement();
   parse_tree::element *expression_statement();
