@@ -546,3 +546,16 @@ TEST(parser_tests, for_statement)
   CHECK_TRUE(exprs_are_equal(expected_condition, actual->condition));
   CHECK_TRUE(exprs_are_equal(expected_modifier, actual->modifier));
 }
+
+TEST(parser_tests, accessors)
+{
+  auto functions = parse_file("test_files/accessor.tl");
+
+  CHECK_EQUAL(1, functions.size());
+  CHECK_EQUAL((int)compiler::parse_tree::toplevel::tl_type::FUNCTION,
+              (int)functions[0]->type);
+
+  auto func = reinterpret_cast<compiler::parse_tree::function *>(functions[0]);
+
+  CHECK_EQUAL(3, func->element_list.size());
+}

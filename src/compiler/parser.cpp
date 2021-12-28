@@ -441,7 +441,7 @@ std::vector<parse_tree::element *> parser::statements()
   return elements;
 }
 
-uint64_t parser::accessor_depth()
+uint64_t parser::accessor_lit()
 {
 
   /*
@@ -469,6 +469,38 @@ uint64_t parser::accessor_depth()
     }
   }
   return depth;
+}
+
+std::vector<parse_tree::expression *> parser::accessor_expr()
+{
+  std::vector<parse_tree::expression *> result;
+  
+  if (current_td_pair().token == Token::L_BRACKET) {
+    bool consume = true;
+    while (consume) {
+      advance();
+      result.emplace_back(expression(parser::precedence::LOWEST));
+
+      advance();
+      expect(Token::R_BRACKET, "Ending bracket expected");
+
+      if (peek().token != Token::L_BRACKET) {
+        consume = false;
+        advance();
+      }
+      else {
+        advance(); // Eat the '['
+      }
+    }
+  }
+
+  if(!_parser_okay) {
+    for(auto &e: result) {
+      delete e;
+    }
+  }
+
+  return result;  
 }
 
 parse_tree::element *parser::statement()
@@ -516,7 +548,7 @@ parse_tree::element *parser::assignment()
   std::string variable_type = current_td_pair().data;
 
   advance();
-  uint64_t depth = parser::accessor_depth();
+  uint64_t depth = parser::accessor_lit();
 
   expect(Token::EQ, "Expected '=' in variable assignment");
   advance();
@@ -807,7 +839,6 @@ parse_tree::expression *parser::expression(parser::precedence precedence)
 
 parse_tree::expression *parser::prefix_expr()
 {
-
   auto result = new parse_tree::prefix_expr(current_td_pair().data, nullptr);
 
   advance();
@@ -818,7 +849,6 @@ parse_tree::expression *parser::prefix_expr()
 
 parse_tree::expression *parser::infix_expr(parse_tree::expression *left)
 {
-
   auto result =
       new parse_tree::infix_expr(current_td_pair().data, left, nullptr);
 
@@ -835,23 +865,13 @@ parse_tree::expression *parser::infix_expr(parse_tree::expression *left)
 
 parse_tree::expression *parser::identifier()
 {
-  // Sanity check
   expect(Token::IDENTIFIER, "Expected identifier in expression");
 
   std::string name = current_td_pair().data;
 
-  // Check for '  i[0] ' etc
-  //
-  //  TODO : This call to accessor_depth with DEMAND that the indicies be raw
-  //  numbers
-  //          This SHOULD take any expression in each pair of [].
-  //          That means the following call should be modified to take one or
-  //          the other and that the object accessor_depth needs to be updated
-  //          to have depth be a series of expressions to locate the offset
-  //
-  size_t depth = parser::accessor_depth();
+  auto accessors = parser::accessor_expr();
 
-  return new parse_tree::identifier_expr(depth, name);
+  return new parse_tree::identifier_expr(name, accessors);
 }
 
 parse_tree::expression *parser::number()

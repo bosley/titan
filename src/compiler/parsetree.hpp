@@ -94,12 +94,19 @@ public:
 
 class identifier_expr : public expression {
 public:
-  identifier_expr(uint64_t depth, std::string value)
-      : expression(node_type::ID, value), depth(depth)
+  identifier_expr(std::string value,
+                  std::vector<expression *> access_exprs)
+      : expression(node_type::ID, value),
+        accessor_expressions(access_exprs)
   {
   }
-  ~identifier_expr() {}
-  uint64_t depth;
+  ~identifier_expr()
+  {
+    for (auto &e : accessor_expressions) {
+      delete e;
+    }
+  }
+  std::vector<expression *> accessor_expressions; // [expr][expr], etc
 };
 
 class prefix_expr : public expression {
