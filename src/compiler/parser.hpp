@@ -63,7 +63,8 @@ private:
   parse_tree::toplevel *import_stmt();
   std::vector<parse_tree::variable> function_params();
   std::vector<parse_tree::element *> statements();
-  uint64_t accessor_depth();
+  uint64_t accessor_lit();
+  std::vector<parse_tree::expression *> accessor_expr();
   parse_tree::element *statement();
   parse_tree::element *assignment();
   parse_tree::element *if_statement();

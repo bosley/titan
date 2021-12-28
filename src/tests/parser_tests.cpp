@@ -546,3 +546,4 @@ TEST(parser_tests, for_statement)
   CHECK_TRUE(exprs_are_equal(expected_condition, actual->condition));
   CHECK_TRUE(exprs_are_equal(expected_modifier, actual->modifier));
 }
+
