@@ -20,7 +20,6 @@ before_install:
   - PARENTDIR=$(pwd)
   
   - mkdir $PARENTDIR/build
-  - mkdir $PARENTDIR/build-asan
   - mkdir $PARENTDIR/build-release
 
   - bash scripts/install_cpputest.sh
@@ -33,10 +32,6 @@ script:
 
   - cd $PARENTDIR/build
   - cmake $PARENTDIR/src -DCMAKE_BUILD_TYPE=Debug
-  - make -j9
-
-  - cd $PARENTDIR/build
-  - cmake $PARENTDIR/src -DCMAKE_BUILD_TYPE=Debug -DWITH_ASAN=ON
   - make -j9
 
   - cd $PARENTDIR/build-release
