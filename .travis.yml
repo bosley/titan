@@ -21,6 +21,7 @@ before_install:
   
   - mkdir $PARENTDIR/build
   - mkdir $PARENTDIR/build-release
+  - mkdir $PARENTDIR/build-asan
 
   - bash scripts/install_cpputest.sh
 
@@ -37,3 +38,8 @@ script:
   - cd $PARENTDIR/build-release
   - cmake $PARENTDIR/src -DCMAKE_BUILD_TYPE=Release
   - make -j9
+
+  - cd $PARENTDIR/build
+  - cmake $PARENTDIR/src -DCMAKE_BUILD_TYPE=Debug -DWITH_ASAN=ON
+  - make -j9
+  - bash for i in tests/test_files/*; do ./titan -l trace ${i}; done
