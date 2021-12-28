@@ -471,38 +471,6 @@ uint64_t parser::accessor_lit()
   return depth;
 }
 
-std::vector<parse_tree::expression *> parser::accessor_expr()
-{
-  std::vector<parse_tree::expression *> result;
-  
-  if (current_td_pair().token == Token::L_BRACKET) {
-    bool consume = true;
-    while (consume) {
-      advance();
-      result.emplace_back(expression(parser::precedence::LOWEST));
-
-      advance();
-      expect(Token::R_BRACKET, "Ending bracket expected");
-
-      if (peek().token != Token::L_BRACKET) {
-        consume = false;
-        advance();
-      }
-      else {
-        advance(); // Eat the '['
-      }
-    }
-  }
-
-  if(!_parser_okay) {
-    for(auto &e: result) {
-      delete e;
-    }
-  }
-
-  return result;  
-}
-
 parse_tree::element *parser::statement()
 {
   if (parse_tree::element *item = parser::assignment()) {
@@ -866,12 +834,7 @@ parse_tree::expression *parser::infix_expr(parse_tree::expression *left)
 parse_tree::expression *parser::identifier()
 {
   expect(Token::IDENTIFIER, "Expected identifier in expression");
-
-  std::string name = current_td_pair().data;
-
-  auto accessors = parser::accessor_expr();
-
-  return new parse_tree::identifier_expr(name, accessors);
+  return new parse_tree::expression(parse_tree::node_type::ID, current_td_pair().data);
 }
 
 parse_tree::expression *parser::number()
