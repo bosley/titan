@@ -179,6 +179,9 @@ public:
       : element(line), var(var), expr(node)
   {
   }
+  ~assignment() {
+    delete expr;
+  }
   variable var;
   expression *expr;
 
@@ -198,6 +201,15 @@ public:
     segments.push_back({expr, {}});
   }
 
+  ~if_statement() {
+    for(auto&s : segments) {
+      for(auto& e : s.element_list) {
+        delete e;
+      }
+      delete s.expr;
+    }
+  }
+
   std::vector<segment> segments;
 
   virtual void visit(visitor &v) override;
@@ -209,6 +221,11 @@ public:
       : element(line), expr(node)
   {
   }
+
+  ~expression_statement() {
+    delete expr;
+  }
+
   expression *expr;
 
   virtual void visit(visitor &v) override;
@@ -220,6 +237,13 @@ public:
   while_statement(size_t line, expression *c, std::vector<element *> body)
       : element(line), condition(c), body(body)
   {
+  }
+
+  ~while_statement() {
+    for(auto& e: body) {
+      delete e;
+    }
+    delete condition;
   }
 
   expression *condition;
@@ -236,6 +260,15 @@ public:
       : element(line), assign(assign), condition(condition), modifier(modifier),
         body(body)
   {
+  }
+
+  ~for_statement() {
+    for(auto& e: body) {
+      delete e;
+    }
+    delete modifier;
+    delete condition;
+    delete assign;
   }
 
   element *assign;
@@ -278,6 +311,12 @@ public:
   variable_types return_type;
   std::vector<variable> parameters;
   std::vector<element *> element_list;
+
+  ~function() {
+    for(auto& e: element_list) {
+      delete e;
+    }
+  }
 };
 
 class visitor {

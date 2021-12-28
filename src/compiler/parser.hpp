@@ -44,7 +44,7 @@ private:
   bool _parser_okay;
   size_t _idx;
   size_t _mark;
-  std::vector<TD_Pair> *_tokens;
+  std::vector<TD_Pair> _tokens;
   std::unordered_map<Token, prefix_parse_fn> _prefix_fns;
   std::unordered_map<Token, infix_parse_fn> _infix_fns;
   std::set<std::string> _imported_objects;

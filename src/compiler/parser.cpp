@@ -28,11 +28,8 @@ std::unordered_map<Token, parser::precedence> precedences = {
     {Token::L_BRACKET, parser::precedence::INDEX},
 };
 
-/* Error TD pairs line data */
-static size_t __empty_line = 0;
-
-TD_Pair error_token = {Token::ERT, {}, &__empty_line};
-TD_Pair end_of_stream = {Token::EOS, {}, &__empty_line};
+TD_Pair error_token = {Token::ERT, {}, 0};
+TD_Pair end_of_stream = {Token::EOS, {}, 0};
 
 /* Stores files found [import target] => [location found from include dir] */
 static std::unordered_map<std::string, std::string> located_items;
@@ -74,17 +71,16 @@ locate_import(std::vector<std::string> &paths, std::string &target)
   return {false, {}};
 }
 
-static void report_error(const std::string &filename, size_t *line,
+static void report_error(const std::string &filename, size_t line,
                          const std::string error)
 {
-  std::cout << "Parse error [" << filename << "](" << *line << ") : " << error
+  std::cout << "Parse error [" << filename << "](" << line << ") : " << error
             << std::endl;
 }
 } // namespace
 
 parser::parser()
-    : _parser_okay(true), _idx(0), _mark(std::numeric_limits<uint64_t>::max()),
-      _tokens(nullptr)
+    : _parser_okay(true), _idx(0), _mark(std::numeric_limits<uint64_t>::max())
 {
 }
 
@@ -94,7 +90,7 @@ parser::parse(std::string filename,
               std::function<std::vector<TD_Pair>(std::string)> import_file,
               std::vector<TD_Pair> &tokens)
 {
-  _tokens = &tokens;
+  _tokens = std::move(tokens);
   _filename = filename;
 
   _prefix_fns[Token::IDENTIFIER] = &parser::identifier;
@@ -124,7 +120,7 @@ parser::parse(std::string filename,
   std::vector<parse_tree::toplevel *> top_level_items;
   parse_tree::toplevel *new_top_level_item;
 
-  while (_parser_okay && _idx < _tokens->size()) {
+  while (_parser_okay && _idx < _tokens.size()) {
 
     /*
        Check for an import statement
@@ -195,6 +191,8 @@ parser::parse(std::string filename,
     }
   }
 
+  _tokens.clear();
+
   if (!_parser_okay) {
     // If we got here there is an err so we clean up
     for (size_t i = 0; i < top_level_items.size(); i++) {
@@ -216,18 +214,12 @@ void parser::unset() { _mark = std::numeric_limits<uint64_t>::max(); }
 
 const TD_Pair &parser::current_td_pair() const
 {
-  if (!_tokens) {
-    LOG(FATAL) << COLOR(red) << "(parser) : _tokens not set" << COLOR(none)
-               << std::endl;
-    return error_token;
-  }
-
-  if (_idx >= _tokens->size()) {
+  if (_idx >= _tokens.size()) {
     LOG(DEBUG) << "(parser) : End of token stream" << std::endl;
     return error_token;
   }
 
-  return _tokens->at(_idx);
+  return _tokens.at(_idx);
 }
 
 void parser::reset()
@@ -265,16 +257,11 @@ void parser::expect(Token token, std::string error, size_t ahead)
 
 const TD_Pair &parser::peek(size_t ahead) const
 {
-  if (!_tokens) {
-    LOG(FATAL) << COLOR(red) << "(parser) : _tokens not set" << COLOR(none)
-               << std::endl;
-    return end_of_stream;
-  }
-  if (_idx + ahead >= _tokens->size()) {
+  if (_idx + ahead >= _tokens.size()) {
     LOG(DEBUG) << "(parser) : End of token stream" << std::endl;
     return end_of_stream;
   }
-  return _tokens->at(_idx + ahead);
+  return _tokens.at(_idx + ahead);
 }
 
 parser::precedence parser::peek_precedence()
@@ -505,7 +492,7 @@ parse_tree::element *parser::assignment()
   advance();
   expect(Token::IDENTIFIER, "Expected variable name in assignmnet");
   std::string name = current_td_pair().data;
-  size_t line_no = *current_td_pair().line;
+  size_t line_no = current_td_pair().line;
 
   advance();
   expect(Token::COLON,
@@ -528,7 +515,7 @@ parse_tree::element *parser::assignment()
   advance();
   if (_parser_okay) {
     return new parse_tree::assignment(
-        line_no,
+       line_no,
         {name, parse_tree::string_to_variable_type(variable_type), depth}, exp);
   }
 
@@ -542,7 +529,7 @@ parse_tree::element *parser::if_statement()
     return nullptr;
   }
 
-  size_t line_no = *current_td_pair().line;
+  size_t line_no = current_td_pair().line;
 
   advance();
 
@@ -615,7 +602,7 @@ parse_tree::element *parser::while_statement()
     return nullptr;
   }
 
-  size_t line_no = *current_td_pair().line;
+  size_t line_no = current_td_pair().line;
 
   advance();
 
@@ -644,7 +631,7 @@ parse_tree::element *parser::for_statement()
     return nullptr;
   }
 
-  size_t line_no = *current_td_pair().line;
+  size_t line_no = current_td_pair().line;
 
   advance();
 
@@ -699,7 +686,7 @@ parse_tree::element *parser::return_statement()
     return nullptr;
   }
 
-  size_t line_no = *current_td_pair().line;
+  size_t line_no = current_td_pair().line;
 
   advance();
 
@@ -742,7 +729,7 @@ parse_tree::element *parser::expression_statement()
     return nullptr;
   }
 
-  size_t line_no = *current_td_pair().line;
+  size_t line_no = current_td_pair().line;
   parse_tree::expression *expr = parser::expression(parser::precedence::LOWEST);
 
   advance();
