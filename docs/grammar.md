@@ -6,35 +6,37 @@
     <import> := 'import' <string>
               | <import> 'import' <string>
 
-    <function-statement> := 'fn' <identifier> '(' <function-params> ')' '->' <identifier> '{' <statements> '}'
+    <function-statement> := 'fn' <identifier> '(' <function-params> ')' '->' <identifier> <statement-block>
 
     <function-params> := <identifier> ':' <identifier>
                        | <function-params> ',' <identifier> ':' <identifier>
 
-    <statements> := <statement> 
-                  | <statements> <statement>
+    <statement-block> := '{' <statement>+ '}'
 
     <statement> := <assignment> 
                 | <if-statement> 
-                | <loop> 
+                | <while-statement>
+                | <for-statement>
+                | <return-statement>
                 | <expression>
 
-    <assignment> := 'let' <identifier> ':' <identifier> '=' <expression> ';'
-                  | <identifier> '=' <expression> ';'
+    <assignment> := 'let' <identifier> ':' <identifier> [<lit-accessors>+] '=' <expression> ';'
 
-    <if-statement> := 'if' '(' <expression> ')' '{' <statements> '}' <else-if> 
-                    | 'if' '(' <expression> ')' '{' <statements> '}' <else>
-                    | 'if' '(' <expression> ')' '{' <statements> '}'
+    <lit-accessors> := '[' <number> ']'
 
-    <else-if> := 'else' 'if' '(' <expression> ')' '{' <statements> '}' <else-if>
-               | 'else' 'if' '(' <expression> ')' '{' <statements> '}' <else>
-               | 'else' 'if' '(' <expression> ')' '{' <statements> '}'
+    <expr-accessors> := '[' <expression> ']'
 
-    <else> := 'else' '{' <statements> '}'
+    <if-statement> := 'if' <conditional> <statement-block> [<else-if>+] [<else>]
 
-    <loop> := 'while' '(' <expression> ')' '{' <statements> '}' 
-            | 'for' '(' <assigment> <expression> ';' <assignment> ')' '{' <statements> '}'
+    <else-if> := 'else' 'if' <statement-block>
 
+    <else> := 'else' <statement-block>
+
+    <while-statement> := 'while' <conditional> <statemebt-block>
+
+    <for-statement> := 'for' '(' <assignment> ';' <expression> ';' <expression> ')' <statement-block>
+
+    <conditional> := '(' expression ')'
 
     <identifier> := <letter> | <identifier> <letter> | <identifier> <number> | <identifier> '_'
 
@@ -46,42 +48,37 @@
 
     <string> := '"' <chars>+ '"'
 
-    <expression> := <term>
-                  | <expression> '+' <term>
-                  | <expression> '-' <term>
-                  | <expression> '<' '=' <term>
-                  | <expression> '>' '=' <term>
-                  | <expression> '<' <term>
-                  | <expression> '> '<term>
-                  | <expression> '=' '=' <term>
-                  | <expression> '!' '=' <term>
+    <expression> := <prefix> [<infix+>]
 
-    <term> := <factor>
-            | <term> '*' <factor>
-            | <term> '/' <factor>
-            | <term> '*' '*' <factor>
-            | <term> '%' <factor>
-            | <term> '<' '<' <factor>
-            | <term> '>' '>' <factor>
-            | <term> '^' <factor>
-            | <term> '|' <factor>
-            | <term> '&' <factor>
-            | <term> '|' '|' <factor>
-            | <term> '&' '&' <factor>
+    <expression-list> := <expression>
+                       | ',' <expression-list>
 
-    <factor> := <primary>
-              | <function_call>
+    <prefix> := <identifier>
+              | <number> 
+              | <float>
+              | <string>
+              | <prefix> 
               | '(' <expression> ')'
-              | '~' <factor>
-              | '!' <factor>
+              | '{' <expression-list> '}'
 
-    <primary> := <number>
-               | <float>
-               | <identifier>
-                  
-    <function_call> := <identifier> '(' ')' 
-                     | <identifier> '(' <call_parameter_list> ')'
+    <infix> := '=' <expression>
+             | '=' '=' <expression>
+             | '!' '=' <expression>
+             | '<' <expression>
+             | '>' <expression>
+             | '<' '=' <expression>
+             | '>' '=' <expression>
+             | '+' <expression>
+             | '-' <expression>
+             | '/' <expression>
+             | '*' <expression>
+             | '%' <expression>
+             | <call-expr>
+             | <expr-accessors>
 
-    <call_parameter_list> := <primary>
-                           | <call_parameter_list> <primary>
+    <call-expr> := <identifier> '(' [<call_parameter_list>] ')' 
+
+    <call_parameter_list> := <expression> 
+                           | <call_parameter_list> ',' <expression>
+
 ```
