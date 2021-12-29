@@ -43,7 +43,9 @@ static void report_error(const std::string &filename, size_t line,
 } // namespace
 
 parser::parser(imports &file_imports)
-    : _parser_okay(true), _idx(0), _mark(std::numeric_limits<uint64_t>::max()), _file_imports(file_imports) {
+    : _parser_okay(true), _idx(0), _mark(std::numeric_limits<uint64_t>::max()),
+      _file_imports(file_imports)
+{
 }
 
 std::vector<parse_tree::toplevel_ptr>
@@ -96,7 +98,9 @@ parser::parse(std::string filename,
           locate_import(include_directories, import_statement->target);
 
       if (!item_found) {
-        report_error(_filename, current_td_pair().line, "Unable to locate import target: " + import_statement->target);
+        report_error(_filename, current_td_pair().line,
+                     "Unable to locate import target: " +
+                         import_statement->target);
         _parser_okay = false;
         break;
       }
@@ -105,12 +109,8 @@ parser::parse(std::string filename,
 
       parser import_parser(_file_imports);
 
-      auto parsed_file = import_parser.parse(
-          target_item, 
-          include_directories, 
-          import_file, 
-          imported_tokens
-      );
+      auto parsed_file = import_parser.parse(target_item, include_directories,
+                                             import_file, imported_tokens);
 
       if (!import_parser.is_okay()) {
         _parser_okay = false;
@@ -131,13 +131,11 @@ parser::parse(std::string filename,
 
       top_level_items.push_back(std::move(function_statement));
     }
-    else 
-    {
+    else {
       die("Invalid top level item. Expected 'import' or 'fn'");
     };
-
   }
-  
+
   _tokens.clear();
 
   if (!_parser_okay) {
@@ -158,7 +156,8 @@ void parser::unset() { _mark = std::numeric_limits<uint64_t>::max(); }
 const TD_Pair &parser::current_td_pair() const
 {
   if (_idx >= _tokens.size()) {
-    LOG(DEBUG) << TAG(APP_FILE_NAME) << "[" << APP_LINE << "]: End of token stream" << std::endl;
+    LOG(DEBUG) << TAG(APP_FILE_NAME) << "[" << APP_LINE
+               << "]: End of token stream" << std::endl;
     return error_token;
   }
 
@@ -201,7 +200,8 @@ void parser::expect(Token token, std::string error, size_t ahead)
 const TD_Pair &parser::peek(size_t ahead) const
 {
   if (_idx + ahead >= _tokens.size()) {
-    LOG(DEBUG) << TAG(APP_FILE_NAME) << "[" << APP_LINE << "]: End of token stream" << std::endl;
+    LOG(DEBUG) << TAG(APP_FILE_NAME) << "[" << APP_LINE
+               << "]: End of token stream" << std::endl;
     return end_of_stream;
   }
   return _tokens.at(_idx + ahead);
@@ -227,8 +227,7 @@ parse_tree::import_ptr parser::import()
   if (_parser_okay) {
     auto target = current_td_pair().data;
     advance();
-    return parse_tree::import_ptr(
-        new parse_tree::import(target));
+    return parse_tree::import_ptr(new parse_tree::import(target));
   }
   else {
     return nullptr;
@@ -880,8 +879,10 @@ parse_tree::expr_ptr parser::index_expr(parse_tree::expr_ptr arr)
 std::tuple<bool, std::string>
 parser::locate_import(std::vector<std::string> &paths, std::string &target)
 {
-  LOG(DEBUG) << TAG(APP_FILE_NAME) << "[" << APP_LINE << "]: " << target << std::endl;
-  LOG(DEBUG) << TAG(APP_FILE_NAME) << "[" << APP_LINE << "]: " << paths.size() << " include directories" << std::endl;
+  LOG(DEBUG) << TAG(APP_FILE_NAME) << "[" << APP_LINE << "]: " << target
+             << std::endl;
+  LOG(DEBUG) << TAG(APP_FILE_NAME) << "[" << APP_LINE << "]: " << paths.size()
+             << " include directories" << std::endl;
 
   // Check the local directory first
   std::filesystem::path item_as_local = std::filesystem::current_path();
@@ -893,7 +894,7 @@ parser::locate_import(std::vector<std::string> &paths, std::string &target)
   // If its not in the same directory as the file importing it, check the
   // already located items
   auto [found, imported_target] = _file_imports.get_target_path(target);
-  if(found) {
+  if (found) {
     return {true, imported_target};
   }
 

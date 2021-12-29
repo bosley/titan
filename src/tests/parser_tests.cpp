@@ -1,5 +1,6 @@
 
 
+#include "compiler/imports.hpp"
 #include "compiler/lexer.hpp"
 #include "compiler/parser.hpp"
 #include "log/log.hpp"
@@ -29,7 +30,8 @@ std::vector<compiler::parse_tree::toplevel_ptr> parse_file(std::string file)
     return {};
   };
 
-  compiler::parser parser;
+  compiler::imports file_imports;
+  compiler::parser parser(file_imports);
   std::vector<std::string> include_directories;
   return parser.parse(file, include_directories, import_file, tokens);
 }
@@ -677,22 +679,22 @@ TEST(parser_tests, import_statement)
 
   constexpr auto import_file =
       [](std::string file) -> std::vector<compiler::TD_Pair> {
+    compiler::lexer lexer;
+    if (!lexer.load_file(file)) {
+      return {};
+    }
 
-      compiler::lexer lexer;
-      if (!lexer.load_file(file)) {
-        return {};
-      }
-
-      std::vector<compiler::TD_Pair> tokens;
-      if (!lexer.lex(tokens)) {
-        return {};
-      }
+    std::vector<compiler::TD_Pair> tokens;
+    if (!lexer.lex(tokens)) {
+      return {};
+    }
 
     return tokens;
   };
 
-  compiler::parser parser;
-  std::vector<std::string> include_directories = { "test_files" };
+  compiler::imports file_imports;
+  compiler::parser parser(file_imports);
+  std::vector<std::string> include_directories = {"test_files"};
 
   auto functions = parser.parse(file, include_directories, import_file, tokens);
 
@@ -700,5 +702,3 @@ TEST(parser_tests, import_statement)
   CHECK_EQUAL((int)compiler::parse_tree::toplevel::tl_type::FUNCTION,
               (int)functions[0]->type);
 }
-
-

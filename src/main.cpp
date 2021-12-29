@@ -1,4 +1,5 @@
 #include "app.hpp"
+#include "compiler/imports.hpp"
 #include "compiler/lexer.hpp"
 #include "compiler/parser.hpp"
 
@@ -29,22 +30,28 @@ void setup_logger()
 {
   switch (logger_level) {
   case LogLevel::TRACE:
-    AixLog::Log::init<AixLog::SinkCout>(AixLog::Severity::trace, "[#severity] (#tag) #message");
+    AixLog::Log::init<AixLog::SinkCout>(AixLog::Severity::trace,
+                                        "[#severity] (#tag) #message");
     break;
   case LogLevel::DEBUG:
-    AixLog::Log::init<AixLog::SinkCout>(AixLog::Severity::debug, "[#severity] (#tag) #message");
+    AixLog::Log::init<AixLog::SinkCout>(AixLog::Severity::debug,
+                                        "[#severity] (#tag) #message");
     break;
   case LogLevel::INFO:
-    AixLog::Log::init<AixLog::SinkCout>(AixLog::Severity::info, "[#severity] (#tag) #message");
+    AixLog::Log::init<AixLog::SinkCout>(AixLog::Severity::info,
+                                        "[#severity] (#tag) #message");
     break;
   case LogLevel::WARNING:
-    AixLog::Log::init<AixLog::SinkCout>(AixLog::Severity::warning, "[#severity] (#tag) #message");
+    AixLog::Log::init<AixLog::SinkCout>(AixLog::Severity::warning,
+                                        "[#severity] (#tag) #message");
     break;
   case LogLevel::ERROR:
-    AixLog::Log::init<AixLog::SinkCout>(AixLog::Severity::error, "[#severity] (#tag) #message");
+    AixLog::Log::init<AixLog::SinkCout>(AixLog::Severity::error,
+                                        "[#severity] (#tag) #message");
     break;
   case LogLevel::FATAL:
-    AixLog::Log::init<AixLog::SinkCout>(AixLog::Severity::fatal, "[#severity] (#tag) #message");
+    AixLog::Log::init<AixLog::SinkCout>(AixLog::Severity::fatal,
+                                        "[#severity] (#tag) #message");
     break;
   default:
     std::cerr << "Internal error : Unable to map log level to logger"
@@ -174,16 +181,19 @@ int main(int argc, char **argv)
     return td;
   };
 
+  compiler::imports file_imports;
+
   for (auto &file : filenames) {
 
     auto files_tokens = import_file(file);
 
-    compiler::parser parser;
+    compiler::parser parser(file_imports);
 
     auto p_tree =
         parser.parse(file, include_directories, import_file, files_tokens);
 
-    LOG(DEBUG) << TAG(APP_FILE_NAME) << "[" << APP_LINE << "]: Top level items : " << p_tree.size() << std::endl;
+    LOG(DEBUG) << TAG(APP_FILE_NAME) << "[" << APP_LINE
+               << "]: Top level items : " << p_tree.size() << std::endl;
   }
 
   return 0;

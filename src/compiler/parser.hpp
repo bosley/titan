@@ -84,7 +84,8 @@ private:
   parse_tree::expr_ptr index_expr(parse_tree::expr_ptr array);
   parse_tree::expr_ptr call_expr(parse_tree::expr_ptr function);
   std::vector<parse_tree::expr_ptr> expression_list();
-  std::tuple<bool, std::string> locate_import(std::vector<std::string> &paths, std::string &target);
+  std::tuple<bool, std::string> locate_import(std::vector<std::string> &paths,
+                                              std::string &target);
 };
 } // namespace compiler
 
