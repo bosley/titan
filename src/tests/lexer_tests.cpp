@@ -1,7 +1,4 @@
-
-
 #include "compiler/lexer.hpp"
-#include "log/log.hpp"
 #include <iostream>
 #include <vector>
 
@@ -90,19 +87,16 @@ std::vector<TestCase> tcs = {
 
 } // namespace
 
-TEST_GROUP(lexer_tests){
-    void setup(){AixLog::Log::init<AixLog::SinkCout>(AixLog::Severity::fatal);
-}
-
-void teardown() {}
-}
-;
+TEST_GROUP(lexer_tests)
+{
+};
 
 //  Load the text files and ensure the expected tokens match the input
 //
 TEST(lexer_tests, all_tokens)
 {
   compiler::lexer lexer;
+
   for (auto &tc : tcs) {
     std::vector<compiler::TD_Pair> tokens;
     CHECK_TRUE(lexer.load_file(tc.file));

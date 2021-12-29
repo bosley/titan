@@ -54,33 +54,34 @@ public:
   expression() : type(node_type::ROOT) {}
   expression(node_type t) : type(t) {}
   expression(node_type t, std::string val) : type(t), value(val) {}
+  virtual ~expression() = default;
 
   node_type type;
   std::string value;
 };
-using expr_ptr = std::shared_ptr<expression>;
+using expr_ptr = std::unique_ptr<expression>;
 
 /*
  *  prefix / infix and other expression implementations are used to construct expression trees
  *  this method will display the expression trees horizontally via stdout
  */
-extern void display_expr_tree(const std::string &prefix, expr_ptr n, bool is_left);
+extern void display_expr_tree(const std::string &prefix, expression* n, bool is_left);
 
 class prefix_expr : public expression {
 public:
   prefix_expr(std::string op, expr_ptr right)
-      : expression(node_type::PREFIX), op(op), right(right)
+      : expression(node_type::PREFIX), op(op), right(std::move(right))
   {
   }
   std::string op;
   expr_ptr right;
 };
-using prefix_expr_ptr = std::shared_ptr<prefix_expr>;
+using prefix_expr_ptr = std::unique_ptr<prefix_expr>;
 
 class infix_expr : public expression {
 public:
   infix_expr(std::string op, expr_ptr left, expr_ptr right)
-      : expression(node_type::INFIX), op(op), left(left), right(right)
+      : expression(node_type::INFIX), op(op), left(std::move(left)), right(std::move(right))
   {
   }
 
@@ -88,7 +89,7 @@ public:
   expr_ptr left;
   expr_ptr right;
 };
-using infix_expr_ptr = std::shared_ptr<infix_expr>;
+using infix_expr_ptr = std::unique_ptr<infix_expr>;
 
 class array_literal_expr : public expression {
 public:
@@ -96,30 +97,30 @@ public:
   
   std::vector<expr_ptr > expressions;
 };
-using array_literal_expr_ptr = std::shared_ptr<array_literal_expr>;
+using array_literal_expr_ptr = std::unique_ptr<array_literal_expr>;
 
 class array_index_expr : public expression {
 public:
   array_index_expr() : expression(node_type::ARRAY_IDX) {}
   array_index_expr(expr_ptr arr, expr_ptr idx)
-      : expression(node_type::ARRAY_IDX), arr(arr), index(idx)
+      : expression(node_type::ARRAY_IDX), arr(std::move(arr)), index(std::move(idx))
   {
   }
 
   expr_ptr arr;
   expr_ptr index;
 };
-using array_index_expr_ptr = std::shared_ptr<array_index_expr>;
+using array_index_expr_ptr = std::unique_ptr<array_index_expr>;
 
 class function_call_expr: public expression {
 public:
   function_call_expr() : expression(node_type::CALL) {}
-  function_call_expr(expr_ptr fn) : expression(node_type::CALL), fn(fn) {}
+  function_call_expr(expr_ptr fn) : expression(node_type::CALL), fn(std::move(fn)) {}
 
   expr_ptr fn;
   std::vector<expr_ptr > params;
 };
-using function_call_expr_ptr = std::shared_ptr<function_call_expr>;
+using function_call_expr_ptr = std::unique_ptr<function_call_expr>;
 
 class visitor;
 
@@ -131,12 +132,12 @@ public:
   virtual void visit(visitor &visitor) = 0;
   size_t line_number;
 };
-using element_ptr = std::shared_ptr<element>;
+using element_ptr = std::unique_ptr<element>;
 
 class assignment_statement : public element {
 public:
   assignment_statement(size_t line, variable var, expr_ptr node)
-      : element(line), var(var), expr(node)
+      : element(line), var(var), expr(std::move(node))
   {
   }
 
@@ -145,31 +146,33 @@ public:
 
   virtual void visit(visitor &v) override;
 };
-using assignment_statement_ptr = std::shared_ptr<assignment_statement>;
+using assignment_statement_ptr = std::unique_ptr<assignment_statement>;
 
 class if_statement : public element {
 public:
-  struct segment {
+  class segment {
+  public:
+    segment(expr_ptr expr, std::vector<element_ptr> element_list) :
+
+      expr(std::move(expr)), element_list(std::move(element_list))
+          {
+          }
+
     expr_ptr expr;
     std::vector<element_ptr> element_list;
   };
   if_statement(size_t line) : element(line) {}
 
-  if_statement(size_t line, expr_ptr expr) : element(line)
-  {
-    segments.push_back({expr, {}});
-  }
-
   std::vector<segment> segments;
 
   virtual void visit(visitor &v) override;
 };
-using if_statement_ptr = std::shared_ptr<if_statement>;
+using if_statement_ptr = std::unique_ptr<if_statement>;
 
 class expression_statement : public element {
 public:
   expression_statement(size_t line, expr_ptr node)
-      : element(line), expr(node)
+      : element(line), expr(std::move(node))
   {
   }
 
@@ -177,13 +180,13 @@ public:
 
   virtual void visit(visitor &v) override;
 };
-using expression_statement_ptr = std::shared_ptr<expression_statement>;
+using expression_statement_ptr = std::unique_ptr<expression_statement>;
 
 class while_statement : public element {
 public:
   while_statement(size_t line) : element(line), condition(nullptr) {}
   while_statement(size_t line, expr_ptr c, std::vector<element_ptr> body)
-      : element(line), condition(c), body(body)
+      : element(line), condition(std::move(c)), body(std::move(body))
   {
   }
 
@@ -192,15 +195,15 @@ public:
 
   virtual void visit(visitor &v) override;
 };
-using while_statement_ptr = std::shared_ptr<while_statement>;
+using while_statement_ptr = std::unique_ptr<while_statement>;
 
 class for_statement : public element {
 public:
   for_statement(size_t line) : element(line), condition(nullptr) {}
   for_statement(size_t line, element_ptr assign, expr_ptr condition,
                 expr_ptr modifier, std::vector<element_ptr> body)
-      : element(line), assign(assign), condition(condition), modifier(modifier),
-        body(body)
+      : element(line), assign(std::move(assign)), condition(std::move(condition)), modifier(std::move(modifier)),
+        body(std::move(body))
   {
   }
 
@@ -211,16 +214,16 @@ public:
 
   virtual void visit(visitor &v) override;
 };
-using for_statement_ptr = std::shared_ptr<for_statement>;
+using for_statement_ptr = std::unique_ptr<for_statement>;
 
 class return_statement : public element {
 public:
-  return_statement(size_t line, expr_ptr node) : element(line), expr(node) {}
+  return_statement(size_t line, expr_ptr node) : element(line), expr(std::move(node)) {}
   expr_ptr expr;
 
   virtual void visit(visitor &v) override;
 };
-using return_statement_ptr = std::shared_ptr<return_statement>;
+using return_statement_ptr = std::unique_ptr<return_statement>;
 
 class toplevel {
 public:
@@ -229,7 +232,7 @@ public:
   virtual ~toplevel() = default;
   tl_type type;
 };
-using toplevel_ptr = std::shared_ptr<toplevel>;
+using toplevel_ptr = std::unique_ptr<toplevel>;
 
 class import : public toplevel {
 public:
@@ -240,7 +243,7 @@ public:
   import() : toplevel(toplevel::tl_type::IMPORT) {}
   std::string target;
 };
-using import_ptr = std::shared_ptr<import>;
+using import_ptr = std::unique_ptr<import>;
 
 class function : public toplevel {
 public:
@@ -250,7 +253,7 @@ public:
   std::vector<variable> parameters;
   std::vector<element_ptr> element_list;
 };
-using function_ptr = std::shared_ptr<function>;
+using function_ptr = std::unique_ptr<function>;
 
 class visitor {
 public:

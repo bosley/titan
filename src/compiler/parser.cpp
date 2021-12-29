@@ -2,6 +2,8 @@
 
 #include "log/log.hpp"
 #include <filesystem>
+#include <iterator>
+#include <algorithm>
 #include <iostream>
 #include <limits>
 #include <tuple>
@@ -118,21 +120,16 @@ parser::parse(std::string filename,
   _infix_fns[Token::L_BRACKET] = &parser::index_expr;
 
   std::vector<parse_tree::toplevel_ptr> top_level_items;
-  parse_tree::toplevel_ptr  new_top_level_item;
 
   while (_parser_okay && _idx < _tokens.size()) {
 
     /*
        Check for an import statement
        */
-    new_top_level_item = parser::import();
-    if (new_top_level_item) {
+    if (auto import_statement = parser::import()) {
       if (!_parser_okay) {
         continue;
       }
-
-      auto import_statement = 
-          std::dynamic_pointer_cast<parse_tree::import>(new_top_level_item);
 
       // Ensure we haven't imported it yet
       if (_imported_objects.find(import_statement->target) !=
@@ -163,28 +160,18 @@ parser::parse(std::string filename,
       }
 
       // Add it to our top level objects
-      top_level_items.insert(top_level_items.end(), parsed_file.begin(),
-                             parsed_file.end());
-    }
-    if (!_parser_okay) {
-      continue;
+      top_level_items.insert(top_level_items.end(), std::make_move_iterator(parsed_file.begin()),
+                             std::make_move_iterator(parsed_file.end()));
     }
 
     /*
        Check for a function declaration
        */
-    new_top_level_item = parser::function();
-    if (new_top_level_item) {
-      top_level_items.push_back(new_top_level_item);
+    else if (auto function_statement = parser::function()) {
+      top_level_items.push_back(std::move(function_statement));
     }
-    if (!_parser_okay) {
-      continue;
-    }
-
-    // Add if statements here for other top level items
-
-    // No top level items were found we must be done
-    if (!new_top_level_item) {
+    else 
+    {
       return top_level_items;
     }
   }
@@ -266,7 +253,7 @@ parser::precedence parser::peek_precedence()
   return parser::precedence::LOWEST;
 }
 
-parse_tree::toplevel_ptr parser::import()
+parse_tree::import_ptr parser::import()
 {
 
   if (current_td_pair().token != Token::IMPORT) {
@@ -276,14 +263,14 @@ parse_tree::toplevel_ptr parser::import()
   advance();
 
   if (_parser_okay) {
-    return parse_tree::toplevel_ptr(new parse_tree::import(current_td_pair().data));
+    return parse_tree::import_ptr(new parse_tree::import(current_td_pair().data));
   }
   else {
     return nullptr;
   }
 }
 
-parse_tree::toplevel_ptr parser::function()
+parse_tree::function_ptr parser::function()
 {
 
   // fn some_function
@@ -313,12 +300,12 @@ parse_tree::toplevel_ptr parser::function()
     return nullptr;
   }
 
-  auto new_func = std::shared_ptr<parse_tree::function>(new parse_tree::function());
+  auto new_func = parse_tree::function_ptr(new parse_tree::function());
 
   new_func->name = function_name;
   new_func->return_type = parse_tree::string_to_variable_type(return_type);
-  new_func->parameters = parameters;
-  new_func->element_list = element_list;
+  new_func->parameters = std::move(parameters);
+  new_func->element_list = std::move(element_list);
 
   return new_func;
 }
@@ -406,7 +393,7 @@ std::vector<parse_tree::element_ptr > parser::statements()
 
     // If a new item was gotten, add it to the list
     if (new_element) {
-      elements.push_back(new_element);
+      elements.emplace_back(std::move(new_element));
     }
     else {
       check_for_statement = false;
@@ -507,7 +494,7 @@ parse_tree::element_ptr parser::assignment()
   if (_parser_okay) {
     return parse_tree::element_ptr(new parse_tree::assignment_statement(
        line_no,
-        {name, parse_tree::string_to_variable_type(variable_type), depth}, exp));
+        {name, parse_tree::string_to_variable_type(variable_type), depth}, std::move(exp)));
   }
 
   return nullptr;
@@ -530,7 +517,7 @@ parse_tree::element_ptr parser::if_statement()
     return nullptr;
   }
 
-  auto if_stmt = std::shared_ptr<parse_tree::if_statement>(new parse_tree::if_statement(line_no));
+  auto if_stmt = parse_tree::if_statement_ptr(new parse_tree::if_statement(line_no));
 
   bool construct_segments = true;
 
@@ -542,7 +529,9 @@ parse_tree::element_ptr parser::if_statement()
       return nullptr;
     }
 
-    if_stmt->segments.push_back({condition, if_body});
+    if_stmt->segments.emplace_back(
+        parse_tree::if_statement::segment(std::move(condition), std::move(if_body))
+        );
 
     if (current_td_pair().token == Token::ELSE) {
 
@@ -601,7 +590,7 @@ parse_tree::element_ptr parser::while_statement()
     return nullptr;
   }
 
-  return parse_tree::element_ptr(new parse_tree::while_statement(line_no, condition, body));
+  return parse_tree::element_ptr(new parse_tree::while_statement(line_no, std::move(condition), std::move(body)));
 }
 
 parse_tree::element_ptr parser::for_statement()
@@ -649,8 +638,8 @@ parse_tree::element_ptr parser::for_statement()
     return nullptr;
   }
 
-  return parse_tree::element_ptr(new parse_tree::for_statement(line_no, assignment, conditional,
-                                       modifier, body));
+  return parse_tree::element_ptr(new parse_tree::for_statement(line_no, std::move(assignment), std::move(conditional),
+                                       std::move(modifier), std::move(body)));
 }
 
 parse_tree::element_ptr parser::return_statement()
@@ -688,7 +677,7 @@ parse_tree::element_ptr parser::return_statement()
     return nullptr;
   }
 
-  return parse_tree::element_ptr(new parse_tree::return_statement(line_no, return_expr));
+  return parse_tree::element_ptr(new parse_tree::return_statement(line_no, std::move(return_expr)));
 }
 
 // Expects expression to exist, if not this will kill the parser
@@ -714,7 +703,7 @@ parse_tree::element_ptr parser::expression_statement()
     return nullptr;
   }
 
-  return parse_tree::element_ptr(new parse_tree::expression_statement(line_no, expr));
+  return parse_tree::element_ptr(new parse_tree::expression_statement(line_no, std::move(expr)));
 }
 
 parse_tree::expr_ptr parser::conditional()
@@ -756,7 +745,8 @@ parse_tree::expr_ptr parser::expression(parser::precedence precedence)
     }
     auto i_fn = _infix_fns[peek().token];
     advance();
-    left = (this->*i_fn)(left);
+
+    left = (this->*i_fn)(std::move(left));
   }
 
   return left;
@@ -764,7 +754,7 @@ parse_tree::expr_ptr parser::expression(parser::precedence precedence)
 
 parse_tree::expr_ptr parser::prefix_expr()
 {
-  auto result = std::shared_ptr<parse_tree::prefix_expr>(new parse_tree::prefix_expr(current_td_pair().data, nullptr));
+  auto result = parse_tree::prefix_expr_ptr(new parse_tree::prefix_expr(current_td_pair().data, nullptr));
 
   advance();
 
@@ -774,8 +764,8 @@ parse_tree::expr_ptr parser::prefix_expr()
 
 parse_tree::expr_ptr parser::infix_expr(parse_tree::expr_ptr left)
 {
-  auto result = std::shared_ptr<parse_tree::infix_expr>(
-      new parse_tree::infix_expr(current_td_pair().data, left, nullptr));
+  auto result = parse_tree::infix_expr_ptr(
+      new parse_tree::infix_expr(current_td_pair().data, std::move(left), nullptr));
 
   precedence p = precedence::LOWEST;
   if (precedences.find(current_td_pair().token) != precedences.end()) {
@@ -823,9 +813,9 @@ parse_tree::expr_ptr parser::str()
 parse_tree::expr_ptr parser::call_expr(parse_tree::expr_ptr fn)
 {
 
-  auto result = std::shared_ptr<parse_tree::function_call_expr>(new parse_tree::function_call_expr());
+  auto result = parse_tree::function_call_expr_ptr(new parse_tree::function_call_expr());
 
-  result->fn = fn;
+  result->fn = std::move(fn);
 
   if (peek().token == Token::R_PAREN) {
     advance();
@@ -875,7 +865,7 @@ parse_tree::expr_ptr parser::grouped_expr()
 parse_tree::expr_ptr parser::array()
 {
 
-  auto arr = std::shared_ptr<parse_tree::array_literal_expr>(new parse_tree::array_literal_expr());
+  auto arr = parse_tree::array_literal_expr_ptr(new parse_tree::array_literal_expr());
 
   if (peek().token == Token::R_BRACKET) {
     advance();
@@ -894,8 +884,8 @@ parse_tree::expr_ptr parser::array()
 parse_tree::expr_ptr parser::index_expr(parse_tree::expr_ptr arr)
 {
 
-  auto idx = std::shared_ptr<parse_tree::array_index_expr>(new parse_tree::array_index_expr());
-  idx->arr = arr;
+  auto idx = parse_tree::array_index_expr_ptr(new parse_tree::array_index_expr());
+  idx->arr = std::move(arr);
 
   advance();
   idx->index = expression(precedence::LOWEST);

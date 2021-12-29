@@ -59,8 +59,8 @@ private:
   void expect(Token token, std::string error, size_t ahead = 0);
   const TD_Pair &peek(size_t ahead = 1) const;
   precedence peek_precedence();
-  parse_tree::toplevel_ptr function();
-  parse_tree::toplevel_ptr import();
+  parse_tree::function_ptr function();
+  parse_tree::import_ptr import();
   std::vector<parse_tree::variable> function_params();
   std::vector<parse_tree::element_ptr> statements();
   uint64_t accessor_lit();
