@@ -659,3 +659,46 @@ TEST(parser_tests, for_statement)
       exprs_are_equal(expected_condition.get(), actual->condition.get()));
   CHECK_TRUE(exprs_are_equal(expected_modifier.get(), actual->modifier.get()));
 }
+
+TEST(parser_tests, import_statement)
+{
+  //  Import needs to handle importing all by its lonesome
+
+  std::string file = "test_files/import.tl";
+
+  compiler::lexer lexer;
+  std::vector<compiler::TD_Pair> tokens;
+  if (!lexer.load_file(file)) {
+    FAIL("Failed to load file");
+  }
+  if (!lexer.lex(tokens)) {
+    FAIL("Failed to lex file");
+  }
+
+  constexpr auto import_file =
+      [](std::string file) -> std::vector<compiler::TD_Pair> {
+
+      compiler::lexer lexer;
+      if (!lexer.load_file(file)) {
+        return {};
+      }
+
+      std::vector<compiler::TD_Pair> tokens;
+      if (!lexer.lex(tokens)) {
+        return {};
+      }
+
+    return tokens;
+  };
+
+  compiler::parser parser;
+  std::vector<std::string> include_directories = { "test_files" };
+
+  auto functions = parser.parse(file, include_directories, import_file, tokens);
+
+  CHECK_EQUAL(2, functions.size());
+  CHECK_EQUAL((int)compiler::parse_tree::toplevel::tl_type::FUNCTION,
+              (int)functions[0]->type);
+}
+
+

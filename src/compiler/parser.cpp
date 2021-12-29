@@ -34,45 +34,6 @@ std::unordered_map<Token, parser::precedence> precedences = {
 TD_Pair error_token = {Token::ERT, {}, 0};
 TD_Pair end_of_stream = {Token::EOS, {}, 0};
 
-/* Stores files found [import target] => [location found from include dir] */
-static std::unordered_map<std::string, std::string> located_items;
-
-/* Finds an import */
-static std::tuple<bool, std::string>
-locate_import(std::vector<std::string> &paths, std::string &target)
-{
-  LOG(DEBUG) << TAG(APP_FILE_NAME) << "[" << APP_LINE << "]: " << target << std::endl;
-  LOG(DEBUG) << TAG(APP_FILE_NAME) << "[" << APP_LINE << "]: " << paths.size() << " include directories" << std::endl;
-
-  // Check the local directory first
-  std::filesystem::path item_as_local = std::filesystem::current_path();
-  item_as_local /= target;
-  if (std::filesystem::is_regular_file(item_as_local)) {
-    return {true, item_as_local};
-  }
-
-  // If its not in the same directory as the file importing it, check the
-  // already located items
-  if (located_items.end() != located_items.find(target)) {
-    return {true, located_items[target]};
-  }
-
-  // If it still isn't found, we need to iterate all include dirs and search for
-  // it
-  for (auto &dir : paths) {
-    std::filesystem::path item_path = dir;
-    item_path /= target;
-
-    // If we find the item store it for later before handing off
-    if (std::filesystem::is_regular_file(item_path)) {
-      located_items[target] = item_path;
-      return {true, item_path};
-    }
-  }
-
-  return {false, {}};
-}
-
 static void report_error(const std::string &filename, size_t line,
                          const std::string error)
 {
@@ -127,14 +88,15 @@ parser::parse(std::string filename,
        Check for an import statement
        */
     if (auto import_statement = parser::import()) {
+
       if (!_parser_okay) {
-        continue;
+        break;
       }
 
       // Ensure we haven't imported it yet
       if (_imported_objects.find(import_statement->target) !=
           _imported_objects.end()) {
-        continue;
+        break;
       }
       _imported_objects.insert(import_statement->target);
 
@@ -142,40 +104,55 @@ parser::parse(std::string filename,
           locate_import(include_directories, import_statement->target);
 
       if (!item_found) {
-        std::cout << "Error : Unable to locate import \""
-                  << import_statement->target << "\"" << std::endl;
+         report_error(_filename, current_td_pair().line, "Unable to locate import target: " + import_statement->target);
         _parser_okay = false;
-        continue;
+        break;
       }
 
       // Lex and parse the file
       std::vector<TD_Pair> imported_tokens = import_file(target_item);
 
       parser import_parser;
-      std::vector<parse_tree::toplevel_ptr> parsed_file = import_parser.parse(
-          target_item, include_directories, import_file, imported_tokens);
+
+      // Tell the new parser what we've imported
+      import_parser._imported_objects = _imported_objects;
+
+      auto parsed_file = import_parser.parse(
+          target_item, 
+          include_directories, 
+          import_file, 
+          imported_tokens
+      );
+
+      // Take on the imported list from the new parser
+      _imported_objects = import_parser._imported_objects;
+
       if (!import_parser.is_okay()) {
-        _parser_okay = true;
-        continue;
+        _parser_okay = false;
+        break;
       }
 
       // Add it to our top level objects
       top_level_items.insert(top_level_items.end(),
                              std::make_move_iterator(parsed_file.begin()),
                              std::make_move_iterator(parsed_file.end()));
+      tokens.clear();
     }
 
     /*
        Check for a function declaration
        */
     else if (auto function_statement = parser::function()) {
+
       top_level_items.push_back(std::move(function_statement));
     }
-    else {
-      return top_level_items;
-    }
-  }
+    else 
+    {
+      die("Invalid top level item. Expected 'import' or 'fn'");
+    };
 
+  }
+  
   _tokens.clear();
 
   if (!_parser_okay) {
@@ -255,16 +232,18 @@ parser::precedence parser::peek_precedence()
 
 parse_tree::import_ptr parser::import()
 {
-
   if (current_td_pair().token != Token::IMPORT) {
     return nullptr;
   }
+
   expect(Token::STRING, "Expected string value for given import", 1);
   advance();
 
   if (_parser_okay) {
+    auto target = current_td_pair().data;
+    advance();
     return parse_tree::import_ptr(
-        new parse_tree::import(current_td_pair().data));
+        new parse_tree::import(target));
   }
   else {
     return nullptr;
@@ -910,6 +889,42 @@ parse_tree::expr_ptr parser::index_expr(parse_tree::expr_ptr arr)
   }
 
   return idx;
+}
+
+/* Finds an import */
+std::tuple<bool, std::string>
+parser::locate_import(std::vector<std::string> &paths, std::string &target)
+{
+  LOG(DEBUG) << TAG(APP_FILE_NAME) << "[" << APP_LINE << "]: " << target << std::endl;
+  LOG(DEBUG) << TAG(APP_FILE_NAME) << "[" << APP_LINE << "]: " << paths.size() << " include directories" << std::endl;
+
+  // Check the local directory first
+  std::filesystem::path item_as_local = std::filesystem::current_path();
+  item_as_local /= target;
+  if (std::filesystem::is_regular_file(item_as_local)) {
+    return {true, item_as_local};
+  }
+
+  // If its not in the same directory as the file importing it, check the
+  // already located items
+  if (_located_items.end() != _located_items.find(target)) {
+    return {true, _located_items[target]};
+  }
+
+  // If it still isn't found, we need to iterate all include dirs and search for
+  // it
+  for (auto &dir : paths) {
+    std::filesystem::path item_path = dir;
+    item_path /= target;
+
+    // If we find the item store it for later before handing off
+    if (std::filesystem::is_regular_file(item_path)) {
+      _located_items[target] = item_path;
+      return {true, item_path};
+    }
+  }
+
+  return {false, {}};
 }
 
 } // namespace compiler
