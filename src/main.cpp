@@ -28,22 +28,22 @@ void setup_logger()
 {
   switch (logger_level) {
   case LogLevel::TRACE:
-    AixLog::Log::init<AixLog::SinkCout>(AixLog::Severity::trace);
+    AixLog::Log::init<AixLog::SinkCout>(AixLog::Severity::trace, "[#severity] (#tag) #message");
     break;
   case LogLevel::DEBUG:
-    AixLog::Log::init<AixLog::SinkCout>(AixLog::Severity::debug);
+    AixLog::Log::init<AixLog::SinkCout>(AixLog::Severity::debug, "[#severity] (#tag) #message");
     break;
   case LogLevel::INFO:
-    AixLog::Log::init<AixLog::SinkCout>(AixLog::Severity::info);
+    AixLog::Log::init<AixLog::SinkCout>(AixLog::Severity::info, "[#severity] (#tag) #message");
     break;
   case LogLevel::WARNING:
-    AixLog::Log::init<AixLog::SinkCout>(AixLog::Severity::warning);
+    AixLog::Log::init<AixLog::SinkCout>(AixLog::Severity::warning, "[#severity] (#tag) #message");
     break;
   case LogLevel::ERROR:
-    AixLog::Log::init<AixLog::SinkCout>(AixLog::Severity::error);
+    AixLog::Log::init<AixLog::SinkCout>(AixLog::Severity::error, "[#severity] (#tag) #message");
     break;
   case LogLevel::FATAL:
-    AixLog::Log::init<AixLog::SinkCout>(AixLog::Severity::fatal);
+    AixLog::Log::init<AixLog::SinkCout>(AixLog::Severity::fatal, "[#severity] (#tag) #message");
     break;
   default:
     std::cerr << "Internal error : Unable to map log level to logger"

@@ -15,7 +15,7 @@ lexer::lexer() : _tokens(nullptr), _current_line(nullptr), _line_len(0), _idx(0)
 
 bool lexer::load_file(std::string &file)
 {
-  LOG(DEBUG) << "(lexer) : " << file << "\n";
+  LOG(DEBUG) << TAG("lexer") << file << "\n";
 
   clear();
 
