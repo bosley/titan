@@ -87,9 +87,7 @@ std::vector<TestCase> tcs = {
 
 } // namespace
 
-TEST_GROUP(lexer_tests)
-{
-};
+TEST_GROUP(lexer_tests){};
 
 //  Load the text files and ensure the expected tokens match the input
 //

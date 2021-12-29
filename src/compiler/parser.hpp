@@ -29,7 +29,7 @@ public:
   };
   parser();
 
-  std::vector<parse_tree::toplevel_ptr >
+  std::vector<parse_tree::toplevel_ptr>
   parse(std::string filename, std::vector<std::string> &include_directories,
         std::function<std::vector<TD_Pair>(std::string)> import_function,
         std::vector<TD_Pair> &tokens);
@@ -38,8 +38,7 @@ public:
 
 private:
   typedef parse_tree::expr_ptr (parser::*prefix_parse_fn)();
-  typedef parse_tree::expr_ptr (parser::*infix_parse_fn)(
-      parse_tree::expr_ptr );
+  typedef parse_tree::expr_ptr (parser::*infix_parse_fn)(parse_tree::expr_ptr);
 
   bool _parser_okay;
   size_t _idx;
@@ -82,7 +81,7 @@ private:
   parse_tree::expr_ptr infix_expr(parse_tree::expr_ptr left);
   parse_tree::expr_ptr index_expr(parse_tree::expr_ptr array);
   parse_tree::expr_ptr call_expr(parse_tree::expr_ptr function);
-  std::vector<parse_tree::expr_ptr > expression_list();
+  std::vector<parse_tree::expr_ptr> expression_list();
 };
 } // namespace compiler
 

@@ -2,9 +2,9 @@
 #define COMPILER_PARSE_TREE_HPP
 
 #include "tokens.hpp"
+#include <iostream>
 #include <memory>
 #include <utility>
-#include <iostream>
 #include <vector>
 
 namespace compiler {
@@ -64,10 +64,12 @@ public:
 using expr_ptr = std::unique_ptr<expression>;
 
 /*
- *  prefix / infix and other expression implementations are used to construct expression trees
- *  this method will display the expression trees horizontally via stdout
+ *  prefix / infix and other expression implementations are used to construct
+ * expression trees this method will display the expression trees horizontally
+ * via stdout
  */
-extern void display_expr_tree(const std::string &prefix, expression* n, bool is_left);
+extern void display_expr_tree(const std::string &prefix, expression *n,
+                              bool is_left);
 
 class prefix_expr : public expression {
 public:
@@ -83,7 +85,8 @@ using prefix_expr_ptr = std::unique_ptr<prefix_expr>;
 class infix_expr : public expression {
 public:
   infix_expr(std::string op, expr_ptr left, expr_ptr right)
-      : expression(node_type::INFIX), op(op), left(std::move(left)), right(std::move(right))
+      : expression(node_type::INFIX), op(op), left(std::move(left)),
+        right(std::move(right))
   {
   }
 
@@ -96,8 +99,8 @@ using infix_expr_ptr = std::unique_ptr<infix_expr>;
 class array_literal_expr : public expression {
 public:
   array_literal_expr() : expression(node_type::ARRAY) {}
-  
-  std::vector<expr_ptr > expressions;
+
+  std::vector<expr_ptr> expressions;
 };
 using array_literal_expr_ptr = std::unique_ptr<array_literal_expr>;
 
@@ -105,7 +108,8 @@ class array_index_expr : public expression {
 public:
   array_index_expr() : expression(node_type::ARRAY_IDX) {}
   array_index_expr(expr_ptr arr, expr_ptr idx)
-      : expression(node_type::ARRAY_IDX), arr(std::move(arr)), index(std::move(idx))
+      : expression(node_type::ARRAY_IDX), arr(std::move(arr)),
+        index(std::move(idx))
   {
   }
 
@@ -114,13 +118,16 @@ public:
 };
 using array_index_expr_ptr = std::unique_ptr<array_index_expr>;
 
-class function_call_expr: public expression {
+class function_call_expr : public expression {
 public:
   function_call_expr() : expression(node_type::CALL) {}
-  function_call_expr(expr_ptr fn) : expression(node_type::CALL), fn(std::move(fn)) {}
+  function_call_expr(expr_ptr fn)
+      : expression(node_type::CALL), fn(std::move(fn))
+  {
+  }
 
   expr_ptr fn;
-  std::vector<expr_ptr > params;
+  std::vector<expr_ptr> params;
 };
 using function_call_expr_ptr = std::unique_ptr<function_call_expr>;
 
@@ -154,11 +161,12 @@ class if_statement : public element {
 public:
   class segment {
   public:
-    segment(expr_ptr expr, std::vector<element_ptr> element_list) :
+    segment(expr_ptr expr, std::vector<element_ptr> element_list)
+        :
 
-      expr(std::move(expr)), element_list(std::move(element_list))
-          {
-          }
+          expr(std::move(expr)), element_list(std::move(element_list))
+    {
+    }
 
     expr_ptr expr;
     std::vector<element_ptr> element_list;
@@ -204,7 +212,8 @@ public:
   for_statement(size_t line) : element(line), condition(nullptr) {}
   for_statement(size_t line, element_ptr assign, expr_ptr condition,
                 expr_ptr modifier, std::vector<element_ptr> body)
-      : element(line), assign(std::move(assign)), condition(std::move(condition)), modifier(std::move(modifier)),
+      : element(line), assign(std::move(assign)),
+        condition(std::move(condition)), modifier(std::move(modifier)),
         body(std::move(body))
   {
   }
@@ -220,7 +229,10 @@ using for_statement_ptr = std::unique_ptr<for_statement>;
 
 class return_statement : public element {
 public:
-  return_statement(size_t line, expr_ptr node) : element(line), expr(std::move(node)) {}
+  return_statement(size_t line, expr_ptr node)
+      : element(line), expr(std::move(node))
+  {
+  }
   expr_ptr expr;
 
   virtual void visit(visitor &v) override;

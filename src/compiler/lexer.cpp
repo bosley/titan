@@ -409,8 +409,8 @@ bool lexer::lex_line()
         item += _current_line->data[_idx];
 
         if (is_float) {
-          _tokens->emplace_back(TD_Pair{Token::LITERAL_FLOAT, item,
-                                        _current_line->file_line_no});
+          _tokens->emplace_back(
+              TD_Pair{Token::LITERAL_FLOAT, item, _current_line->file_line_no});
         }
         else {
           _tokens->emplace_back(TD_Pair{Token::LITERAL_NUMBER, item,
