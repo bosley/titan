@@ -481,7 +481,6 @@ TEST(parser_tests, while_statements)
   }
 }
 
-/*
 TEST(parser_tests, return_tests)
 {
   auto functions = parse_file("test_files/return.tl");
@@ -492,12 +491,12 @@ TEST(parser_tests, return_tests)
                 (int)functions[i]->type);
 
     auto func =
-        reinterpret_cast<compiler::parse_tree::function>(functions[i]);
+        reinterpret_cast<compiler::parse_tree::function*>(functions[i].get());
     CHECK_EQUAL(1, func->element_list.size());
 
     auto return_stmt =
-        reinterpret_cast<compiler::parse_tree::return_statement>(
-            func->element_list[0]);
+        reinterpret_cast<compiler::parse_tree::return_statement*>(
+            func->element_list[0].get());
 
     compiler::parse_tree::expr_ptr expected_expr = nullptr;
     if (i == 0) {
@@ -509,7 +508,7 @@ TEST(parser_tests, return_tests)
           compiler::parse_tree::node_type::RAW_NUMBER, "8"));
     }
 
-    CHECK_TRUE(exprs_are_equal(expected_expr, return_stmt->expr));
+    CHECK_TRUE(exprs_are_equal(expected_expr.get(), return_stmt->expr.get()));
   }
 }
 
@@ -523,7 +522,7 @@ TEST(parser_tests, expression_statement)
   CHECK_EQUAL((int)compiler::parse_tree::toplevel::tl_type::FUNCTION,
               (int)functions[1]->type);
 
-  auto func = reinterpret_cast<compiler::parse_tree::function>(functions[1]);
+  auto func = reinterpret_cast<compiler::parse_tree::function*>(functions[1].get());
 
   CHECK_EQUAL(1, func->element_list.size());
 
@@ -533,10 +532,10 @@ TEST(parser_tests, expression_statement)
               compiler::parse_tree::node_type::ID, "new"))));
 
   auto expr_stmt =
-      reinterpret_cast<compiler::parse_tree::expression_statement>(
-          func->element_list[0]);
+      reinterpret_cast<compiler::parse_tree::expression_statement*>(
+          func->element_list[0].get());
 
-  CHECK_TRUE(exprs_are_equal(expected, expr_stmt->expr));
+  CHECK_TRUE(exprs_are_equal(expected.get(), expr_stmt->expr.get()));
 }
 
 TEST(parser_tests, reassignment_statement)
@@ -547,13 +546,13 @@ TEST(parser_tests, reassignment_statement)
   CHECK_EQUAL((int)compiler::parse_tree::toplevel::tl_type::FUNCTION,
               (int)functions[0]->type);
 
-  auto func = reinterpret_cast<compiler::parse_tree::function>(functions[0]);
+  auto func = reinterpret_cast<compiler::parse_tree::function*>(functions[0].get());
 
   CHECK_EQUAL(2, func->element_list.size());
 
   auto reassign =
-      reinterpret_cast<compiler::parse_tree::expression_statement>(
-          func->element_list[1]);
+      reinterpret_cast<compiler::parse_tree::expression_statement*>(
+          func->element_list[1].get());
 
   auto expected =
       compiler::parse_tree::expr_ptr(new compiler::parse_tree::infix_expr(
@@ -567,7 +566,7 @@ TEST(parser_tests, reassignment_statement)
               compiler::parse_tree::expr_ptr(new compiler::parse_tree::expression(
                   compiler::parse_tree::node_type::ID, "x"))))));
 
-  CHECK_TRUE(exprs_are_equal(expected, reassign->expr));
+  CHECK_TRUE(exprs_are_equal(expected.get(), reassign->expr.get()));
 }
 
 TEST(parser_tests, for_statement)
@@ -578,12 +577,11 @@ TEST(parser_tests, for_statement)
   CHECK_EQUAL((int)compiler::parse_tree::toplevel::tl_type::FUNCTION,
               (int)functions[0]->type);
 
-  auto func = reinterpret_cast<compiler::parse_tree::function>(functions[0]);
+  auto func = reinterpret_cast<compiler::parse_tree::function*>(functions[0].get());
 
   CHECK_EQUAL(1, func->element_list.size());
 
   auto expected_assign =
-      
       compiler::parse_tree::assignment_statement_ptr(new compiler::parse_tree::assignment_statement(
           5, {"i", compiler::parse_tree::variable_types::U8, 0},
           compiler::parse_tree::expr_ptr(new compiler::parse_tree::expression(
@@ -609,14 +607,13 @@ TEST(parser_tests, for_statement)
               compiler::parse_tree::expr_ptr(new compiler::parse_tree::expression(
                   compiler::parse_tree::node_type::RAW_NUMBER, "1"))))));
 
-  auto actual = reinterpret_cast<compiler::parse_tree::for_statement>(
-      func->element_list[0]);
+  auto actual = reinterpret_cast<compiler::parse_tree::for_statement*>(
+      func->element_list[0].get());
 
   auto actual_assign =
-      reinterpret_cast<compiler::parse_tree::assignment_statement>(actual->assign);
+      reinterpret_cast<compiler::parse_tree::assignment_statement*>(actual->assign.get());
 
-  CHECK_TRUE(exprs_are_equal(expected_assign->expr, actual_assign->expr));
-  CHECK_TRUE(exprs_are_equal(expected_condition, actual->condition));
-  CHECK_TRUE(exprs_are_equal(expected_modifier, actual->modifier));
+  CHECK_TRUE(exprs_are_equal(expected_assign->expr.get(), actual_assign->expr.get()));
+  CHECK_TRUE(exprs_are_equal(expected_condition.get(), actual->condition.get()));
+  CHECK_TRUE(exprs_are_equal(expected_modifier.get(), actual->modifier.get()));
 }
-*/
