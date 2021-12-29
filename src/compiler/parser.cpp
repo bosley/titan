@@ -1,6 +1,7 @@
 #include "parser.hpp"
 
 #include "app.hpp"
+#include "error/error.hpp"
 #include "log/log.hpp"
 #include <algorithm>
 #include <filesystem>
@@ -37,8 +38,20 @@ TD_Pair end_of_stream = {Token::EOS, {}, 0};
 static void report_error(const std::string &filename, size_t line,
                          const std::string error)
 {
-  std::cout << "Parse error [" << filename << "](" << line << ") : " << error
-            << std::endl;
+  error::error().display_error(
+          "parser",
+          {
+            filename, // File
+            error,    // Error message
+            line,     // Line num
+            0,        // Col
+            true,     // Show line 
+            true,     // Show col
+            true,     // Show chunk
+            false,    // Attn line
+            false     // Attn col
+          }
+      );
 }
 } // namespace
 
