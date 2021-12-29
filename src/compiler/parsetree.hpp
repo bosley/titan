@@ -9,13 +9,6 @@ namespace compiler {
 
 namespace parse_tree {
 
-class element;
-class expression;
-class toplevel;
-using expr_ptr = std::shared_ptr<expression>;
-using element_ptr = std::shared_ptr<element>;
-using toplevel_ptr = std::shared_ptr<toplevel>;
-
 enum class variable_types {
   U8 = 0,
   U16,
@@ -98,6 +91,7 @@ public:
   node_type type;
   std::string value;
 };
+using expr_ptr = std::shared_ptr<expression>;
 
 class prefix_expr : public expression {
 public:
@@ -108,6 +102,7 @@ public:
   std::string op;
   expr_ptr right;
 };
+using prefix_expr_ptr = std::shared_ptr<prefix_expr>;
 
 class infix_expr : public expression {
 public:
@@ -120,6 +115,7 @@ public:
   expr_ptr left;
   expr_ptr right;
 };
+using infix_expr_ptr = std::shared_ptr<infix_expr>;
 
 class array_literal_expr : public expression {
 public:
@@ -127,6 +123,7 @@ public:
   
   std::vector<expr_ptr > expressions;
 };
+using array_literal_expr_ptr = std::shared_ptr<array_literal_expr>;
 
 class array_index_expr : public expression {
 public:
@@ -139,8 +136,9 @@ public:
   expr_ptr arr;
   expr_ptr index;
 };
+using array_index_expr_ptr = std::shared_ptr<array_index_expr>;
 
-class function_call_expr : public expression {
+class function_call_expr: public expression {
 public:
   function_call_expr() : expression(node_type::CALL) {}
   function_call_expr(expr_ptr fn) : expression(node_type::CALL), fn(fn) {}
@@ -148,6 +146,7 @@ public:
   expr_ptr fn;
   std::vector<expr_ptr > params;
 };
+using function_call_expr_ptr = std::shared_ptr<function_call_expr>;
 
 class visitor;
 
@@ -159,10 +158,11 @@ public:
   virtual void visit(visitor &visitor) = 0;
   size_t line_number;
 };
+using element_ptr = std::shared_ptr<element>;
 
-class assignment : public element {
+class assignment_statement : public element {
 public:
-  assignment(size_t line, variable var, expr_ptr node)
+  assignment_statement(size_t line, variable var, expr_ptr node)
       : element(line), var(var), expr(node)
   {
   }
@@ -172,6 +172,7 @@ public:
 
   virtual void visit(visitor &v) override;
 };
+using assignment_statement_ptr = std::shared_ptr<assignment_statement>;
 
 class if_statement : public element {
 public:
@@ -190,6 +191,7 @@ public:
 
   virtual void visit(visitor &v) override;
 };
+using if_statement_ptr = std::shared_ptr<if_statement>;
 
 class expression_statement : public element {
 public:
@@ -202,6 +204,7 @@ public:
 
   virtual void visit(visitor &v) override;
 };
+using expression_statement_ptr = std::shared_ptr<expression_statement>;
 
 class while_statement : public element {
 public:
@@ -216,6 +219,7 @@ public:
 
   virtual void visit(visitor &v) override;
 };
+using while_statement_ptr = std::shared_ptr<while_statement>;
 
 class for_statement : public element {
 public:
@@ -234,6 +238,8 @@ public:
 
   virtual void visit(visitor &v) override;
 };
+using for_statement_ptr = std::shared_ptr<for_statement>;
+
 class return_statement : public element {
 public:
   return_statement(size_t line, expr_ptr node) : element(line), expr(node) {}
@@ -241,6 +247,7 @@ public:
 
   virtual void visit(visitor &v) override;
 };
+using return_statement_ptr = std::shared_ptr<return_statement>;
 
 class toplevel {
 public:
@@ -249,16 +256,18 @@ public:
   virtual ~toplevel() = default;
   tl_type type;
 };
+using toplevel_ptr = std::shared_ptr<toplevel>;
 
-class import_stmt : public toplevel {
+class import : public toplevel {
 public:
-  import_stmt(std::string target)
+  import(std::string target)
       : toplevel(toplevel::tl_type::IMPORT), target(target)
   {
   }
-  import_stmt() : toplevel(toplevel::tl_type::IMPORT) {}
+  import() : toplevel(toplevel::tl_type::IMPORT) {}
   std::string target;
 };
+using import_ptr = std::shared_ptr<import>;
 
 class function : public toplevel {
 public:
@@ -268,10 +277,11 @@ public:
   std::vector<variable> parameters;
   std::vector<element_ptr> element_list;
 };
+using function_ptr = std::shared_ptr<function>;
 
 class visitor {
 public:
-  virtual void accept(assignment &stmt) = 0;
+  virtual void accept(assignment_statement &stmt) = 0;
   virtual void accept(expression_statement &stmt) = 0;
   virtual void accept(if_statement &stmt) = 0;
   virtual void accept(while_statement &stmt) = 0;

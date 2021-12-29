@@ -60,7 +60,7 @@ private:
   const TD_Pair &peek(size_t ahead = 1) const;
   precedence peek_precedence();
   parse_tree::toplevel_ptr function();
-  parse_tree::toplevel_ptr import_stmt();
+  parse_tree::toplevel_ptr import();
   std::vector<parse_tree::variable> function_params();
   std::vector<parse_tree::element_ptr> statements();
   uint64_t accessor_lit();

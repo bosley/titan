@@ -125,15 +125,14 @@ parser::parse(std::string filename,
     /*
        Check for an import statement
        */
-    new_top_level_item = import_stmt();
+    new_top_level_item = parser::import();
     if (new_top_level_item) {
       if (!_parser_okay) {
         continue;
       }
 
-
       auto import_statement = 
-          std::dynamic_pointer_cast<parse_tree::import_stmt>(new_top_level_item);
+          std::dynamic_pointer_cast<parse_tree::import>(new_top_level_item);
 
       // Ensure we haven't imported it yet
       if (_imported_objects.find(import_statement->target) !=
@@ -174,7 +173,7 @@ parser::parse(std::string filename,
     /*
        Check for a function declaration
        */
-    new_top_level_item = function();
+    new_top_level_item = parser::function();
     if (new_top_level_item) {
       top_level_items.push_back(new_top_level_item);
     }
@@ -267,7 +266,7 @@ parser::precedence parser::peek_precedence()
   return parser::precedence::LOWEST;
 }
 
-parse_tree::toplevel_ptr parser::import_stmt()
+parse_tree::toplevel_ptr parser::import()
 {
 
   if (current_td_pair().token != Token::IMPORT) {
@@ -277,7 +276,7 @@ parse_tree::toplevel_ptr parser::import_stmt()
   advance();
 
   if (_parser_okay) {
-    return parse_tree::toplevel_ptr(new parse_tree::import_stmt(current_td_pair().data));
+    return parse_tree::toplevel_ptr(new parse_tree::import(current_td_pair().data));
   }
   else {
     return nullptr;
@@ -506,7 +505,7 @@ parse_tree::element_ptr parser::assignment()
 
   advance();
   if (_parser_okay) {
-    return parse_tree::element_ptr(new parse_tree::assignment(
+    return parse_tree::element_ptr(new parse_tree::assignment_statement(
        line_no,
         {name, parse_tree::string_to_variable_type(variable_type), depth}, exp));
   }
