@@ -48,6 +48,7 @@ private:
   std::unordered_map<Token, infix_parse_fn> _infix_fns;
   std::set<std::string> _imported_objects;
   std::string _filename;
+  std::unordered_map<std::string, std::string> _located_items;
   void prev();
   void advance();
   void mark();
@@ -82,6 +83,7 @@ private:
   parse_tree::expr_ptr index_expr(parse_tree::expr_ptr array);
   parse_tree::expr_ptr call_expr(parse_tree::expr_ptr function);
   std::vector<parse_tree::expr_ptr> expression_list();
+  std::tuple<bool, std::string> locate_import(std::vector<std::string> &paths, std::string &target);
 };
 } // namespace compiler
 
