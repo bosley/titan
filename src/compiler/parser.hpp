@@ -3,12 +3,12 @@
 
 #include <functional>
 #include <optional>
-#include <set>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
 #include "common.hpp"
+#include "imports.hpp"
 #include "parsetree.hpp"
 #include "tokens.hpp"
 
@@ -27,7 +27,8 @@ public:
     CALL,         // call()
     INDEX         // []
   };
-  parser();
+
+  parser(imports &file_imports);
 
   std::vector<parse_tree::toplevel_ptr>
   parse(std::string filename, std::vector<std::string> &include_directories,
@@ -43,10 +44,10 @@ private:
   bool _parser_okay;
   size_t _idx;
   size_t _mark;
+  imports &_file_imports;
   std::vector<TD_Pair> _tokens;
   std::unordered_map<Token, prefix_parse_fn> _prefix_fns;
   std::unordered_map<Token, infix_parse_fn> _infix_fns;
-  std::set<std::string> _imported_objects;
   std::string _filename;
   std::unordered_map<std::string, std::string> _located_items;
   void prev();
@@ -83,7 +84,8 @@ private:
   parse_tree::expr_ptr index_expr(parse_tree::expr_ptr array);
   parse_tree::expr_ptr call_expr(parse_tree::expr_ptr function);
   std::vector<parse_tree::expr_ptr> expression_list();
-  std::tuple<bool, std::string> locate_import(std::vector<std::string> &paths, std::string &target);
+  std::tuple<bool, std::string> locate_import(std::vector<std::string> &paths,
+                                              std::string &target);
 };
 } // namespace compiler
 
