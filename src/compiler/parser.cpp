@@ -1,5 +1,6 @@
 #include "parser.hpp"
 
+#include "app.hpp"
 #include "log/log.hpp"
 #include <algorithm>
 #include <filesystem>
@@ -40,9 +41,8 @@ static std::unordered_map<std::string, std::string> located_items;
 static std::tuple<bool, std::string>
 locate_import(std::vector<std::string> &paths, std::string &target)
 {
-
-  LOG(DEBUG) << "(parser) : " << target << std::endl;
-  LOG(DEBUG) << "(parser) : [" << paths.size() << "] include directories\n";
+  LOG(DEBUG) << TAG(APP_FILE_NAME) << "[" << APP_LINE << "]: " << target << std::endl;
+  LOG(DEBUG) << TAG(APP_FILE_NAME) << "[" << APP_LINE << "]: " << paths.size() << " include directories" << std::endl;
 
   // Check the local directory first
   std::filesystem::path item_as_local = std::filesystem::current_path();
@@ -196,7 +196,7 @@ void parser::unset() { _mark = std::numeric_limits<uint64_t>::max(); }
 const TD_Pair &parser::current_td_pair() const
 {
   if (_idx >= _tokens.size()) {
-    LOG(DEBUG) << "(parser) : End of token stream" << std::endl;
+    LOG(DEBUG) << TAG(APP_FILE_NAME) << "[" << APP_LINE << "]: End of token stream" << std::endl;
     return error_token;
   }
 
@@ -224,8 +224,8 @@ void parser::die(std::string error)
   report_error(_filename, current_td_pair().line, error);
   _parser_okay = false;
 
-  LOG(DEBUG) << COLOR(magenta)
-             << "(parser) : Curernt token : " << token_to_str(current_td_pair())
+  LOG(DEBUG) << TAG(APP_FILE_NAME) << "[" << APP_LINE << "]: " << COLOR(magenta)
+             << "Curernt token : " << token_to_str(current_td_pair())
              << COLOR(none) << std::endl;
 }
 
@@ -239,7 +239,7 @@ void parser::expect(Token token, std::string error, size_t ahead)
 const TD_Pair &parser::peek(size_t ahead) const
 {
   if (_idx + ahead >= _tokens.size()) {
-    LOG(DEBUG) << "(parser) : End of token stream" << std::endl;
+    LOG(DEBUG) << TAG(APP_FILE_NAME) << "[" << APP_LINE << "]: End of token stream" << std::endl;
     return end_of_stream;
   }
   return _tokens.at(_idx + ahead);

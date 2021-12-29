@@ -1,4 +1,5 @@
 #include "lexer.hpp"
+#include "app.hpp"
 #include "log/log.hpp"
 
 #include <algorithm>
@@ -15,7 +16,7 @@ lexer::lexer() : _tokens(nullptr), _current_line(nullptr), _line_len(0), _idx(0)
 
 bool lexer::load_file(std::string &file)
 {
-  LOG(DEBUG) << TAG("lexer") << file << "\n";
+  LOG(DEBUG) << TAG(APP_FILE_NAME) << "[" << APP_LINE << "]: " << file << "\n";
 
   clear();
 

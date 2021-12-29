@@ -1,3 +1,4 @@
+#include "app.hpp"
 #include "compiler/lexer.hpp"
 #include "compiler/parser.hpp"
 
@@ -182,7 +183,7 @@ int main(int argc, char **argv)
     auto p_tree =
         parser.parse(file, include_directories, import_file, files_tokens);
 
-    LOG(INFO) << "Top level items : " << p_tree.size() << std::endl;
+    LOG(DEBUG) << TAG(APP_FILE_NAME) << "[" << APP_LINE << "]: Top level items : " << p_tree.size() << std::endl;
   }
 
   return 0;
