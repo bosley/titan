@@ -317,49 +317,111 @@ TEST(parser_tests, if_statements)
     }
   }
 }
-/*
+
 TEST(parser_tests, while_statements)
 {
-  std::vector<std::shared_ptr<compiler::parse_tree::while_statement>> expected = {
+  std::vector<compiler::parse_tree::while_statement_ptr> expected = {
 
-      new compiler::parse_tree::while_statement(
+    // While A
+    compiler::parse_tree::while_statement_ptr(new compiler::parse_tree::while_statement(
+          
+          // Line
           3,
-          new compiler::parse_tree::expression(
-              compiler::parse_tree::node_type::RAW_NUMBER, "1"),
-          {new compiler::parse_tree::while_statement(
-              4,
-              new compiler::parse_tree::expression(
-                  compiler::parse_tree::node_type::RAW_NUMBER, "0"),
-              {})}),
 
-      new compiler::parse_tree::while_statement(
+          // Expr
+          compiler::parse_tree::expr_ptr(new compiler::parse_tree::expression(
+              compiler::parse_tree::node_type::RAW_NUMBER, "1")),
+          
+          // Body
+          {
+
+          // Inner While
+          compiler::parse_tree::element_ptr(new compiler::parse_tree::while_statement(
+              
+              // Line
+              4,
+
+              // Expr
+              compiler::parse_tree::expr_ptr(new compiler::parse_tree::expression(
+                  compiler::parse_tree::node_type::RAW_NUMBER, "0")),
+
+              // Body
+              {
+              }))
+          })),
+
+      // While B
+      compiler::parse_tree::while_statement_ptr(new compiler::parse_tree::while_statement(
+
+          // Line
           8,
-          new compiler::parse_tree::expression(
-              compiler::parse_tree::node_type::RAW_NUMBER, "1"),
-          {new compiler::parse_tree::assignment_statement(
+
+          // Expr
+          compiler::parse_tree::expr_ptr(new compiler::parse_tree::expression(
+              compiler::parse_tree::node_type::RAW_NUMBER, "1")),
+
+          // Body
+          {
+
+          // Assignment 1
+          compiler::parse_tree::element_ptr(new compiler::parse_tree::assignment_statement(
+
+               // Line
                9,
+
+               // Variable
                compiler::parse_tree::variable{
                    "a", compiler::parse_tree::variable_types::U8, 0},
-               new compiler::parse_tree::expression(
-                   compiler::parse_tree::node_type::RAW_NUMBER, "2")),
-           new compiler::parse_tree::assignment_statement(
+
+               // Expression
+               compiler::parse_tree::expr_ptr(new compiler::parse_tree::expression(
+                   compiler::parse_tree::node_type::RAW_NUMBER, "2")))),
+
+           // Assignment 2
+           compiler::parse_tree::element_ptr(new compiler::parse_tree::assignment_statement(
+
+               // Line
                10,
+
+               // Variable
                compiler::parse_tree::variable{
                    "b", compiler::parse_tree::variable_types::U16, 0},
-               new compiler::parse_tree::expression(
-                   compiler::parse_tree::node_type::RAW_NUMBER, "4")),
-           new compiler::parse_tree::assignment_statement(
+
+               // Expression
+               compiler::parse_tree::expr_ptr(new compiler::parse_tree::expression(
+                   compiler::parse_tree::node_type::RAW_NUMBER, "4")))),
+           
+           // Assignment 3
+           compiler::parse_tree::element_ptr(new compiler::parse_tree::assignment_statement(
+
+               // Line
                11,
+
+               // variable
                compiler::parse_tree::variable{
                    "c", compiler::parse_tree::variable_types::U32, 0},
-               new compiler::parse_tree::expression(
-                   compiler::parse_tree::node_type::RAW_NUMBER, "6")),
-           new compiler::parse_tree::assignment_statement(
+
+               // Expression
+               compiler::parse_tree::expr_ptr(new compiler::parse_tree::expression(
+                   compiler::parse_tree::node_type::RAW_NUMBER, "6")))),
+
+           // Assignment 4
+           compiler::parse_tree::element_ptr(new compiler::parse_tree::assignment_statement(
+
+              // Line
                12,
+
+               // Variable
                compiler::parse_tree::variable{
                    "d", compiler::parse_tree::variable_types::U64, 0},
-               new compiler::parse_tree::expression(
-                   compiler::parse_tree::node_type::RAW_NUMBER, "8"))})};
+
+               // Expression
+               compiler::parse_tree::expr_ptr(new compiler::parse_tree::expression(
+                   compiler::parse_tree::node_type::RAW_NUMBER, "8"))))
+          }
+
+        ))
+  };
 
   auto functions = parse_file("test_files/while.tl");
 
@@ -367,13 +429,13 @@ TEST(parser_tests, while_statements)
   CHECK_EQUAL((int)compiler::parse_tree::toplevel::tl_type::FUNCTION,
               (int)functions[0]->type);
 
-  auto func = std::reinterpret_pointer_cast<compiler::parse_tree::function *>(functions[0]);
+  auto func = std::reinterpret_pointer_cast<compiler::parse_tree::function>(functions[0]);
 
   CHECK_EQUAL(expected.size(), func->element_list.size());
 
   for (size_t i = 0; i < expected.size(); i++) {
 
-    auto ws = std::reinterpret_pointer_cast<compiler::parse_tree::while_statement *>(
+    auto ws = std::reinterpret_pointer_cast<compiler::parse_tree::while_statement>(
         func->element_list[i]);
     CHECK_TRUE(exprs_are_equal(expected[i]->condition, ws->condition));
 
@@ -384,10 +446,10 @@ TEST(parser_tests, while_statements)
       if (ws->body[j]->line_number == 4) {
 
         auto expected_ws =
-            std::reinterpret_pointer_cast<compiler::parse_tree::while_statement *>(
+            std::reinterpret_pointer_cast<compiler::parse_tree::while_statement>(
                 expected[i]->body[j]);
         auto inner_ws =
-            std::reinterpret_pointer_cast<compiler::parse_tree::while_statement *>(
+            std::reinterpret_pointer_cast<compiler::parse_tree::while_statement>(
                 ws->body[j]);
 
         CHECK_EQUAL(expected_ws->body.size(), inner_ws->body.size());
@@ -396,10 +458,10 @@ TEST(parser_tests, while_statements)
       }
       else {
 
-        auto expected_a = std::reinterpret_pointer_cast<compiler::parse_tree::assignment_statement *>(
+        auto expected_a = std::reinterpret_pointer_cast<compiler::parse_tree::assignment_statement>(
             expected[i]->body[j]);
         auto inner_a =
-            std::reinterpret_pointer_cast<compiler::parse_tree::assignment_statement *>(ws->body[j]);
+            std::reinterpret_pointer_cast<compiler::parse_tree::assignment_statement>(ws->body[j]);
 
         CHECK_TRUE(expected_a->var.name == inner_a->var.name);
         CHECK_EQUAL((int)expected_a->var.type, (int)inner_a->var.type);
@@ -410,6 +472,7 @@ TEST(parser_tests, while_statements)
   }
 }
 
+/*
 TEST(parser_tests, return_tests)
 {
   auto functions = parse_file("test_files/return.tl");
