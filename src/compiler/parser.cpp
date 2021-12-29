@@ -1,10 +1,10 @@
 #include "parser.hpp"
 
 #include "log/log.hpp"
-#include <filesystem>
-#include <iterator>
 #include <algorithm>
+#include <filesystem>
 #include <iostream>
+#include <iterator>
 #include <limits>
 #include <tuple>
 #include <unordered_map>
@@ -86,7 +86,7 @@ parser::parser()
 {
 }
 
-std::vector<parse_tree::toplevel_ptr >
+std::vector<parse_tree::toplevel_ptr>
 parser::parse(std::string filename,
               std::vector<std::string> &include_directories,
               std::function<std::vector<TD_Pair>(std::string)> import_file,
@@ -152,7 +152,7 @@ parser::parse(std::string filename,
       std::vector<TD_Pair> imported_tokens = import_file(target_item);
 
       parser import_parser;
-      std::vector<parse_tree::toplevel_ptr > parsed_file = import_parser.parse(
+      std::vector<parse_tree::toplevel_ptr> parsed_file = import_parser.parse(
           target_item, include_directories, import_file, imported_tokens);
       if (!import_parser.is_okay()) {
         _parser_okay = true;
@@ -160,7 +160,8 @@ parser::parse(std::string filename,
       }
 
       // Add it to our top level objects
-      top_level_items.insert(top_level_items.end(), std::make_move_iterator(parsed_file.begin()),
+      top_level_items.insert(top_level_items.end(),
+                             std::make_move_iterator(parsed_file.begin()),
                              std::make_move_iterator(parsed_file.end()));
     }
 
@@ -170,8 +171,7 @@ parser::parse(std::string filename,
     else if (auto function_statement = parser::function()) {
       top_level_items.push_back(std::move(function_statement));
     }
-    else 
-    {
+    else {
       return top_level_items;
     }
   }
@@ -263,7 +263,8 @@ parse_tree::import_ptr parser::import()
   advance();
 
   if (_parser_okay) {
-    return parse_tree::import_ptr(new parse_tree::import(current_td_pair().data));
+    return parse_tree::import_ptr(
+        new parse_tree::import(current_td_pair().data));
   }
   else {
     return nullptr;
@@ -294,7 +295,7 @@ parse_tree::function_ptr parser::function()
   std::string return_type = current_td_pair().data;
 
   advance();
-  std::vector<parse_tree::element_ptr > element_list = statements();
+  std::vector<parse_tree::element_ptr> element_list = statements();
 
   if (!_parser_okay) {
     return nullptr;
@@ -365,7 +366,7 @@ std::vector<parse_tree::variable> parser::function_params()
 //  Eat all of { s, s+1, s+2 ... s+n }
 //  including '{' and '}'
 //
-std::vector<parse_tree::element_ptr > parser::statements()
+std::vector<parse_tree::element_ptr> parser::statements()
 {
 
   expect(Token::L_BRACE,
@@ -378,7 +379,7 @@ std::vector<parse_tree::element_ptr > parser::statements()
     return {};
   }
 
-  std::vector<parse_tree::element_ptr > elements;
+  std::vector<parse_tree::element_ptr> elements;
 
   //  Check for statements
   //
@@ -493,8 +494,9 @@ parse_tree::element_ptr parser::assignment()
   advance();
   if (_parser_okay) {
     return parse_tree::element_ptr(new parse_tree::assignment_statement(
-       line_no,
-        {name, parse_tree::string_to_variable_type(variable_type), depth}, std::move(exp)));
+        line_no,
+        {name, parse_tree::string_to_variable_type(variable_type), depth},
+        std::move(exp)));
   }
 
   return nullptr;
@@ -517,21 +519,21 @@ parse_tree::element_ptr parser::if_statement()
     return nullptr;
   }
 
-  auto if_stmt = parse_tree::if_statement_ptr(new parse_tree::if_statement(line_no));
+  auto if_stmt =
+      parse_tree::if_statement_ptr(new parse_tree::if_statement(line_no));
 
   bool construct_segments = true;
 
   while (construct_segments && _parser_okay) {
 
-    std::vector<parse_tree::element_ptr > if_body = statements();
+    std::vector<parse_tree::element_ptr> if_body = statements();
 
     if (!_parser_okay) {
       return nullptr;
     }
 
-    if_stmt->segments.emplace_back(
-        parse_tree::if_statement::segment(std::move(condition), std::move(if_body))
-        );
+    if_stmt->segments.emplace_back(parse_tree::if_statement::segment(
+        std::move(condition), std::move(if_body)));
 
     if (current_td_pair().token == Token::ELSE) {
 
@@ -551,8 +553,8 @@ parse_tree::element_ptr parser::if_statement()
       else {
 
         // TRUE for last else statement
-        condition =
-            parse_tree::expr_ptr(new parse_tree::expression(parse_tree::node_type::RAW_NUMBER, "1"));
+        condition = parse_tree::expr_ptr(
+            new parse_tree::expression(parse_tree::node_type::RAW_NUMBER, "1"));
       }
     }
     else {
@@ -584,13 +586,14 @@ parse_tree::element_ptr parser::while_statement()
     return nullptr;
   }
 
-  std::vector<parse_tree::element_ptr > body = parser::statements();
+  std::vector<parse_tree::element_ptr> body = parser::statements();
 
   if (!_parser_okay) {
     return nullptr;
   }
 
-  return parse_tree::element_ptr(new parse_tree::while_statement(line_no, std::move(condition), std::move(body)));
+  return parse_tree::element_ptr(new parse_tree::while_statement(
+      line_no, std::move(condition), std::move(body)));
 }
 
 parse_tree::element_ptr parser::for_statement()
@@ -632,14 +635,15 @@ parse_tree::element_ptr parser::for_statement()
 
   advance();
 
-  std::vector<parse_tree::element_ptr > body = parser::statements();
+  std::vector<parse_tree::element_ptr> body = parser::statements();
 
   if (!_parser_okay) {
     return nullptr;
   }
 
-  return parse_tree::element_ptr(new parse_tree::for_statement(line_no, std::move(assignment), std::move(conditional),
-                                       std::move(modifier), std::move(body)));
+  return parse_tree::element_ptr(new parse_tree::for_statement(
+      line_no, std::move(assignment), std::move(conditional),
+      std::move(modifier), std::move(body)));
 }
 
 parse_tree::element_ptr parser::return_statement()
@@ -664,7 +668,8 @@ parse_tree::element_ptr parser::return_statement()
   }
   else if (current_td_pair().token == Token::SEMICOLON) {
     advance();
-    return parse_tree::element_ptr(new parse_tree::return_statement(line_no, nullptr));
+    return parse_tree::element_ptr(
+        new parse_tree::return_statement(line_no, nullptr));
   }
   else {
     return_expr = parser::expression(parser::precedence::LOWEST);
@@ -677,7 +682,8 @@ parse_tree::element_ptr parser::return_statement()
     return nullptr;
   }
 
-  return parse_tree::element_ptr(new parse_tree::return_statement(line_no, std::move(return_expr)));
+  return parse_tree::element_ptr(
+      new parse_tree::return_statement(line_no, std::move(return_expr)));
 }
 
 // Expects expression to exist, if not this will kill the parser
@@ -703,7 +709,8 @@ parse_tree::element_ptr parser::expression_statement()
     return nullptr;
   }
 
-  return parse_tree::element_ptr(new parse_tree::expression_statement(line_no, std::move(expr)));
+  return parse_tree::element_ptr(
+      new parse_tree::expression_statement(line_no, std::move(expr)));
 }
 
 parse_tree::expr_ptr parser::conditional()
@@ -754,7 +761,8 @@ parse_tree::expr_ptr parser::expression(parser::precedence precedence)
 
 parse_tree::expr_ptr parser::prefix_expr()
 {
-  auto result = parse_tree::prefix_expr_ptr(new parse_tree::prefix_expr(current_td_pair().data, nullptr));
+  auto result = parse_tree::prefix_expr_ptr(
+      new parse_tree::prefix_expr(current_td_pair().data, nullptr));
 
   advance();
 
@@ -764,8 +772,8 @@ parse_tree::expr_ptr parser::prefix_expr()
 
 parse_tree::expr_ptr parser::infix_expr(parse_tree::expr_ptr left)
 {
-  auto result = parse_tree::infix_expr_ptr(
-      new parse_tree::infix_expr(current_td_pair().data, std::move(left), nullptr));
+  auto result = parse_tree::infix_expr_ptr(new parse_tree::infix_expr(
+      current_td_pair().data, std::move(left), nullptr));
 
   precedence p = precedence::LOWEST;
   if (precedences.find(current_td_pair().token) != precedences.end()) {
@@ -781,18 +789,19 @@ parse_tree::expr_ptr parser::infix_expr(parse_tree::expr_ptr left)
 parse_tree::expr_ptr parser::identifier()
 {
   expect(Token::IDENTIFIER, "Expected identifier in expression");
-  return parse_tree::expr_ptr(new parse_tree::expression(parse_tree::node_type::ID, current_td_pair().data));
+  return parse_tree::expr_ptr(new parse_tree::expression(
+      parse_tree::node_type::ID, current_td_pair().data));
 }
 
 parse_tree::expr_ptr parser::number()
 {
   if (current_td_pair().token == Token::LITERAL_NUMBER) {
-    return parse_tree::expr_ptr(new parse_tree::expression(parse_tree::node_type::RAW_NUMBER,
-                                      current_td_pair().data));
+    return parse_tree::expr_ptr(new parse_tree::expression(
+        parse_tree::node_type::RAW_NUMBER, current_td_pair().data));
   }
   else if (current_td_pair().token == Token::LITERAL_FLOAT) {
-    return parse_tree::expr_ptr(new parse_tree::expression(parse_tree::node_type::RAW_FLOAT,
-                                      current_td_pair().data));
+    return parse_tree::expr_ptr(new parse_tree::expression(
+        parse_tree::node_type::RAW_FLOAT, current_td_pair().data));
   }
   else {
     die("Expected numerical item");
@@ -806,14 +815,15 @@ parse_tree::expr_ptr parser::str()
   // Sanity check
   expect(Token::STRING, "Expected string in expression");
 
-  return parse_tree::expr_ptr(new parse_tree::expression(parse_tree::node_type::RAW_STRING,
-                                    current_td_pair().data));
+  return parse_tree::expr_ptr(new parse_tree::expression(
+      parse_tree::node_type::RAW_STRING, current_td_pair().data));
 }
 
 parse_tree::expr_ptr parser::call_expr(parse_tree::expr_ptr fn)
 {
 
-  auto result = parse_tree::function_call_expr_ptr(new parse_tree::function_call_expr());
+  auto result =
+      parse_tree::function_call_expr_ptr(new parse_tree::function_call_expr());
 
   result->fn = std::move(fn);
 
@@ -831,9 +841,9 @@ parse_tree::expr_ptr parser::call_expr(parse_tree::expr_ptr fn)
   return result;
 }
 
-std::vector<parse_tree::expr_ptr > parser::expression_list()
+std::vector<parse_tree::expr_ptr> parser::expression_list()
 {
-  std::vector<parse_tree::expr_ptr > results;
+  std::vector<parse_tree::expr_ptr> results;
 
   results.emplace_back(expression(precedence::LOWEST));
 
@@ -865,7 +875,8 @@ parse_tree::expr_ptr parser::grouped_expr()
 parse_tree::expr_ptr parser::array()
 {
 
-  auto arr = parse_tree::array_literal_expr_ptr(new parse_tree::array_literal_expr());
+  auto arr =
+      parse_tree::array_literal_expr_ptr(new parse_tree::array_literal_expr());
 
   if (peek().token == Token::R_BRACKET) {
     advance();
@@ -884,7 +895,8 @@ parse_tree::expr_ptr parser::array()
 parse_tree::expr_ptr parser::index_expr(parse_tree::expr_ptr arr)
 {
 
-  auto idx = parse_tree::array_index_expr_ptr(new parse_tree::array_index_expr());
+  auto idx =
+      parse_tree::array_index_expr_ptr(new parse_tree::array_index_expr());
   idx->arr = std::move(arr);
 
   advance();

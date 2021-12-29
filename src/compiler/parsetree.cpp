@@ -45,7 +45,7 @@ variable_types string_to_variable_type(const std::string &s)
   return variable_types::USER_DEFINED;
 }
 
-void display_expr_tree(const std::string &prefix, expression* n, bool is_left)
+void display_expr_tree(const std::string &prefix, expression *n, bool is_left)
 {
   if (!n) {
     return;
@@ -54,7 +54,7 @@ void display_expr_tree(const std::string &prefix, expression* n, bool is_left)
   std::cout << (is_left ? "├──" : "└──");
 
   if (n->type == node_type::CALL) {
-    auto i = reinterpret_cast<function_call_expr*>(n);
+    auto i = reinterpret_cast<function_call_expr *>(n);
     if (i->fn) {
       std::cout << " call<" << i->fn->value << ">" << std::endl;
     }
@@ -63,7 +63,7 @@ void display_expr_tree(const std::string &prefix, expression* n, bool is_left)
     }
   }
   else if (n->type == node_type::ARRAY_IDX) {
-    auto i = reinterpret_cast<array_index_expr*>(n);
+    auto i = reinterpret_cast<array_index_expr *>(n);
     if (i->arr && i->index) {
       std::cout << " " << i->arr->value << "[" << i->index->value << "]"
                 << std::endl;
@@ -73,21 +73,23 @@ void display_expr_tree(const std::string &prefix, expression* n, bool is_left)
     }
   }
   else if (n->type == node_type::INFIX) {
-    auto i = reinterpret_cast<infix_expr*>(n);
+    auto i = reinterpret_cast<infix_expr *>(n);
     std::cout << " " << i->op << std::endl;
-    display_expr_tree(prefix + (is_left ? "│   " : "    "), i->left.get(), true);
-    display_expr_tree(prefix + (is_left ? "│   " : "    "), i->right.get(), false);
+    display_expr_tree(prefix + (is_left ? "│   " : "    "), i->left.get(),
+                      true);
+    display_expr_tree(prefix + (is_left ? "│   " : "    "), i->right.get(),
+                      false);
   }
   else if (n->type == node_type::PREFIX) {
-    auto i = reinterpret_cast<prefix_expr*>(n);
+    auto i = reinterpret_cast<prefix_expr *>(n);
     std::cout << " " << i->op << std::endl;
-    display_expr_tree(prefix + (is_left ? "│   " : "    "), i->right.get(), false);
+    display_expr_tree(prefix + (is_left ? "│   " : "    "), i->right.get(),
+                      false);
   }
   else {
     std::cout << " " << n->value << std::endl;
   }
 }
-
 
 } // namespace parse_tree
 } // namespace compiler
