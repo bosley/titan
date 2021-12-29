@@ -147,6 +147,7 @@ void parse_args(std::vector<std::string> args)
 
 int main(int argc, char **argv)
 {
+  logger_args["trace"] = LogLevel::TRACE;
   logger_args["debug"] = LogLevel::DEBUG;
   logger_args["info"] = LogLevel::INFO;
   logger_args["warning"] = LogLevel::WARNING;
@@ -178,8 +179,7 @@ int main(int argc, char **argv)
 
     compiler::parser parser;
 
-    std::vector<compiler::parse_tree::toplevel *> p_tree =
-        parser.parse(file, include_directories, import_file, files_tokens);
+    auto p_tree = parser.parse(file, include_directories, import_file, files_tokens);
 
     LOG(INFO) << "Top level items : " << p_tree.size() << std::endl;
   }

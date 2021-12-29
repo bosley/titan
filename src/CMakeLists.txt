@@ -5,6 +5,7 @@ project(titan)
 set(CMAKE_CXX_STANDARD 17)
 
 option(COMPILE_TESTS "Execute unit tests" ON)
+option(WITH_ASAN     "Compile with ASAN" OFF)
 
 if(DEFINED ENV{CPPUTEST_HOME})
     message(STATUS "Using CppUTest home: $ENV{CPPUTEST_HOME}")
@@ -15,6 +16,12 @@ else()
     find_package(PkgConfig REQUIRED)
     pkg_search_module(CPPUTEST REQUIRED cpputest>=3.8)
     message(STATUS "Found CppUTest version ${CPPUTEST_VERSION}")
+endif()
+
+if(WITH_ASAN)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address")
+  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
+  set(CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
 endif()
 
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )

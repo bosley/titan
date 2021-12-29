@@ -74,13 +74,13 @@ enum class Token {
 struct TD_Pair {
   Token token;
   std::string data;
-  size_t *line;
+  size_t line;
 };
 
 static std::string token_to_str(const TD_Pair &td)
 {
 
-  size_t line_no = (td.line) ? *td.line : 0;
+  size_t line_no = td.line;
   switch (td.token) {
   case Token::FN:
     return "FN[" + std::to_string(line_no) + "]";
