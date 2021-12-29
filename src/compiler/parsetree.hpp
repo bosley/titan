@@ -2,6 +2,8 @@
 #define COMPILER_PARSE_TREE_HPP
 
 #include "tokens.hpp"
+#include <memory>
+#include <utility>
 #include <iostream>
 #include <vector>
 
