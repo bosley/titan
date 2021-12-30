@@ -31,7 +31,7 @@ void show(level lvl, const char *reporter, const config &cfg)
     break;
   };
 
-  std::cout << "<" << reporter << ">" << alert_type << APP_COLOR_END
+  std::cout << alert_type << " <" << reporter << "> " << APP_COLOR_END
             << cfg.file;
 
   if (cfg.show_line_num) {
@@ -43,7 +43,9 @@ void show(level lvl, const char *reporter, const config &cfg)
   }
 
   if (!cfg.show_chunk) {
-    std::cout << cfg.message << std::endl;
+    std::cout << std::endl
+              << APP_COLOR_CYAN << "\tMessage : " << APP_COLOR_END
+              << cfg.message << std::endl;
     return;
   }
 

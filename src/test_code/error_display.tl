@@ -3,6 +3,6 @@
 fn main() -> nil {
 
   // This should make an err
-  let x:u8 = 0
+  let x: = 0;
 
 }

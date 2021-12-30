@@ -17,7 +17,7 @@ public:
   static constexpr size_t default_display_window_bot = 5;
 
   config()
-      : line(0), col(0), show_line_num(false), show_col_num(false),
+      : line(0), col(0), show_line_num(true), show_col_num(true),
         show_chunk(false), attn_at_line(false), attn_at_col(false),
         display_window_top(default_display_window_top),
         display_window_bot(default_display_window_bot)
@@ -44,12 +44,7 @@ public:
     display_window_bot = bot;
   }
 
-  void set_all_show(bool value)
-  {
-    show_line_num = value;
-    show_col_num = value;
-    show_chunk = value;
-  }
+  void set_show_chunk(bool value) { show_chunk = value; }
 
   void set_all_attn(bool value)
   {

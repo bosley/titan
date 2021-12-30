@@ -36,13 +36,13 @@ TD_Pair error_token = {Token::ERT, {}, 0};
 TD_Pair end_of_stream = {Token::EOS, {}, 0};
 
 static void report_error(const std::string &filename, size_t line, size_t col,
-                         const std::string error)
+                         const std::string error, bool show_full)
 {
   alert::config cfg;
 
   cfg.set_basic(filename, error, line, col);
-  cfg.set_all_show(true);
-  cfg.set_all_attn(true);
+  cfg.set_show_chunk(show_full);
+  cfg.set_all_attn(show_full);
 
   alert::show(alert::level::ERROR, "parser", cfg);
 }
@@ -106,7 +106,8 @@ parser::parse(std::string filename,
       if (!item_found) {
         report_error(_filename, current_td_pair().line, current_td_pair().col,
                      "Unable to locate import target: " +
-                         import_statement->target);
+                         import_statement->target,
+                     _parser_okay);
         _parser_okay = false;
         break;
       }
@@ -188,7 +189,8 @@ void parser::reset()
 
 void parser::die(std::string error)
 {
-  report_error(_filename, current_td_pair().line, current_td_pair().col, error);
+  report_error(_filename, current_td_pair().line, current_td_pair().col, error,
+               _parser_okay);
   _parser_okay = false;
 
   LOG(DEBUG) << TAG(APP_FILE_NAME) << "[" << APP_LINE << "]: " << COLOR(magenta)
@@ -444,7 +446,7 @@ parse_tree::element_ptr parser::assignment()
 
   advance();
   expect(Token::COLON,
-         "Expected colon between name:type in varialbe assignment");
+         "Expected colon between name:type in variabLe assignment");
 
   advance();
   expect(Token::IDENTIFIER, "Expected variable type");
