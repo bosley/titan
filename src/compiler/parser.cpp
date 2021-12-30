@@ -1,7 +1,7 @@
 #include "parser.hpp"
 
+#include "alert/alert.hpp"
 #include "app.hpp"
-#include "error/error.hpp"
 #include "log/log.hpp"
 #include <algorithm>
 #include <filesystem>
@@ -35,23 +35,16 @@ std::unordered_map<Token, parser::precedence> precedences = {
 TD_Pair error_token = {Token::ERT, {}, 0};
 TD_Pair end_of_stream = {Token::EOS, {}, 0};
 
-static void report_error(const std::string &filename, size_t line,
+static void report_error(const std::string &filename, size_t line, size_t col,
                          const std::string error)
 {
-  error::error().display_error(
-          "parser",
-          {
-            filename, // File
-            error,    // Error message
-            line,     // Line num
-            0,        // Col
-            true,     // Show line 
-            true,     // Show col
-            true,     // Show chunk
-            false,    // Attn line
-            false     // Attn col
-          }
-      );
+  alert::config cfg;
+
+  cfg.set_basic(filename, error, line, col);
+  cfg.set_all_show(true);
+  cfg.set_all_attn(true);
+
+  alert::show(alert::level::ERROR, "parser", cfg);
 }
 } // namespace
 
@@ -111,7 +104,7 @@ parser::parse(std::string filename,
           locate_import(include_directories, import_statement->target);
 
       if (!item_found) {
-        report_error(_filename, current_td_pair().line,
+        report_error(_filename, current_td_pair().line, current_td_pair().col,
                      "Unable to locate import target: " +
                          import_statement->target);
         _parser_okay = false;
@@ -195,7 +188,7 @@ void parser::reset()
 
 void parser::die(std::string error)
 {
-  report_error(_filename, current_td_pair().line, error);
+  report_error(_filename, current_td_pair().line, current_td_pair().col, error);
   _parser_okay = false;
 
   LOG(DEBUG) << TAG(APP_FILE_NAME) << "[" << APP_LINE << "]: " << COLOR(magenta)

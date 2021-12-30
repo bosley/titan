@@ -75,6 +75,7 @@ struct TD_Pair {
   Token token;
   std::string data;
   size_t line;
+  size_t col;
 };
 
 static std::string token_to_str(const TD_Pair &td)
@@ -83,134 +84,197 @@ static std::string token_to_str(const TD_Pair &td)
   size_t line_no = td.line;
   switch (td.token) {
   case Token::FN:
-    return "FN[" + std::to_string(line_no) + "]";
+    return "FN[" + std::to_string(td.line) + ", " + std::to_string(td.col) +
+           "]";
   case Token::IDENTIFIER:
-    return "IDENTIFIER(" + td.data + ")[" + std::to_string(line_no) + "]";
+    return "IDENTIFIER(" + td.data + ")[" + std::to_string(td.line) + ", " +
+           std::to_string(td.col) + "]";
   case Token::L_BRACKET:
-    return "L_BRACKET[" + std::to_string(line_no) + "]";
+    return "L_BRACKET[" + std::to_string(td.line) + ", " +
+           std::to_string(td.col) + "]";
   case Token::R_BRACKET:
-    return "R_BRACKET[" + std::to_string(line_no) + "]";
+    return "R_BRACKET[" + std::to_string(td.line) + ", " +
+           std::to_string(td.col) + "]";
   case Token::L_PAREN:
-    return "L_PAREN[" + std::to_string(line_no) + "]";
+    return "L_PAREN[" + std::to_string(td.line) + ", " +
+           std::to_string(td.col) + "]";
   case Token::R_PAREN:
-    return "R_PAREN[" + std::to_string(line_no) + "]";
+    return "R_PAREN[" + std::to_string(td.line) + ", " +
+           std::to_string(td.col) + "]";
   case Token::L_BRACE:
-    return "L_BRACE[" + std::to_string(line_no) + "]";
+    return "L_BRACE[" + std::to_string(td.line) + ", " +
+           std::to_string(td.col) + "]";
   case Token::R_BRACE:
-    return "R_BRACE[" + std::to_string(line_no) + "]";
+    return "R_BRACE[" + std::to_string(td.line) + ", " +
+           std::to_string(td.col) + "]";
   case Token::COLON:
-    return "COLON[" + std::to_string(line_no) + "]";
+    return "COLON[" + std::to_string(td.line) + ", " + std::to_string(td.col) +
+           "]";
   case Token::SEMICOLON:
-    return "SEMICOLON[" + std::to_string(line_no) + "]";
+    return "SEMICOLON[" + std::to_string(td.line) + ", " +
+           std::to_string(td.col) + "]";
   case Token::COMMA:
-    return "COMMA[" + std::to_string(line_no) + "]";
+    return "COMMA[" + std::to_string(td.line) + ", " + std::to_string(td.col) +
+           "]";
   case Token::GT:
-    return "GT[" + std::to_string(line_no) + "]";
+    return "GT[" + std::to_string(td.line) + ", " + std::to_string(td.col) +
+           "]";
   case Token::LT:
-    return "LT[" + std::to_string(line_no) + "]";
+    return "LT[" + std::to_string(td.line) + ", " + std::to_string(td.col) +
+           "]";
   case Token::GTE:
-    return "GTE[" + std::to_string(line_no) + "]";
+    return "GTE[" + std::to_string(td.line) + ", " + std::to_string(td.col) +
+           "]";
   case Token::LTE:
-    return "LTE[" + std::to_string(line_no) + "]";
+    return "LTE[" + std::to_string(td.line) + ", " + std::to_string(td.col) +
+           "]";
   case Token::SUB:
-    return "SUB[" + std::to_string(line_no) + "]";
+    return "SUB[" + std::to_string(td.line) + ", " + std::to_string(td.col) +
+           "]";
   case Token::ARROW:
-    return "ARROW[" + std::to_string(line_no) + "]";
+    return "ARROW[" + std::to_string(td.line) + ", " + std::to_string(td.col) +
+           "]";
   case Token::ADD:
-    return "ADD[" + std::to_string(line_no) + "]";
+    return "ADD[" + std::to_string(td.line) + ", " + std::to_string(td.col) +
+           "]";
   case Token::MUL:
-    return "MUL[" + std::to_string(line_no) + "]";
+    return "MUL[" + std::to_string(td.line) + ", " + std::to_string(td.col) +
+           "]";
   case Token::DIV:
-    return "DIV[" + std::to_string(line_no) + "]";
+    return "DIV[" + std::to_string(td.line) + ", " + std::to_string(td.col) +
+           "]";
   case Token::MOD:
-    return "MOD[" + std::to_string(line_no) + "]";
+    return "MOD[" + std::to_string(td.line) + ", " + std::to_string(td.col) +
+           "]";
   case Token::POW:
-    return "POW[" + std::to_string(line_no) + "]";
+    return "POW[" + std::to_string(td.line) + ", " + std::to_string(td.col) +
+           "]";
   case Token::ADD_EQ:
-    return "ADD_EQ[" + std::to_string(line_no) + "]";
+    return "ADD_EQ[" + std::to_string(td.line) + ", " + std::to_string(td.col) +
+           "]";
   case Token::SUB_EQ:
-    return "SUB_EQ[" + std::to_string(line_no) + "]";
+    return "SUB_EQ[" + std::to_string(td.line) + ", " + std::to_string(td.col) +
+           "]";
   case Token::MUL_EQ:
-    return "MUL_EQ[" + std::to_string(line_no) + "]";
+    return "MUL_EQ[" + std::to_string(td.line) + ", " + std::to_string(td.col) +
+           "]";
   case Token::DIV_EQ:
-    return "DIV_EQ[" + std::to_string(line_no) + "]";
+    return "DIV_EQ[" + std::to_string(td.line) + ", " + std::to_string(td.col) +
+           "]";
   case Token::MOD_EQ:
-    return "MOD_EQ[" + std::to_string(line_no) + "]";
+    return "MOD_EQ[" + std::to_string(td.line) + ", " + std::to_string(td.col) +
+           "]";
   case Token::POW_EQ:
-    return "POW_EQ[" + std::to_string(line_no) + "]";
+    return "POW_EQ[" + std::to_string(td.line) + ", " + std::to_string(td.col) +
+           "]";
   case Token::AMPERSAND:
-    return "AMPERSAND[" + std::to_string(line_no) + "]";
+    return "AMPERSAND[" + std::to_string(td.line) + ", " +
+           std::to_string(td.col) + "]";
   case Token::PIPE:
-    return "PIPE[" + std::to_string(line_no) + "]";
+    return "PIPE[" + std::to_string(td.line) + ", " + std::to_string(td.col) +
+           "]";
   case Token::TILDE:
-    return "TILDE[" + std::to_string(line_no) + "]";
+    return "TILDE[" + std::to_string(td.line) + ", " + std::to_string(td.col) +
+           "]";
   case Token::HAT:
-    return "HAT[" + std::to_string(line_no) + "]";
+    return "HAT[" + std::to_string(td.line) + ", " + std::to_string(td.col) +
+           "]";
   case Token::AMPERSAND_EQ:
-    return "AMPERSAND_EQ[" + std::to_string(line_no) + "]";
+    return "AMPERSAND_EQ[" + std::to_string(td.line) + ", " +
+           std::to_string(td.col) + "]";
   case Token::PIPE_EQ:
-    return "PIPE_EQ[" + std::to_string(line_no) + "]";
+    return "PIPE_EQ[" + std::to_string(td.line) + ", " +
+           std::to_string(td.col) + "]";
   case Token::TILDE_EQ:
-    return "TILDE_EQ[" + std::to_string(line_no) + "]";
+    return "TILDE_EQ[" + std::to_string(td.line) + ", " +
+           std::to_string(td.col) + "]";
   case Token::HAT_EQ:
-    return "HAT_EQ[" + std::to_string(line_no) + "]";
+    return "HAT_EQ[" + std::to_string(td.line) + ", " + std::to_string(td.col) +
+           "]";
   case Token::EQ:
-    return "EQ[" + std::to_string(line_no) + "]";
+    return "EQ[" + std::to_string(td.line) + ", " + std::to_string(td.col) +
+           "]";
   case Token::EQ_EQ:
-    return "EQ_EQ[" + std::to_string(line_no) + "]";
+    return "EQ_EQ[" + std::to_string(td.line) + ", " + std::to_string(td.col) +
+           "]";
   case Token::AT:
-    return "AT[" + std::to_string(line_no) + "]";
+    return "AT[" + std::to_string(td.line) + ", " + std::to_string(td.col) +
+           "]";
   case Token::DOLLAR:
-    return "DOLLAR[" + std::to_string(line_no) + "]";
+    return "DOLLAR[" + std::to_string(td.line) + ", " + std::to_string(td.col) +
+           "]";
   case Token::STRING:
-    return "STRING(" + td.data + ")[" + std::to_string(line_no) + "]";
+    return "STRING(" + td.data + ")[" + std::to_string(td.line) + ", " +
+           std::to_string(td.col) + "]";
   case Token::SINGLE_QUOTE:
-    return "SINGLE_QUOTE[" + std::to_string(line_no) + "]";
+    return "SINGLE_QUOTE[" + std::to_string(td.line) + ", " +
+           std::to_string(td.col) + "]";
   case Token::QUESTION_MARK:
-    return "QUESTION_MARK[" + std::to_string(line_no) + "]";
+    return "QUESTION_MARK[" + std::to_string(td.line) + ", " +
+           std::to_string(td.col) + "]";
   case Token::PERIOD:
-    return "PERIOD[" + std::to_string(line_no) + "]";
+    return "PERIOD[" + std::to_string(td.line) + ", " + std::to_string(td.col) +
+           "]";
   case Token::OCTOTHORPE:
-    return "OCTOTHORPE[" + std::to_string(line_no) + "]";
+    return "OCTOTHORPE[" + std::to_string(td.line) + ", " +
+           std::to_string(td.col) + "]";
   case Token::LITERAL_FLOAT:
-    return "FLOAT(" + td.data + ")[" + std::to_string(line_no) + "]";
+    return "FLOAT(" + td.data + ")[" + std::to_string(td.line) + ", " +
+           std::to_string(td.col) + "]";
   case Token::LITERAL_NUMBER:
-    return "NUMBER(" + td.data + ")[" + std::to_string(line_no) + "]";
+    return "NUMBER(" + td.data + ")[" + std::to_string(td.line) + ", " +
+           std::to_string(td.col) + "]";
   case Token::OR:
-    return "OR[" + std::to_string(line_no) + "]";
+    return "OR[" + std::to_string(td.line) + ", " + std::to_string(td.col) +
+           "]";
   case Token::AND:
-    return "AND[" + std::to_string(line_no) + "]";
+    return "AND[" + std::to_string(td.line) + ", " + std::to_string(td.col) +
+           "]";
   case Token::EXCLAMATION:
-    return "EXCLAMATION[" + std::to_string(line_no) + "]";
+    return "EXCLAMATION[" + std::to_string(td.line) + ", " +
+           std::to_string(td.col) + "]";
   case Token::EXCLAMATION_EQ:
-    return "EXCLAMATION_EQ[" + std::to_string(line_no) + "]";
+    return "EXCLAMATION_EQ[" + std::to_string(td.line) + ", " +
+           std::to_string(td.col) + "]";
   case Token::WHILE:
-    return "WHILE[" + std::to_string(line_no) + "]";
+    return "WHILE[" + std::to_string(td.line) + ", " + std::to_string(td.col) +
+           "]";
   case Token::FOR:
-    return "FOR[" + std::to_string(line_no) + "]";
+    return "FOR[" + std::to_string(td.line) + ", " + std::to_string(td.col) +
+           "]";
   case Token::IF:
-    return "IF[" + std::to_string(line_no) + "]";
+    return "IF[" + std::to_string(td.line) + ", " + std::to_string(td.col) +
+           "]";
   case Token::ELSE:
-    return "ELSE[" + std::to_string(line_no) + "]";
+    return "ELSE[" + std::to_string(td.line) + ", " + std::to_string(td.col) +
+           "]";
   case Token::RETURN:
-    return "RETURN[" + std::to_string(line_no) + "]";
+    return "RETURN[" + std::to_string(td.line) + ", " + std::to_string(td.col) +
+           "]";
   case Token::BREAK:
-    return "BREAK[" + std::to_string(line_no) + "]";
+    return "BREAK[" + std::to_string(td.line) + ", " + std::to_string(td.col) +
+           "]";
   case Token::LET:
-    return "LET[" + std::to_string(line_no) + "]";
+    return "LET[" + std::to_string(td.line) + ", " + std::to_string(td.col) +
+           "]";
   case Token::IMPORT:
-    return "IMPORT[" + std::to_string(line_no) + "]";
+    return "IMPORT[" + std::to_string(td.line) + ", " + std::to_string(td.col) +
+           "]";
   case Token::LSH:
-    return "LSH[" + std::to_string(line_no) + "]";
+    return "LSH[" + std::to_string(td.line) + ", " + std::to_string(td.col) +
+           "]";
   case Token::RSH:
-    return "RSH[" + std::to_string(line_no) + "]";
+    return "RSH[" + std::to_string(td.line) + ", " + std::to_string(td.col) +
+           "]";
   case Token::EOS:
-    return "EOS[" + std::to_string(line_no) + "]";
+    return "EOS[" + std::to_string(td.line) + ", " + std::to_string(td.col) +
+           "]";
   case Token::ERT:
     return "ERT";
   }
 
-  return "UNKNOWN[" + std::to_string(line_no) + "]";
+  return "UNKNOWN[" + std::to_string(td.line) + ", " + std::to_string(td.col) +
+         "]";
 }
 
 } // namespace compiler
