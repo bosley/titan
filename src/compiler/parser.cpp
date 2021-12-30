@@ -1,5 +1,6 @@
 #include "parser.hpp"
 
+#include "alert/alert.hpp"
 #include "app.hpp"
 #include "log/log.hpp"
 #include <algorithm>
@@ -34,11 +35,16 @@ std::unordered_map<Token, parser::precedence> precedences = {
 TD_Pair error_token = {Token::ERT, {}, 0};
 TD_Pair end_of_stream = {Token::EOS, {}, 0};
 
-static void report_error(const std::string &filename, size_t line,
-                         const std::string error)
+static void report_error(const std::string &filename, size_t line, size_t col,
+                         const std::string error, bool show_full)
 {
-  std::cout << "Parse error [" << filename << "](" << line << ") : " << error
-            << std::endl;
+  alert::config cfg;
+
+  cfg.set_basic(filename, error, line, col);
+  cfg.set_show_chunk(show_full);
+  cfg.set_all_attn(show_full);
+
+  alert::show(alert::level::ERROR, "parser", cfg);
 }
 } // namespace
 
@@ -98,9 +104,10 @@ parser::parse(std::string filename,
           locate_import(include_directories, import_statement->target);
 
       if (!item_found) {
-        report_error(_filename, current_td_pair().line,
+        report_error(_filename, current_td_pair().line, current_td_pair().col,
                      "Unable to locate import target: " +
-                         import_statement->target);
+                         import_statement->target,
+                     _parser_okay);
         _parser_okay = false;
         break;
       }
@@ -182,7 +189,8 @@ void parser::reset()
 
 void parser::die(std::string error)
 {
-  report_error(_filename, current_td_pair().line, error);
+  report_error(_filename, current_td_pair().line, current_td_pair().col, error,
+               _parser_okay);
   _parser_okay = false;
 
   LOG(DEBUG) << TAG(APP_FILE_NAME) << "[" << APP_LINE << "]: " << COLOR(magenta)
@@ -438,7 +446,7 @@ parse_tree::element_ptr parser::assignment()
 
   advance();
   expect(Token::COLON,
-         "Expected colon between name:type in varialbe assignment");
+         "Expected colon between name:type in variabLe assignment");
 
   advance();
   expect(Token::IDENTIFIER, "Expected variable type");
