@@ -47,8 +47,7 @@ enum class node_type {
   PREFIX,
   INFIX,
   ARRAY,
-  ARRAY_IDX,
-  REASSIGN
+  ARRAY_IDX
 };
 
 class expression {
