@@ -3,22 +3,22 @@
 
 #include "parsetree.hpp"
 
+#include <optional>
 #include <string>
+#include <tuple>
 #include <variant>
 #include <vector>
-#include <tuple>
-#include <optional>
 
-/* 
- 
+/*
+
    Idea time.
 
    Functions need to be searched, but they don't exist within
    any scope other than 'global' at least for now.
 
    Scopes within functions need to be able to find anything in
-   itsself or anything directly above it all the way to global   
- 
+   itsself or anything directly above it all the way to global
+
  */
 
 namespace compiler {
@@ -31,7 +31,6 @@ using variant_data =
 class table {
 
 public:
-
   table();
 
   void set_scope_to_global();
@@ -55,10 +54,9 @@ public:
   //  Attempt to find a symbol
   //  Marking current_only will limit search to current scope
   std::optional<variant_data> lookup(const std::string &v,
-                                        bool current_only = false);
+                                     bool current_only = false);
 
 private:
-  
   // Table entry for a given scope
   struct table_entry {
     std::string name;
@@ -68,7 +66,7 @@ private:
   // Scope that contains data, and potentially contains sub scopes
   class scope {
   public:
-    scope(const std::string& name) : name(name), prev_scope(nullptr) {}
+    scope(const std::string &name) : name(name), prev_scope(nullptr) {}
     ~scope()
     {
       for (auto &s : sub_scopes) {
@@ -78,15 +76,15 @@ private:
     std::string name;
     scope *prev_scope;                // So search can happen from scope
     std::vector<table_entry> entries; // Data in scope (usually assignments)
-    std::vector<scope *> sub_scopes;  // Inner scopes from current 
+    std::vector<scope *> sub_scopes;  // Inner scopes from current
   };
 
   scope _global_scope; // Program global scope (functions)
   scope *_curr_scope;  // Scope currently being populated
 
   bool scope_contains_item(scope *s, const std::string &v);
-};  
-}
-}
+};
+} // namespace symbol
+} // namespace compiler
 
 #endif

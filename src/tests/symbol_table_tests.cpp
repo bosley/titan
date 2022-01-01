@@ -1,8 +1,8 @@
-#include "compiler/symbols.hpp"
 #include "compiler/parsetree.hpp"
+#include "compiler/symbols.hpp"
 
-#include <vector>
 #include <random>
+#include <vector>
 
 #include <CppUTest/TestHarness.h>
 
@@ -12,8 +12,8 @@ TEST(symbol_tests, all)
 {
   compiler::symbol::table table;
 
-  std::string function_main  = "main";
-  std::string function_add   = "add";
+  std::string function_main = "main";
+  std::string function_add = "add";
   std::string function_print = "print";
 
   compiler::parse_tree::function *dummy_func =
@@ -23,8 +23,8 @@ TEST(symbol_tests, all)
 
   // Will create symbols in global table for functions,
   // and will generate global sub scopes for each function
-  CHECK_TRUE(table.add_symbol(function_main,  dummy_func));
-  CHECK_TRUE(table.add_symbol(function_add,   dummy_func));
+  CHECK_TRUE(table.add_symbol(function_main, dummy_func));
+  CHECK_TRUE(table.add_symbol(function_add, dummy_func));
   CHECK_TRUE(table.add_symbol(function_print, dummy_func));
 
   // Enter function
@@ -38,11 +38,11 @@ TEST(symbol_tests, all)
   CHECK_TRUE(table.exists("x"));
   CHECK_TRUE(table.exists("y"));
   CHECK_TRUE(table.exists("z"));
-  
+
   // Add another scope
   table.add_scope_and_enter("if_statement");
-  
-  // Add some more vars 
+
+  // Add some more vars
   CHECK_TRUE(table.add_symbol("a", dummy_assign));
   CHECK_TRUE(table.add_symbol("b", dummy_assign));
   CHECK_TRUE(table.add_symbol("c", dummy_assign));
@@ -70,10 +70,10 @@ TEST(symbol_tests, all)
   CHECK_TRUE(table.exists("add"));
   CHECK_TRUE(table.exists("print"));
 
-  // Leave the scope 
+  // Leave the scope
   table.pop_scope();
 
-  // Ensure the first ones still reachable and the later 
+  // Ensure the first ones still reachable and the later
   // can no longer be reached
   CHECK_TRUE(table.exists("x"));
   CHECK_TRUE(table.exists("y"));
@@ -111,23 +111,23 @@ TEST(symbol_tests, expanded)
 
   // Add functions
   //
-  for(uint64_t i = 0; i < num_functions; i++) {
+  for (uint64_t i = 0; i < num_functions; i++) {
     std::string fn_name = "function_" + std::to_string(i);
-    CHECK_TRUE(table.add_symbol(fn_name,  dummy_func));
+    CHECK_TRUE(table.add_symbol(fn_name, dummy_func));
   }
 
   // Operate on them
   //
-  for(uint64_t i = 0; i < num_functions; i++) {
+  for (uint64_t i = 0; i < num_functions; i++) {
     std::string fn_name = "function_" + std::to_string(i);
-    
+
     // Activate function
     //
     CHECK_TRUE(table.activate_top_level_scope(fn_name));
 
     // Ensure that all other functions are reachable from it
     //
-    for(uint64_t j = 0; j < num_functions; j++) {
+    for (uint64_t j = 0; j < num_functions; j++) {
 
       std::string search_fn = "function_" + std::to_string(j);
       CHECK_TRUE(table.exists(search_fn));
@@ -135,61 +135,76 @@ TEST(symbol_tests, expanded)
 
     uint64_t top_level_vars = get_rand(1, 100);
 
-    for(uint64_t j = 0; j < top_level_vars; j++) {
+    for (uint64_t j = 0; j < top_level_vars; j++) {
       std::string var_name = "var_" + std::to_string(j);
       CHECK_TRUE(table.add_symbol(var_name, dummy_assign));
     }
 
     // Ensure reachable
-    for(uint64_t j = 0; j < top_level_vars; j++) {
+    for (uint64_t j = 0; j < top_level_vars; j++) {
       std::string var_name = "var_" + std::to_string(j);
       CHECK_TRUE(table.exists(var_name));
     }
 
     // Go deep into scope
     uint64_t scope_depth = get_rand(1, 5);
-    for(uint64_t k = 0; k < scope_depth; k++) {
+    for (uint64_t k = 0; k < scope_depth; k++) {
       std::string scope_name = "scope_" + std::to_string(k);
       table.add_scope_and_enter(scope_name);
     }
 
     // Ensure still reachable
-    for(uint64_t j = 0; j < top_level_vars; j++) {
+    for (uint64_t j = 0; j < top_level_vars; j++) {
       std::string var_name = "var_" + std::to_string(j);
       CHECK_TRUE(table.exists(var_name));
+
+      if (std::nullopt == table.lookup(var_name)) {
+        FAIL("Failed to get variable");
+      }
     }
 
     // Add vars deep in scopes
-    for(uint64_t j = 0; j < top_level_vars; j++) {
+    for (uint64_t j = 0; j < top_level_vars; j++) {
       std::string var_name = "scoped_var_" + std::to_string(j);
       CHECK_TRUE(table.add_symbol(var_name, dummy_assign));
     }
 
     // Sanity check
-    for(uint64_t j = 0; j < top_level_vars; j++) {
+    for (uint64_t j = 0; j < top_level_vars; j++) {
       std::string var_name = "scoped_var_" + std::to_string(j);
       CHECK_TRUE(table.exists(var_name));
+
+      if (std::nullopt == table.lookup(var_name)) {
+        FAIL("Failed to get variable");
+      }
 
       // Ensure that top level items are not in current scope, but
       // in an upper scope
       std::string top_var_name = "var_" + std::to_string(j);
       CHECK_FALSE(table.exists(top_var_name, true));
+
+      if (std::nullopt != table.lookup(top_var_name, true)) {
+        FAIL("Failed to _not_ get variable");
+      }
     }
 
     // Leave scopes
-    for(uint64_t k = 0; k < scope_depth; k++) {
+    for (uint64_t k = 0; k < scope_depth; k++) {
       table.pop_scope();
     }
 
-    for(uint64_t j = 0; j < top_level_vars; j++) {
-      
+    for (uint64_t j = 0; j < top_level_vars; j++) {
+
       // Ensure scoped vars are gone
       std::string scoped_var_name = "scoped_var_" + std::to_string(j);
       CHECK_FALSE(table.exists(scoped_var_name));
 
-      // Ensure top level vars still good
+      // Check top level values
       std::string var_name = "var_" + std::to_string(j);
-      CHECK_TRUE(table.exists(var_name));
+      auto var_item = table.lookup(var_name);
+      if (std::nullopt == var_item) {
+        FAIL("Failed to get variable");
+      }
     }
   }
 
