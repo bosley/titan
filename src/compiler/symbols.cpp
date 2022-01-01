@@ -4,7 +4,6 @@ namespace compiler {
 
 namespace symbol {
 
-
 table::table() : _global_scope("global"), _curr_scope(&_global_scope) {}
 
 void table::set_scope_to_global()
@@ -23,21 +22,25 @@ bool table::activate_top_level_scope(const std::string &name)
     return false;
   }
 
+  auto tmp = _curr_scope;
   _curr_scope = *iter;
+  _curr_scope->prev_scope = tmp;
   return true;
 }
 
 void table::add_scope(const std::string &name) 
 {
-  _curr_scope->sub_scopes.push_back(
-      new scope(name));
+  _curr_scope->sub_scopes.push_back(new scope(name));
 }
 
 void table::add_scope_and_enter(const std::string &name) 
 {
   auto new_scope = new scope(name);
   _curr_scope->sub_scopes.push_back(new_scope);
+
+  auto tmp = _curr_scope;
   _curr_scope = new_scope;
+  _curr_scope->prev_scope = tmp;
 }
 
 void table::pop_scope()
@@ -82,6 +85,7 @@ bool table::exists(const std::string &v, bool current_only)
     }
     locator = locator->prev_scope;
   }
+
   return false;
 }
 
