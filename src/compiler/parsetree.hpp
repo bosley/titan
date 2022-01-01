@@ -20,12 +20,9 @@ enum class variable_types {
   I16,
   I32,
   I64,
-  RAW_NUMBER, // Literal number with no assigned type
   FLOAT,
   STRING,
   USER_DEFINED,
-  OP,
-  EXPR
 };
 
 extern variable_types string_to_variable_type(const std::string &s);

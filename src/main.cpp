@@ -3,6 +3,7 @@
 #include "compiler/imports.hpp"
 #include "compiler/lexer.hpp"
 #include "compiler/parser.hpp"
+#include "compiler/symbols.hpp"
 
 #include "log/log.hpp"
 
@@ -208,6 +209,8 @@ int main(int argc, char **argv)
     std::cout << "No items to generate" << std::endl;
     return -1;
   }
+
+  compiler::symbol::table symbol_table;
   
   //  Analyze the parse trees
   //

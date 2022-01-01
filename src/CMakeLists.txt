@@ -53,6 +53,7 @@ set(PROJECT_SOURCES
         ${CMAKE_CURRENT_SOURCE_DIR}/compiler/lexer.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/compiler/parser.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/compiler/parsetree.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/compiler/symbols.cpp
 )
 
 add_executable(${PROJECT_NAME}
