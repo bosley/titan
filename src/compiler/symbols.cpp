@@ -1,5 +1,7 @@
 #include "symbols.hpp"
 
+#include <algorithm>
+
 namespace compiler {
 
 namespace symbol {
