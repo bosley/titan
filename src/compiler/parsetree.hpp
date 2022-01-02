@@ -238,27 +238,30 @@ using return_statement_ptr = std::unique_ptr<return_statement>;
 class toplevel {
 public:
   enum class tl_type { IMPORT, FUNCTION };
-  toplevel(tl_type t) : type(t) {}
+  toplevel(tl_type t, size_t line, size_t col) : type(t), line(line), col(col) {}
   virtual ~toplevel() = default;
   tl_type type;
+  size_t line;
+  size_t col;
 };
 using toplevel_ptr = std::unique_ptr<toplevel>;
 
 class import : public toplevel {
 public:
-  import(std::string target)
-      : toplevel(toplevel::tl_type::IMPORT), target(target)
+  import(std::string target, size_t line, size_t col)
+      : toplevel(toplevel::tl_type::IMPORT, line, col), target(target)
   {
   }
-  import() : toplevel(toplevel::tl_type::IMPORT) {}
+  import(size_t line, size_t col) : toplevel(toplevel::tl_type::IMPORT, line, col) {}
   std::string target;
 };
 using import_ptr = std::unique_ptr<import>;
 
 class function : public toplevel {
 public:
-  function() : toplevel(toplevel::tl_type::FUNCTION) {}
+  function(size_t line, size_t col) : toplevel(toplevel::tl_type::FUNCTION, line, col) {}
   std::string name;
+  std::string file_name;
   variable_types return_type;
   std::vector<variable> parameters;
   std::vector<element_ptr> element_list;

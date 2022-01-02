@@ -17,7 +17,7 @@ TEST(symbol_tests, all)
   std::string function_print = "print";
 
   compiler::parse_tree::function *dummy_func =
-      new compiler::parse_tree::function();
+      new compiler::parse_tree::function(0, 0);
   compiler::parse_tree::assignment_statement *dummy_assign =
       new compiler::parse_tree::assignment_statement(0, {}, nullptr);
 
@@ -94,7 +94,7 @@ TEST(symbol_tests, all)
 TEST(symbol_tests, expanded)
 {
   compiler::parse_tree::function *dummy_func =
-      new compiler::parse_tree::function();
+      new compiler::parse_tree::function(0,0);
   compiler::parse_tree::assignment_statement *dummy_assign =
       new compiler::parse_tree::assignment_statement(0, {}, nullptr);
 

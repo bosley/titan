@@ -3,11 +3,34 @@
 #include "log/log.hpp"
 #include "analyzer.hpp"
 
+#include <algorithm>
+
 namespace compiler {
 
 
-analyzer::analyzer(std::vector<parse_tree::toplevel_ptr> &tree) : _tree(tree), _current_function(nullptr) {
+analyzer::analyzer(symbol::table &table,
+                   std::vector<parse_tree::toplevel_ptr> &tree)
+    : _table(table), _tree(tree), _current_function(nullptr), _num_errors(0)
+{
+  _flags.entry_method_exists = false;
+}
 
+void analyzer::report_error(const std::string &file, size_t line, size_t col, const std::string &msg)
+{
+  alert::config cfg;
+  cfg.set_basic(file, msg, line, col);
+
+  bool show_full = _num_errors == 0;
+
+  cfg.set_show_chunk(show_full);
+  cfg.set_all_attn(show_full);
+
+  cfg.show_line_num = line != 0;
+  cfg.show_col_num = cfg.show_line_num;
+
+  alert::show(alert::level::ERROR, "analyzer", cfg);
+
+  _num_errors++;
 }
 
 bool analyzer::analyze()
@@ -16,7 +39,67 @@ bool analyzer::analyze()
              << "]: Starting semeantic analysis" << std::endl;
 
   uint64_t item_count = 0;
+  
+  // Prescan functions
   for (auto &item : _tree) {
+
+    if(item->type == parse_tree::toplevel::tl_type::FUNCTION) {
+      
+      auto fn = reinterpret_cast<parse_tree::function *>(item.get());
+      
+      if(!_table.add_symbol(fn->name, fn)) {
+        std::string msg = "Duplicate function \"" + fn->name + "\"";
+
+        auto item = _table.lookup(fn->name);
+        if(item != std::nullopt) {
+
+          try {
+            auto first_fn = std::get<parse_tree::function*>(item.value());
+            msg += " First occurance at (";
+            msg += first_fn->file_name;
+            msg += ", line : ";
+            msg += std::to_string(first_fn->line);
+            msg += ")";
+          }
+          catch (const std::bad_variant_access &ex) 
+          {
+            LOG(ERROR)
+                << TAG(APP_FILE_NAME) << "[" << APP_LINE
+                << "] exception while accessing suspected function from symbol table :"
+                << ex.what() << std::endl;
+          }
+        }
+
+        report_error(fn->file_name, fn->line, fn->col, msg);
+      }
+
+      if(fn->name == EXPECTED_ENTRY_SV) {
+        if(fn->return_type != EXPECTED_ENTRY_RETURN_TYPE) {
+          std::string msg = "Entry method \""; 
+          msg += EXPECTED_ENTRY_SV;
+          msg += "\" is expected to have return type : ";
+          msg += EXPECTED_ENTRY_RETURN_TYPE_SV;
+          msg += ".";
+          report_error(fn->file_name, fn->line, 0, msg);
+        }
+      
+        _flags.entry_method_exists = true;
+      }
+    }
+  }
+
+  if(!_flags.entry_method_exists) {
+    _num_errors++;
+    report_error("program error", 0, 0, "No entry method 'main' found");
+    return false;
+  }
+
+
+  for (auto &item : _tree) {
+
+    if(_num_errors >= NUM_ERRORS_BEFORE_ABORT) {
+      return false;
+    }
 
     //
     //  TODO : 
@@ -55,7 +138,7 @@ bool analyzer::analyze()
                << item_count << " complete" << std::endl;
   }
 
-  return false;
+  return _num_errors == 0;
 }
 
 void analyzer::accept(parse_tree::assignment_statement &stmt)
@@ -69,6 +152,9 @@ void analyzer::accept(parse_tree::assignment_statement &stmt)
 
   //  Check if stmt.var already exists in current scope. Allow shadowing
   //
+  //
+
+
   
   //  Analyze expression to ensure all variables / functions called and function parameters are solid
   //

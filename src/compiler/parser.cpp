@@ -229,13 +229,16 @@ parse_tree::import_ptr parser::import()
     return nullptr;
   }
 
+  size_t line = current_td_pair().line;
+  size_t col = current_td_pair().col;
+
   expect(Token::STRING, "Expected string value for given import", 1);
   advance();
 
   if (_parser_okay) {
     auto target = current_td_pair().data;
     advance();
-    return parse_tree::import_ptr(new parse_tree::import(target));
+    return parse_tree::import_ptr(new parse_tree::import(target, line, col));
   }
   else {
     return nullptr;
@@ -249,6 +252,9 @@ parse_tree::function_ptr parser::function()
   if (current_td_pair().token != Token::FN) {
     return nullptr;
   }
+
+  size_t line = current_td_pair().line;
+  size_t col = current_td_pair().col;
 
   advance();
   expect(Token::IDENTIFIER, "Expected function name following 'fn'");
@@ -272,9 +278,10 @@ parse_tree::function_ptr parser::function()
     return nullptr;
   }
 
-  auto new_func = parse_tree::function_ptr(new parse_tree::function());
+  auto new_func = parse_tree::function_ptr(new parse_tree::function(line, col));
 
   new_func->name = function_name;
+  new_func->file_name = _filename;
   new_func->return_type = parse_tree::string_to_variable_type(return_type);
   new_func->parameters = std::move(parameters);
   new_func->element_list = std::move(element_list);

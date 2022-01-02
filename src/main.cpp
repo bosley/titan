@@ -215,7 +215,7 @@ int main(int argc, char **argv)
   //  Analyze the parse trees
   //
   {
-    auto semantic_analyzer = new compiler::analyzer(parse_trees);
+    auto semantic_analyzer = new compiler::analyzer(symbol_table, parse_trees);
     if(!semantic_analyzer->analyze()) {
       std::cout << "Semantic analysis failed" << std::endl;
       delete semantic_analyzer;
