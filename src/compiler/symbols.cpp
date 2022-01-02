@@ -54,7 +54,12 @@ bool table::add_symbol(const std::string &name, parse_tree::function *func)
   if (exists(name, true)) {
     return false;
   }
-  _curr_scope->entries.push_back({name, func});
+
+  variant_data v_data;
+  v_data.type = variant_type::FUNCTION;
+  v_data.function = func;
+
+  _curr_scope->entries.push_back({name, v_data});
   add_scope(name);
   return true;
 }
@@ -65,7 +70,12 @@ bool table::add_symbol(const std::string &name,
   if (exists(name, true)) {
     return false;
   }
-  _curr_scope->entries.push_back({name, var});
+
+  variant_data v_data;
+  v_data.type = variant_type::ASSIGNMENT;
+  v_data.assignment = var;
+
+  _curr_scope->entries.push_back({name, v_data});
   return true;
 }
 

@@ -12,17 +12,18 @@ namespace compiler {
 class analyzer : private parse_tree::visitor {
 public:
   analyzer(symbol::table &table,
-      std::vector<parse_tree::toplevel_ptr> &parse_tree);
+           std::vector<parse_tree::toplevel_ptr> &parse_tree);
 
   bool analyze();
 
 private:
   static constexpr std::string_view EXPECTED_ENTRY_SV = "main";
-  static constexpr parse_tree::variable_types EXPECTED_ENTRY_RETURN_TYPE = parse_tree::variable_types::I8;
+  static constexpr parse_tree::variable_types EXPECTED_ENTRY_RETURN_TYPE =
+      parse_tree::variable_types::I8;
   static constexpr std::string_view EXPECTED_ENTRY_RETURN_TYPE_SV = "i8";
   static constexpr uint8_t NUM_ERRORS_BEFORE_ABORT = 10;
 
-  // Flags that need to be true at the end of analyzing 
+  // Flags that need to be true at the end of analyzing
   // the parse trees
   //
   struct check_flags {
@@ -33,12 +34,13 @@ private:
   symbol::table &_table;
   std::vector<parse_tree::toplevel_ptr> &_tree;
 
-  parse_tree::function* _current_function;
+  parse_tree::function *_current_function;
   uint8_t _num_errors;
-
+  uint64_t _uid;
   check_flags _flags;
 
-  void report_error(const std::string &file, size_t line, size_t col, const std::string &msg);
+  void report_error(const std::string &file, size_t line, size_t col,
+                    const std::string &msg, bool show_col = true);
 
   virtual void accept(parse_tree::assignment_statement &stmt) override;
   virtual void accept(parse_tree::expression_statement &stmt) override;
@@ -47,9 +49,13 @@ private:
   virtual void accept(parse_tree::for_statement &stmt) override;
   virtual void accept(parse_tree::return_statement &stmt) override;
 
-  void analyze_expression(parse_tree::expression *expr);
+  parse_tree::variable_types analyze_expression(parse_tree::expression *expr);
+
+  bool can_cast_to_expected(parse_tree::variable_types expected,
+                            parse_tree::variable_types actual,
+                            std::string &out);
 };
 
-}
+} // namespace compiler
 
 #endif

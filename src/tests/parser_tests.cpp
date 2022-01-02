@@ -131,8 +131,8 @@ TEST(parser_tests, basic_function)
       {compiler::parse_tree::toplevel::tl_type::FUNCTION,
        "main",
        {
-           {"argc", compiler::parse_tree::variable_types::U8, 0},
-           {"argv", compiler::parse_tree::variable_types::STRING,
+           {"argc", compiler::parse_tree::variable_types::U8, "u8", 0},
+           {"argv", compiler::parse_tree::variable_types::STRING, "str",
             std::numeric_limits<uint64_t>::max()},
        },
        compiler::parse_tree::variable_types::I64},
@@ -143,11 +143,11 @@ TEST(parser_tests, basic_function)
       {compiler::parse_tree::toplevel::tl_type::FUNCTION,
        "test1",
        {
-           {"a", compiler::parse_tree::variable_types::U32,
+           {"a", compiler::parse_tree::variable_types::U32, "u32",
             std::numeric_limits<uint64_t>::max()},
-           {"b", compiler::parse_tree::variable_types::I8,
+           {"b", compiler::parse_tree::variable_types::I8, "i8",
             std::numeric_limits<uint64_t>::max()},
-           {"c", compiler::parse_tree::variable_types::STRING, 0},
+           {"c", compiler::parse_tree::variable_types::STRING, "str", 0},
 
        },
        compiler::parse_tree::variable_types::I16},
@@ -183,13 +183,13 @@ TEST(parser_tests, assignments)
   std::vector<compiler::parse_tree::assignment_statement> expected;
 
   expected.push_back(compiler::parse_tree::assignment_statement(
-      5, {"d", compiler::parse_tree::variable_types::U32, 0}, nullptr));
+      5, {"d", compiler::parse_tree::variable_types::U32, "u32", 0}, nullptr));
   expected.push_back(compiler::parse_tree::assignment_statement(
-      6, {"e", compiler::parse_tree::variable_types::U16, 12}, nullptr));
+      6, {"e", compiler::parse_tree::variable_types::U16, "u16", 12}, nullptr));
   expected.push_back(compiler::parse_tree::assignment_statement(
-      7, {"f", compiler::parse_tree::variable_types::U8, 6}, nullptr));
+      7, {"f", compiler::parse_tree::variable_types::U8, "u8", 6}, nullptr));
   expected.push_back(compiler::parse_tree::assignment_statement(
-      8, {"g", compiler::parse_tree::variable_types::I8, 0}, nullptr));
+      8, {"g", compiler::parse_tree::variable_types::I8, "i8", 0}, nullptr));
 
   auto functions = parse_file("test_files/parser_assignments.tl");
 
@@ -385,7 +385,7 @@ TEST(parser_tests, while_statements)
 
               // Variable
               compiler::parse_tree::variable{
-                  "a", compiler::parse_tree::variable_types::U8, 0},
+                  "a", compiler::parse_tree::variable_types::U8, "u8", 0},
 
               // Expression
               compiler::parse_tree::expr_ptr(
@@ -402,7 +402,7 @@ TEST(parser_tests, while_statements)
 
               // Variable
               compiler::parse_tree::variable{
-                  "b", compiler::parse_tree::variable_types::U16, 0},
+                  "b", compiler::parse_tree::variable_types::U16, "u16", 0},
 
               // Expression
               compiler::parse_tree::expr_ptr(
@@ -419,7 +419,7 @@ TEST(parser_tests, while_statements)
 
               // variable
               compiler::parse_tree::variable{
-                  "c", compiler::parse_tree::variable_types::U32, 0},
+                  "c", compiler::parse_tree::variable_types::U32, "u32", 0},
 
               // Expression
               compiler::parse_tree::expr_ptr(
@@ -436,7 +436,7 @@ TEST(parser_tests, while_statements)
 
               // Variable
               compiler::parse_tree::variable{
-                  "d", compiler::parse_tree::variable_types::U64, 0},
+                  "d", compiler::parse_tree::variable_types::U64, "u64", 0},
 
               // Expression
               compiler::parse_tree::expr_ptr(
@@ -622,7 +622,7 @@ TEST(parser_tests, for_statement)
 
   auto expected_assign = compiler::parse_tree::assignment_statement_ptr(
       new compiler::parse_tree::assignment_statement(
-          5, {"i", compiler::parse_tree::variable_types::U8, 0},
+          5, {"i", compiler::parse_tree::variable_types::U8, "u8", 0},
           compiler::parse_tree::expr_ptr(new compiler::parse_tree::expression(
               compiler::parse_tree::node_type::RAW_NUMBER, "0"))));
 

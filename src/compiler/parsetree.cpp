@@ -42,6 +42,9 @@ variable_types string_to_variable_type(const std::string &s)
   if (s == "string") {
     return variable_types::STRING;
   }
+  if (s == "nil") {
+    return variable_types::NIL;
+  }
   return variable_types::USER_DEFINED;
 }
 

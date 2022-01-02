@@ -9,33 +9,35 @@
 #include <variant>
 #include <vector>
 
-/*
-
-   Idea time.
-
-   Functions need to be searched, but they don't exist within
-   any scope other than 'global' at least for now.
-
-   Scopes within functions need to be able to find anything in
-   itsself or anything directly above it all the way to global
-
- */
-
 namespace compiler {
 
 namespace symbol {
 
-using variant_data =
-    std::variant<parse_tree::assignment_statement *, parse_tree::function *>;
+enum class variant_type { ASSIGNMENT, FUNCTION };
+
+struct variant_data {
+  variant_type type;
+  union {
+    parse_tree::assignment_statement *assignment;
+    parse_tree::function *function;
+  };
+};
 
 class table {
 
 public:
   table();
 
+  // Set to top level scope
   void set_scope_to_global();
+
+  // Add a subscope with name, but do not enter
   void add_scope(const std::string &name);
+
+  // Add a subscope with name, and enter
   void add_scope_and_enter(const std::string &name);
+
+  // Leave scope for parent scope (if no parent scope will stop at global)
   void pop_scope();
 
   // Begin operating within a top level scope with name

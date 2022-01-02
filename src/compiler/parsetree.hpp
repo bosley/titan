@@ -22,6 +22,8 @@ enum class variable_types {
   I64,
   FLOAT,
   STRING,
+  ARRAY,
+  NIL,
   USER_DEFINED,
 };
 
@@ -30,6 +32,7 @@ extern variable_types string_to_variable_type(const std::string &s);
 struct variable {
   std::string name;
   variable_types type;
+  std::string type_string;
   uint64_t depth; // 0 For single variable, >0 for allocation space,
                   // uint64_t::max() for unknown size
 };
@@ -238,7 +241,9 @@ using return_statement_ptr = std::unique_ptr<return_statement>;
 class toplevel {
 public:
   enum class tl_type { IMPORT, FUNCTION };
-  toplevel(tl_type t, size_t line, size_t col) : type(t), line(line), col(col) {}
+  toplevel(tl_type t, size_t line, size_t col) : type(t), line(line), col(col)
+  {
+  }
   virtual ~toplevel() = default;
   tl_type type;
   size_t line;
@@ -252,14 +257,20 @@ public:
       : toplevel(toplevel::tl_type::IMPORT, line, col), target(target)
   {
   }
-  import(size_t line, size_t col) : toplevel(toplevel::tl_type::IMPORT, line, col) {}
+  import(size_t line, size_t col)
+      : toplevel(toplevel::tl_type::IMPORT, line, col)
+  {
+  }
   std::string target;
 };
 using import_ptr = std::unique_ptr<import>;
 
 class function : public toplevel {
 public:
-  function(size_t line, size_t col) : toplevel(toplevel::tl_type::FUNCTION, line, col) {}
+  function(size_t line, size_t col)
+      : toplevel(toplevel::tl_type::FUNCTION, line, col)
+  {
+  }
   std::string name;
   std::string file_name;
   variable_types return_type;

@@ -317,7 +317,8 @@ std::vector<parse_tree::variable> parser::function_params()
 
     advance();
     expect(Token::IDENTIFIER, "Expected variable type for parameter");
-    std::string param_type = current_td_pair().data;
+    auto param_type = current_td_pair().data;
+    auto param_v_type = parse_tree::string_to_variable_type(param_type);
 
     advance();
     uint64_t depth = 0;
@@ -328,8 +329,8 @@ std::vector<parse_tree::variable> parser::function_params()
       advance();
     }
 
-    parameters.push_back(parse_tree::variable{
-        param_name, parse_tree::string_to_variable_type(param_type), depth});
+    parameters.push_back(
+        parse_tree::variable{param_name, param_v_type, param_type, depth});
 
     if (current_td_pair().token != Token::COMMA) {
       eat_params = false;
@@ -457,7 +458,8 @@ parse_tree::element_ptr parser::assignment()
 
   advance();
   expect(Token::IDENTIFIER, "Expected variable type");
-  std::string variable_type = current_td_pair().data;
+  auto type_string = current_td_pair().data;
+  auto variable_type = parse_tree::string_to_variable_type(type_string);
 
   advance();
   uint64_t depth = parser::accessor_lit();
@@ -472,9 +474,7 @@ parse_tree::element_ptr parser::assignment()
   advance();
   if (_parser_okay) {
     return parse_tree::element_ptr(new parse_tree::assignment_statement(
-        line_no,
-        {name, parse_tree::string_to_variable_type(variable_type), depth},
-        std::move(exp)));
+        line_no, {name, variable_type, type_string, depth}, std::move(exp)));
   }
 
   return nullptr;
