@@ -442,17 +442,29 @@ analyzer::validate_function_call(parse_tree::expression *expr)
   auto suspected_fn = _table.lookup(call->fn->value);
 
   if (suspected_fn == std::nullopt) {
-    // Report error that the function wasn't found
+    std::string message = "Unable to locate item \"" + call->fn->value + "\"";
+    report_error(_current_function->file_name, expr->line, expr->col, message);
+    return std::nullopt;
   }
 
   if (suspected_fn->type != symbol::variant_type::FUNCTION) {
-    // Item is not a function
+    std::string message = "Unable to locate item \"" + call->fn->value + "\"";
+    report_error(_current_function->file_name, expr->line, expr->col, message);
+    return std::nullopt;
   }
 
   auto fn = suspected_fn->function;
 
   if (fn->parameters.size() != call->params.size()) {
-    // Expected fn->params.size(), but given call->params.size()
+    std::string message = "Expected ";
+    message += std::to_string(fn->parameters.size());
+    message += " parameters to function ";
+    message += call->fn->value;
+    message += " but received ";
+    message += std::to_string(call->params.size());
+    message += " parameters.";
+    report_error(_current_function->file_name, expr->line, expr->col, message);
+    return std::nullopt;
   }
 
   for (size_t i = 0; i < fn->parameters.size(); i++) {
@@ -463,7 +475,8 @@ analyzer::validate_function_call(parse_tree::expression *expr)
     // Ensure that the parameters are convertable
     std::string msg;
     if (!can_cast_to_expected(fn->parameters[i].type, actual, msg)) {
-      // Cant convert to call param type
+      report_error(_current_function->file_name, expr->line, expr->col, "Invalid parameter type(s) passed to function");
+      return std::nullopt;
     }
   }
 
