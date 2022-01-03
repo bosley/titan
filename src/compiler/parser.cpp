@@ -229,13 +229,16 @@ parse_tree::import_ptr parser::import()
     return nullptr;
   }
 
+  size_t line = current_td_pair().line;
+  size_t col = current_td_pair().col;
+
   expect(Token::STRING, "Expected string value for given import", 1);
   advance();
 
   if (_parser_okay) {
     auto target = current_td_pair().data;
     advance();
-    return parse_tree::import_ptr(new parse_tree::import(target));
+    return parse_tree::import_ptr(new parse_tree::import(target, line, col));
   }
   else {
     return nullptr;
@@ -249,6 +252,9 @@ parse_tree::function_ptr parser::function()
   if (current_td_pair().token != Token::FN) {
     return nullptr;
   }
+
+  size_t line = current_td_pair().line;
+  size_t col = current_td_pair().col;
 
   advance();
   expect(Token::IDENTIFIER, "Expected function name following 'fn'");
@@ -272,9 +278,10 @@ parse_tree::function_ptr parser::function()
     return nullptr;
   }
 
-  auto new_func = parse_tree::function_ptr(new parse_tree::function());
+  auto new_func = parse_tree::function_ptr(new parse_tree::function(line, col));
 
   new_func->name = function_name;
+  new_func->file_name = _filename;
   new_func->return_type = parse_tree::string_to_variable_type(return_type);
   new_func->parameters = std::move(parameters);
   new_func->element_list = std::move(element_list);
@@ -310,7 +317,8 @@ std::vector<parse_tree::variable> parser::function_params()
 
     advance();
     expect(Token::IDENTIFIER, "Expected variable type for parameter");
-    std::string param_type = current_td_pair().data;
+    auto param_type = current_td_pair().data;
+    auto param_v_type = parse_tree::string_to_variable_type(param_type);
 
     advance();
     uint64_t depth = 0;
@@ -321,8 +329,8 @@ std::vector<parse_tree::variable> parser::function_params()
       advance();
     }
 
-    parameters.push_back(parse_tree::variable{
-        param_name, parse_tree::string_to_variable_type(param_type), depth});
+    parameters.push_back(
+        parse_tree::variable{param_name, param_v_type, param_type, depth});
 
     if (current_td_pair().token != Token::COMMA) {
       eat_params = false;
@@ -443,6 +451,7 @@ parse_tree::element_ptr parser::assignment()
   expect(Token::IDENTIFIER, "Expected variable name in assignmnet");
   std::string name = current_td_pair().data;
   size_t line_no = current_td_pair().line;
+  size_t col = current_td_pair().col;
 
   advance();
   expect(Token::COLON,
@@ -450,7 +459,8 @@ parse_tree::element_ptr parser::assignment()
 
   advance();
   expect(Token::IDENTIFIER, "Expected variable type");
-  std::string variable_type = current_td_pair().data;
+  auto type_string = current_td_pair().data;
+  auto variable_type = parse_tree::string_to_variable_type(type_string);
 
   advance();
   uint64_t depth = parser::accessor_lit();
@@ -465,8 +475,7 @@ parse_tree::element_ptr parser::assignment()
   advance();
   if (_parser_okay) {
     return parse_tree::element_ptr(new parse_tree::assignment_statement(
-        line_no,
-        {name, parse_tree::string_to_variable_type(variable_type), depth},
+        line_no, col, {name, variable_type, type_string, depth},
         std::move(exp)));
   }
 
@@ -480,6 +489,7 @@ parse_tree::element_ptr parser::if_statement()
   }
 
   size_t line_no = current_td_pair().line;
+  size_t col = current_td_pair().col;
 
   advance();
 
@@ -491,7 +501,7 @@ parse_tree::element_ptr parser::if_statement()
   }
 
   auto if_stmt =
-      parse_tree::if_statement_ptr(new parse_tree::if_statement(line_no));
+      parse_tree::if_statement_ptr(new parse_tree::if_statement(line_no, col));
 
   bool construct_segments = true;
 
@@ -525,8 +535,9 @@ parse_tree::element_ptr parser::if_statement()
 
         // TRUE for last else statement
         condition = parse_tree::expr_ptr(
-            new parse_tree::expression(parse_tree::node_type::RAW_NUMBER, "1"));
-      }
+            new parse_tree::raw_int_expr(current_td_pair().line, current_td_pair().col,
+                                   "1", parse_tree::variable_types::U8, 1));
+        }
     }
     else {
       // No continuing segments
@@ -548,6 +559,7 @@ parse_tree::element_ptr parser::while_statement()
   }
 
   size_t line_no = current_td_pair().line;
+  size_t col = current_td_pair().col;
 
   advance();
 
@@ -564,7 +576,7 @@ parse_tree::element_ptr parser::while_statement()
   }
 
   return parse_tree::element_ptr(new parse_tree::while_statement(
-      line_no, std::move(condition), std::move(body)));
+      line_no, col, std::move(condition), std::move(body)));
 }
 
 parse_tree::element_ptr parser::for_statement()
@@ -574,6 +586,7 @@ parse_tree::element_ptr parser::for_statement()
   }
 
   size_t line_no = current_td_pair().line;
+  size_t col = current_td_pair().col;
 
   advance();
 
@@ -613,7 +626,7 @@ parse_tree::element_ptr parser::for_statement()
   }
 
   return parse_tree::element_ptr(new parse_tree::for_statement(
-      line_no, std::move(assignment), std::move(conditional),
+      line_no, col, std::move(assignment), std::move(conditional),
       std::move(modifier), std::move(body)));
 }
 
@@ -624,6 +637,7 @@ parse_tree::element_ptr parser::return_statement()
   }
 
   size_t line_no = current_td_pair().line;
+  size_t col = current_td_pair().col;
 
   advance();
 
@@ -640,7 +654,7 @@ parse_tree::element_ptr parser::return_statement()
   else if (current_td_pair().token == Token::SEMICOLON) {
     advance();
     return parse_tree::element_ptr(
-        new parse_tree::return_statement(line_no, nullptr));
+        new parse_tree::return_statement(line_no, col, nullptr));
   }
   else {
     return_expr = parser::expression(parser::precedence::LOWEST);
@@ -654,7 +668,7 @@ parse_tree::element_ptr parser::return_statement()
   }
 
   return parse_tree::element_ptr(
-      new parse_tree::return_statement(line_no, std::move(return_expr)));
+      new parse_tree::return_statement(line_no, col, std::move(return_expr)));
 }
 
 // Expects expression to exist, if not this will kill the parser
@@ -668,6 +682,7 @@ parse_tree::element_ptr parser::expression_statement()
   }
 
   size_t line_no = current_td_pair().line;
+  size_t col = current_td_pair().col;
   parse_tree::expr_ptr expr = parser::expression(parser::precedence::LOWEST);
 
   advance();
@@ -681,7 +696,7 @@ parse_tree::element_ptr parser::expression_statement()
   }
 
   return parse_tree::element_ptr(
-      new parse_tree::expression_statement(line_no, std::move(expr)));
+      new parse_tree::expression_statement(line_no, col, std::move(expr)));
 }
 
 parse_tree::expr_ptr parser::conditional()
@@ -732,9 +747,11 @@ parse_tree::expr_ptr parser::expression(parser::precedence precedence)
 
 parse_tree::expr_ptr parser::prefix_expr()
 {
-  auto result = parse_tree::prefix_expr_ptr(
-      new parse_tree::prefix_expr(current_td_pair().data, nullptr));
-
+  size_t line_no = current_td_pair().line;
+  size_t col = current_td_pair().col;
+  auto result = parse_tree::prefix_expr_ptr(new parse_tree::prefix_expr(
+      line_no, col, current_td_pair().data, nullptr));
+  result->tok_op = current_td_pair().token;
   advance();
 
   result->right = expression(precedence::PREFIX);
@@ -743,8 +760,11 @@ parse_tree::expr_ptr parser::prefix_expr()
 
 parse_tree::expr_ptr parser::infix_expr(parse_tree::expr_ptr left)
 {
+  size_t line_no = current_td_pair().line;
+  size_t col = current_td_pair().col;
   auto result = parse_tree::infix_expr_ptr(new parse_tree::infix_expr(
-      current_td_pair().data, std::move(left), nullptr));
+      line_no, col, current_td_pair().data, std::move(left), nullptr));
+  result->tok_op = current_td_pair().token;
 
   precedence p = precedence::LOWEST;
   if (precedences.find(current_td_pair().token) != precedences.end()) {
@@ -759,20 +779,25 @@ parse_tree::expr_ptr parser::infix_expr(parse_tree::expr_ptr left)
 
 parse_tree::expr_ptr parser::identifier()
 {
+  size_t line_no = current_td_pair().line;
+  size_t col = current_td_pair().col;
   expect(Token::IDENTIFIER, "Expected identifier in expression");
   return parse_tree::expr_ptr(new parse_tree::expression(
-      parse_tree::node_type::ID, current_td_pair().data));
+      line_no, col, parse_tree::node_type::ID, current_td_pair().data));
 }
 
 parse_tree::expr_ptr parser::number()
 {
+  size_t line_no = current_td_pair().line;
+  size_t col = current_td_pair().col;
   if (current_td_pair().token == Token::LITERAL_NUMBER) {
-    return parse_tree::expr_ptr(new parse_tree::expression(
-        parse_tree::node_type::RAW_NUMBER, current_td_pair().data));
+    return parse_tree::expr_ptr(new parse_tree::raw_int_expr(
+        line_no, col, current_td_pair().data));
   }
   else if (current_td_pair().token == Token::LITERAL_FLOAT) {
     return parse_tree::expr_ptr(new parse_tree::expression(
-        parse_tree::node_type::RAW_FLOAT, current_td_pair().data));
+        line_no, col, parse_tree::node_type::RAW_FLOAT,
+        current_td_pair().data));
   }
   else {
     die("Expected numerical item");
@@ -782,19 +807,21 @@ parse_tree::expr_ptr parser::number()
 
 parse_tree::expr_ptr parser::str()
 {
-
   // Sanity check
   expect(Token::STRING, "Expected string in expression");
 
+  size_t line_no = current_td_pair().line;
+  size_t col = current_td_pair().col;
   return parse_tree::expr_ptr(new parse_tree::expression(
-      parse_tree::node_type::RAW_STRING, current_td_pair().data));
+      line_no, col, parse_tree::node_type::RAW_STRING, current_td_pair().data));
 }
 
 parse_tree::expr_ptr parser::call_expr(parse_tree::expr_ptr fn)
 {
-
-  auto result =
-      parse_tree::function_call_expr_ptr(new parse_tree::function_call_expr());
+  size_t line_no = current_td_pair().line;
+  size_t col = current_td_pair().col;
+  auto result = parse_tree::function_call_expr_ptr(
+      new parse_tree::function_call_expr(line_no, col));
 
   result->fn = std::move(fn);
 
@@ -803,7 +830,11 @@ parse_tree::expr_ptr parser::call_expr(parse_tree::expr_ptr fn)
     return result;
   }
 
+  advance();
+
   result->params = parser::expression_list();
+
+  advance();
 
   if (!_parser_okay) {
     return nullptr;
@@ -836,18 +867,19 @@ parse_tree::expr_ptr parser::grouped_expr()
   advance();
   parse_tree::expr_ptr expr = expression(precedence::LOWEST);
 
-  if (peek().token != Token::R_PAREN) {
+  advance();
+  if (current_td_pair().token != Token::R_PAREN) {
     return nullptr;
   }
-  advance();
   return expr;
 }
 
 parse_tree::expr_ptr parser::array()
 {
-
-  auto arr =
-      parse_tree::array_literal_expr_ptr(new parse_tree::array_literal_expr());
+  size_t line_no = current_td_pair().line;
+  size_t col = current_td_pair().col;
+  auto arr = parse_tree::array_literal_expr_ptr(
+      new parse_tree::array_literal_expr(line_no, col));
 
   if (peek().token == Token::R_BRACKET) {
     advance();
@@ -865,9 +897,10 @@ parse_tree::expr_ptr parser::array()
 
 parse_tree::expr_ptr parser::index_expr(parse_tree::expr_ptr arr)
 {
-
-  auto idx =
-      parse_tree::array_index_expr_ptr(new parse_tree::array_index_expr());
+  size_t line_no = current_td_pair().line;
+  size_t col = current_td_pair().col;
+  auto idx = parse_tree::array_index_expr_ptr(
+      new parse_tree::array_index_expr(line_no, col));
   idx->arr = std::move(arr);
 
   advance();

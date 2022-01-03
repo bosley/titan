@@ -1,7 +1,9 @@
 #include "app.hpp"
+#include "compiler/analyzer.hpp"
 #include "compiler/imports.hpp"
 #include "compiler/lexer.hpp"
 #include "compiler/parser.hpp"
+#include "compiler/symbols.hpp"
 
 #include "log/log.hpp"
 
@@ -183,6 +185,10 @@ int main(int argc, char **argv)
 
   compiler::imports file_imports;
 
+  std::vector<compiler::parse_tree::toplevel_ptr> parse_trees;
+
+  //  Lex and parse all given files / imports into parse_trees
+  //
   for (auto &file : filenames) {
 
     auto files_tokens = import_file(file);
@@ -194,7 +200,34 @@ int main(int argc, char **argv)
 
     LOG(DEBUG) << TAG(APP_FILE_NAME) << "[" << APP_LINE
                << "]: Top level items : " << p_tree.size() << std::endl;
+
+    parse_trees.insert(parse_trees.end(), std::make_move_iterator(p_tree.begin()),
+                   std::make_move_iterator(p_tree.end()));
   }
 
+  if (parse_trees.empty()) {
+    std::cout << "No items to generate" << std::endl;
+    return -1;
+  }
+
+  compiler::symbol::table symbol_table;
+  
+  //  Analyze the parse trees
+  //
+  {
+    auto semantic_analyzer = new compiler::analyzer(symbol_table, parse_trees);
+    if(!semantic_analyzer->analyze()) {
+      std::cout << "Semantic analysis failed" << std::endl;
+      delete semantic_analyzer;
+      return -1;
+    }
+    delete semantic_analyzer;
+  }
+
+  //  Translate parse tree to IR
+  //
+
+  //  IR to target
+  //
   return 0;
 }
