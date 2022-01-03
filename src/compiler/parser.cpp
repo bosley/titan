@@ -814,7 +814,6 @@ parse_tree::expr_ptr parser::str()
 
 parse_tree::expr_ptr parser::call_expr(parse_tree::expr_ptr fn)
 {
-
   size_t line_no = current_td_pair().line;
   size_t col = current_td_pair().col;
   auto result =
@@ -827,7 +826,11 @@ parse_tree::expr_ptr parser::call_expr(parse_tree::expr_ptr fn)
     return result;
   }
 
+  advance();
+
   result->params = parser::expression_list();
+
+  advance();
 
   if (!_parser_okay) {
     return nullptr;
@@ -860,10 +863,10 @@ parse_tree::expr_ptr parser::grouped_expr()
   advance();
   parse_tree::expr_ptr expr = expression(precedence::LOWEST);
 
-  if (peek().token != Token::R_PAREN) {
+  advance();
+  if (current_td_pair().token != Token::R_PAREN) {
     return nullptr;
   }
-  advance();
   return expr;
 }
 

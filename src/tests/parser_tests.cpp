@@ -269,14 +269,27 @@ TEST(parser_tests, expr)
                           compiler::parse_tree::node_type::RAW_NUMBER,
                           "0")))))));
 
+  expected.emplace_back(
+      compiler::parse_tree::expr_ptr(new compiler::parse_tree::infix_expr(
+          0,0,
+          "+",
+          compiler::parse_tree::expr_ptr(new compiler::parse_tree::expression(
+              compiler::parse_tree::node_type::RAW_NUMBER, "3")),
+          compiler::parse_tree::expr_ptr(
+              new compiler::parse_tree::function_call_expr(
+                  0,0,
+                  compiler::parse_tree::expr_ptr(
+                      new compiler::parse_tree::expression(
+                          compiler::parse_tree::node_type::ID, "add")))))));
+
   auto functions = parse_file("test_files/exprs.tl");
 
-  CHECK_EQUAL(1, functions.size());
+  CHECK_EQUAL(2, functions.size());
   CHECK_EQUAL((int)compiler::parse_tree::toplevel::tl_type::FUNCTION,
-              (int)functions[0]->type);
+              (int)functions[1]->type);
 
   auto func =
-      reinterpret_cast<compiler::parse_tree::function *>(functions[0].get());
+      reinterpret_cast<compiler::parse_tree::function *>(functions[1].get());
 
   CHECK_EQUAL(expected.size(), func->element_list.size());
 

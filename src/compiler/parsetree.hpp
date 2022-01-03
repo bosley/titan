@@ -125,7 +125,9 @@ class function_call_expr : public expression {
 public:
   function_call_expr(size_t line, size_t col) : expression(line, col, node_type::CALL) {}
   function_call_expr(size_t line, size_t col, expr_ptr fn)
-      : expression(line, col, node_type::CALL), fn(std::move(fn))
+      : expression(line, col, node_type::CALL), fn(std::move(fn)) {}
+  function_call_expr(size_t line, size_t col, expr_ptr fn, std::vector<expr_ptr> p)
+      : expression(line, col, node_type::CALL), fn(std::move(fn)), params(std::move(p))
   {
   }
 
