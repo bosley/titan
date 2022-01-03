@@ -54,11 +54,15 @@ class expression {
 public:
   expression() : type(node_type::ROOT) {}
   expression(node_type t) : type(t) {}
+  expression(size_t line, size_t col, node_type t) : type(t) {}
   expression(node_type t, std::string val) : type(t), value(val) {}
+  expression(size_t line, size_t col, node_type t, std::string val) : type(t), value(val), line(line), col(col) {}
   virtual ~expression() = default;
 
   node_type type;
   std::string value;
+  size_t line;
+  size_t col;
 };
 using expr_ptr = std::unique_ptr<expression>;
 
@@ -72,8 +76,8 @@ extern void display_expr_tree(const std::string &prefix, expression *n,
 
 class prefix_expr : public expression {
 public:
-  prefix_expr(std::string op, expr_ptr right)
-      : expression(node_type::PREFIX), op(op), right(std::move(right))
+  prefix_expr(size_t line, size_t col, std::string op, expr_ptr right)
+      : expression(line, col, node_type::PREFIX), op(op), right(std::move(right))
   {
   }
   std::string op;
@@ -83,8 +87,8 @@ using prefix_expr_ptr = std::unique_ptr<prefix_expr>;
 
 class infix_expr : public expression {
 public:
-  infix_expr(std::string op, expr_ptr left, expr_ptr right)
-      : expression(node_type::INFIX), op(op), left(std::move(left)),
+  infix_expr(size_t line, size_t col, std::string op, expr_ptr left, expr_ptr right)
+      : expression(line, col, node_type::INFIX), op(op), left(std::move(left)),
         right(std::move(right))
   {
   }
@@ -97,7 +101,7 @@ using infix_expr_ptr = std::unique_ptr<infix_expr>;
 
 class array_literal_expr : public expression {
 public:
-  array_literal_expr() : expression(node_type::ARRAY) {}
+  array_literal_expr(size_t line, size_t col) : expression(line, col, node_type::ARRAY) {}
 
   std::vector<expr_ptr> expressions;
 };
@@ -105,9 +109,9 @@ using array_literal_expr_ptr = std::unique_ptr<array_literal_expr>;
 
 class array_index_expr : public expression {
 public:
-  array_index_expr() : expression(node_type::ARRAY_IDX) {}
-  array_index_expr(expr_ptr arr, expr_ptr idx)
-      : expression(node_type::ARRAY_IDX), arr(std::move(arr)),
+  array_index_expr(size_t line, size_t col) : expression(line, col, node_type::ARRAY_IDX) {}
+  array_index_expr(size_t line, size_t col, expr_ptr arr, expr_ptr idx)
+      : expression(line, col, node_type::ARRAY_IDX), arr(std::move(arr)),
         index(std::move(idx))
   {
   }
@@ -119,9 +123,9 @@ using array_index_expr_ptr = std::unique_ptr<array_index_expr>;
 
 class function_call_expr : public expression {
 public:
-  function_call_expr() : expression(node_type::CALL) {}
-  function_call_expr(expr_ptr fn)
-      : expression(node_type::CALL), fn(std::move(fn))
+  function_call_expr(size_t line, size_t col) : expression(line, col, node_type::CALL) {}
+  function_call_expr(size_t line, size_t col, expr_ptr fn)
+      : expression(line, col, node_type::CALL), fn(std::move(fn))
   {
   }
 
