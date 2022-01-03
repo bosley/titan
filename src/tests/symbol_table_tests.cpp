@@ -19,7 +19,7 @@ TEST(symbol_tests, all)
   compiler::parse_tree::function *dummy_func =
       new compiler::parse_tree::function(0, 0);
   compiler::parse_tree::assignment_statement *dummy_assign =
-      new compiler::parse_tree::assignment_statement(0, {}, nullptr);
+      new compiler::parse_tree::assignment_statement(0, 0, {}, nullptr);
 
   // Will create symbols in global table for functions,
   // and will generate global sub scopes for each function
@@ -96,7 +96,7 @@ TEST(symbol_tests, expanded)
   compiler::parse_tree::function *dummy_func =
       new compiler::parse_tree::function(0,0);
   compiler::parse_tree::assignment_statement *dummy_assign =
-      new compiler::parse_tree::assignment_statement(0, {}, nullptr);
+      new compiler::parse_tree::assignment_statement(0, 0, {}, nullptr);
 
   compiler::symbol::table table;
 

@@ -3,6 +3,8 @@
 #include "app.hpp"
 #include "log/log.hpp"
 
+#include <iostream>
+
 #include <algorithm>
 
 namespace compiler {
@@ -166,8 +168,8 @@ void analyzer::accept(parse_tree::assignment_statement &stmt)
     std::string msg = "Duplicate variable name \"";
     msg += stmt.var.name;
     msg += "\". Item first defined on line ";
-    msg += std::to_string(existing_item.assignment->line_number);
-    report_error(_current_function->file_name, stmt.line_number, 0, msg, false);
+    msg += std::to_string(existing_item.assignment->line);
+    report_error(_current_function->file_name, stmt.line, 0, msg, false);
     return;
   }
 
@@ -175,7 +177,7 @@ void analyzer::accept(parse_tree::assignment_statement &stmt)
 
   std::string msg;
   if (!can_cast_to_expected(stmt.var.type, expression_result, msg)) {
-    report_error(_current_function->file_name, stmt.line_number, 0, msg, false);
+    report_error(_current_function->file_name, stmt.line, 0, msg, false);
   }
 }
 
@@ -251,7 +253,7 @@ void analyzer::accept(parse_tree::return_statement &stmt)
     std::string msg;
     if (!can_cast_to_expected(_current_function->return_type, expression_result,
                               msg)) {
-      report_error(_current_function->file_name, stmt.line_number, 0, msg,
+      report_error(_current_function->file_name, stmt.line, 0, msg,
                    false);
     }
   }
@@ -263,7 +265,7 @@ void analyzer::accept(parse_tree::return_statement &stmt)
 
       std::string message =
           "Expected expression for return in function with non-nil return type";
-      report_error(_current_function->file_name, stmt.line_number, 0, message);
+      report_error(_current_function->file_name, stmt.line, 0, message);
     }
   }
 }
@@ -296,9 +298,22 @@ analyzer::analyze_expression(parse_tree::expression *expr)
   }
 
   case parse_tree::node_type::CALL: {
-    // Ensure function exists / reachable
+
+    auto call = reinterpret_cast<parse_tree::function_call_expr*>(expr);
+
+    std::cout << "Call to " << call->fn->value << std::endl;
+
+    auto fn = _table.lookup(call->fn->value);
+
+    if(fn == std::nullopt) {
+      // Report error that the function wasn't found
+    }
+
+    // ensure that 'call's function parameters
+    // match that of 'fn's in every way
     //
-    // Return the result type of the function
+    // return the return_type of the fn call
+
     break;
   }
 
@@ -370,6 +385,17 @@ bool analyzer::can_cast_to_expected(parse_tree::variable_types expected,
                                     parse_tree::variable_types actual,
                                     std::string &msg)
 {
+  /*
+      
+    TODO:
+      A more clever way needs to be devised to do this so we can easily drop in
+      user stuff too. 
+
+  */
+  if(expected == actual) {
+    return true;
+  }
+
   // Check if the actual value yielded by some expression can be cast to the
   // expected value
 
@@ -383,6 +409,14 @@ bool analyzer::can_cast_to_expected(parse_tree::variable_types expected,
       expected != parse_tree::variable_types::STRING) {
     msg = "Can not safely cast directly from type 'string' to non-string data "
           "type";
+    return false;
+  }
+
+  if ((expected == parse_tree::variable_types::NIL &&
+      actual   != parse_tree::variable_types::NIL) ||
+      (actual   == parse_tree::variable_types::NIL &&
+      expected != parse_tree::variable_types::NIL)) {
+    msg = "Can not cast with nil value";
     return false;
   }
 

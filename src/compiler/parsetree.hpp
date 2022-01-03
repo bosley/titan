@@ -135,17 +135,18 @@ class visitor;
 class element {
 public:
   element() = delete;
-  element(size_t line_number) : line_number(line_number) {}
+  element(size_t line, size_t col) : line(line), col(col) {}
   virtual ~element() = default;
   virtual void visit(visitor &visitor) = 0;
-  size_t line_number;
+  size_t line;
+  size_t col;
 };
 using element_ptr = std::unique_ptr<element>;
 
 class assignment_statement : public element {
 public:
-  assignment_statement(size_t line, variable var, expr_ptr node)
-      : element(line), var(var), expr(std::move(node))
+  assignment_statement(size_t line, size_t col, variable var, expr_ptr node)
+      : element(line, col), var(var), expr(std::move(node))
   {
   }
 
@@ -170,7 +171,7 @@ public:
     expr_ptr expr;
     std::vector<element_ptr> element_list;
   };
-  if_statement(size_t line) : element(line) {}
+  if_statement(size_t line, size_t col) : element(line, col) {}
 
   std::vector<segment> segments;
 
@@ -180,8 +181,8 @@ using if_statement_ptr = std::unique_ptr<if_statement>;
 
 class expression_statement : public element {
 public:
-  expression_statement(size_t line, expr_ptr node)
-      : element(line), expr(std::move(node))
+  expression_statement(size_t line, size_t col, expr_ptr node)
+      : element(line, col), expr(std::move(node))
   {
   }
 
@@ -193,9 +194,9 @@ using expression_statement_ptr = std::unique_ptr<expression_statement>;
 
 class while_statement : public element {
 public:
-  while_statement(size_t line) : element(line), condition(nullptr) {}
-  while_statement(size_t line, expr_ptr c, std::vector<element_ptr> body)
-      : element(line), condition(std::move(c)), body(std::move(body))
+  while_statement(size_t line, size_t col) : element(line, col), condition(nullptr) {}
+  while_statement(size_t line, size_t col, expr_ptr c, std::vector<element_ptr> body)
+      : element(line, col), condition(std::move(c)), body(std::move(body))
   {
   }
 
@@ -208,10 +209,10 @@ using while_statement_ptr = std::unique_ptr<while_statement>;
 
 class for_statement : public element {
 public:
-  for_statement(size_t line) : element(line), condition(nullptr) {}
-  for_statement(size_t line, element_ptr assign, expr_ptr condition,
+  for_statement(size_t line, size_t col) : element(line, col), condition(nullptr) {}
+  for_statement(size_t line, size_t col, element_ptr assign, expr_ptr condition,
                 expr_ptr modifier, std::vector<element_ptr> body)
-      : element(line), assign(std::move(assign)),
+      : element(line, col), assign(std::move(assign)),
         condition(std::move(condition)), modifier(std::move(modifier)),
         body(std::move(body))
   {
@@ -228,8 +229,8 @@ using for_statement_ptr = std::unique_ptr<for_statement>;
 
 class return_statement : public element {
 public:
-  return_statement(size_t line, expr_ptr node)
-      : element(line), expr(std::move(node))
+  return_statement(size_t line, size_t col, expr_ptr node)
+      : element(line, col), expr(std::move(node))
   {
   }
   expr_ptr expr;

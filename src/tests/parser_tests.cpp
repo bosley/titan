@@ -183,13 +183,13 @@ TEST(parser_tests, assignments)
   std::vector<compiler::parse_tree::assignment_statement> expected;
 
   expected.push_back(compiler::parse_tree::assignment_statement(
-      5, {"d", compiler::parse_tree::variable_types::U32, "u32", 0}, nullptr));
+      5, 0, {"d", compiler::parse_tree::variable_types::U32, "u32", 0}, nullptr));
   expected.push_back(compiler::parse_tree::assignment_statement(
-      6, {"e", compiler::parse_tree::variable_types::U16, "u16", 12}, nullptr));
+      6, 0, {"e", compiler::parse_tree::variable_types::U16, "u16", 12}, nullptr));
   expected.push_back(compiler::parse_tree::assignment_statement(
-      7, {"f", compiler::parse_tree::variable_types::U8, "u8", 6}, nullptr));
+      7, 0, {"f", compiler::parse_tree::variable_types::U8, "u8", 6}, nullptr));
   expected.push_back(compiler::parse_tree::assignment_statement(
-      8, {"g", compiler::parse_tree::variable_types::I8, "i8", 0}, nullptr));
+      8, 0, {"g", compiler::parse_tree::variable_types::I8, "i8", 0}, nullptr));
 
   auto functions = parse_file("test_files/parser_assignments.tl");
 
@@ -204,7 +204,7 @@ TEST(parser_tests, assignments)
   for (size_t i = 0; i < expected.size(); i++) {
     auto a = static_cast<compiler::parse_tree::assignment_statement *>(
         f->element_list[i].get());
-    CHECK_EQUAL(expected[i].line_number, a->line_number);
+    CHECK_EQUAL(expected[i].line, a->line);
     CHECK_EQUAL(expected[i].var.name, a->var.name);
     CHECK_EQUAL(expected[i].var.depth, a->var.depth);
   }
@@ -345,7 +345,7 @@ TEST(parser_tests, while_statements)
           new compiler::parse_tree::while_statement(
 
               // Line
-              4,
+              4, 0,
 
               // Expr
               compiler::parse_tree::expr_ptr(
@@ -361,7 +361,7 @@ TEST(parser_tests, while_statements)
           new compiler::parse_tree::while_statement(
 
               // Line
-              3,
+              3, 0,
 
               // Expr
               compiler::parse_tree::expr_ptr(
@@ -381,7 +381,7 @@ TEST(parser_tests, while_statements)
           new compiler::parse_tree::assignment_statement(
 
               // Line
-              9,
+              9, 0,
 
               // Variable
               compiler::parse_tree::variable{
@@ -398,7 +398,7 @@ TEST(parser_tests, while_statements)
           new compiler::parse_tree::assignment_statement(
 
               // Line
-              10,
+              10, 0,
 
               // Variable
               compiler::parse_tree::variable{
@@ -415,7 +415,7 @@ TEST(parser_tests, while_statements)
           new compiler::parse_tree::assignment_statement(
 
               // Line
-              11,
+              11, 0,
 
               // variable
               compiler::parse_tree::variable{
@@ -432,7 +432,7 @@ TEST(parser_tests, while_statements)
           new compiler::parse_tree::assignment_statement(
 
               // Line
-              12,
+              12, 0,
 
               // Variable
               compiler::parse_tree::variable{
@@ -449,7 +449,7 @@ TEST(parser_tests, while_statements)
           new compiler::parse_tree::while_statement(
 
               // Line
-              8,
+              8, 0,
 
               // Expr
               compiler::parse_tree::expr_ptr(
@@ -481,7 +481,7 @@ TEST(parser_tests, while_statements)
 
     for (size_t j = 0; j < expected[i]->body.size(); j++) {
 
-      if (ws->body[j]->line_number == 4) {
+      if (ws->body[j]->line == 4) {
 
         auto expected_ws =
             reinterpret_cast<compiler::parse_tree::while_statement *>(
@@ -622,7 +622,7 @@ TEST(parser_tests, for_statement)
 
   auto expected_assign = compiler::parse_tree::assignment_statement_ptr(
       new compiler::parse_tree::assignment_statement(
-          5, {"i", compiler::parse_tree::variable_types::U8, "u8", 0},
+          5, 0, {"i", compiler::parse_tree::variable_types::U8, "u8", 0},
           compiler::parse_tree::expr_ptr(new compiler::parse_tree::expression(
               compiler::parse_tree::node_type::RAW_NUMBER, "0"))));
 

@@ -451,6 +451,7 @@ parse_tree::element_ptr parser::assignment()
   expect(Token::IDENTIFIER, "Expected variable name in assignmnet");
   std::string name = current_td_pair().data;
   size_t line_no = current_td_pair().line;
+  size_t col = current_td_pair().col;
 
   advance();
   expect(Token::COLON,
@@ -474,7 +475,7 @@ parse_tree::element_ptr parser::assignment()
   advance();
   if (_parser_okay) {
     return parse_tree::element_ptr(new parse_tree::assignment_statement(
-        line_no, {name, variable_type, type_string, depth}, std::move(exp)));
+        line_no, col, {name, variable_type, type_string, depth}, std::move(exp)));
   }
 
   return nullptr;
@@ -487,6 +488,7 @@ parse_tree::element_ptr parser::if_statement()
   }
 
   size_t line_no = current_td_pair().line;
+  size_t col = current_td_pair().col;
 
   advance();
 
@@ -498,7 +500,7 @@ parse_tree::element_ptr parser::if_statement()
   }
 
   auto if_stmt =
-      parse_tree::if_statement_ptr(new parse_tree::if_statement(line_no));
+      parse_tree::if_statement_ptr(new parse_tree::if_statement(line_no, col));
 
   bool construct_segments = true;
 
@@ -555,6 +557,7 @@ parse_tree::element_ptr parser::while_statement()
   }
 
   size_t line_no = current_td_pair().line;
+  size_t col = current_td_pair().col;
 
   advance();
 
@@ -571,7 +574,7 @@ parse_tree::element_ptr parser::while_statement()
   }
 
   return parse_tree::element_ptr(new parse_tree::while_statement(
-      line_no, std::move(condition), std::move(body)));
+      line_no, col, std::move(condition), std::move(body)));
 }
 
 parse_tree::element_ptr parser::for_statement()
@@ -581,6 +584,7 @@ parse_tree::element_ptr parser::for_statement()
   }
 
   size_t line_no = current_td_pair().line;
+  size_t col = current_td_pair().col;
 
   advance();
 
@@ -620,7 +624,7 @@ parse_tree::element_ptr parser::for_statement()
   }
 
   return parse_tree::element_ptr(new parse_tree::for_statement(
-      line_no, std::move(assignment), std::move(conditional),
+      line_no, col, std::move(assignment), std::move(conditional),
       std::move(modifier), std::move(body)));
 }
 
@@ -631,6 +635,7 @@ parse_tree::element_ptr parser::return_statement()
   }
 
   size_t line_no = current_td_pair().line;
+  size_t col = current_td_pair().col;
 
   advance();
 
@@ -647,7 +652,7 @@ parse_tree::element_ptr parser::return_statement()
   else if (current_td_pair().token == Token::SEMICOLON) {
     advance();
     return parse_tree::element_ptr(
-        new parse_tree::return_statement(line_no, nullptr));
+        new parse_tree::return_statement(line_no, col, nullptr));
   }
   else {
     return_expr = parser::expression(parser::precedence::LOWEST);
@@ -661,7 +666,7 @@ parse_tree::element_ptr parser::return_statement()
   }
 
   return parse_tree::element_ptr(
-      new parse_tree::return_statement(line_no, std::move(return_expr)));
+      new parse_tree::return_statement(line_no, col, std::move(return_expr)));
 }
 
 // Expects expression to exist, if not this will kill the parser
@@ -675,6 +680,7 @@ parse_tree::element_ptr parser::expression_statement()
   }
 
   size_t line_no = current_td_pair().line;
+  size_t col = current_td_pair().col;
   parse_tree::expr_ptr expr = parser::expression(parser::precedence::LOWEST);
 
   advance();
@@ -688,7 +694,7 @@ parse_tree::element_ptr parser::expression_statement()
   }
 
   return parse_tree::element_ptr(
-      new parse_tree::expression_statement(line_no, std::move(expr)));
+      new parse_tree::expression_statement(line_no, col, std::move(expr)));
 }
 
 parse_tree::expr_ptr parser::conditional()
