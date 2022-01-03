@@ -19,15 +19,12 @@ void show(level lvl, const char *reporter, const config &cfg)
   switch (lvl) {
   case level::ERROR:
     std::cout << APP_COLOR_RED;
-    alert_type = "Error";
     break;
   case level::WARNING:
     std::cout << APP_COLOR_YELLOW;
-    alert_type = "Warning";
     break;
   default:
-    std::cout << APP_COLOR_MAGENTA;
-    alert_type = "UNKNOWN";
+    std::cout << APP_COLOR_GREEN;
     break;
   };
 
@@ -43,9 +40,12 @@ void show(level lvl, const char *reporter, const config &cfg)
   }
 
   if (!cfg.show_chunk) {
-    std::cout << std::endl
-              << APP_COLOR_CYAN << "\tMessage : " << APP_COLOR_END
-              << cfg.message << std::endl;
+    if(!cfg.message.empty()) {
+      std::cout << std::endl
+                << APP_COLOR_CYAN << "\tMessage : " << APP_COLOR_END 
+                << cfg.message;
+    }
+    std::cout << std::endl;
     return;
   }
 
@@ -67,8 +67,10 @@ void show(level lvl, const char *reporter, const config &cfg)
   bool add_line = cfg.line <= cfg.display_window_bot;
   std::vector<std::string> display;
 
-  std::cout << APP_COLOR_CYAN << "Message : " << APP_COLOR_END << cfg.message
-            << std::endl;
+  if(!cfg.message.empty()) {
+    std::cout << APP_COLOR_CYAN << "Message : " << APP_COLOR_END << cfg.message;
+    std::cout << std::endl;
+  }
   std::cout << line_break << std::endl;
 
   while (!complete) {

@@ -1,5 +1,7 @@
 #include "parser.hpp"
 
+#include "error/error_list.hpp"
+
 #include "alert/alert.hpp"
 #include "app.hpp"
 #include "log/log.hpp"
@@ -35,22 +37,12 @@ std::unordered_map<Token, parser::precedence> precedences = {
 TD_Pair error_token = {Token::ERT, {}, 0};
 TD_Pair end_of_stream = {Token::EOS, {}, 0};
 
-static void report_error(const std::string &filename, size_t line, size_t col,
-                         const std::string error, bool show_full)
-{
-  alert::config cfg;
-
-  cfg.set_basic(filename, error, line, col);
-  cfg.set_show_chunk(show_full);
-  cfg.set_all_attn(show_full);
-
-  alert::show(alert::level::ERROR, "parser", cfg);
-}
 } // namespace
+
 
 parser::parser(imports &file_imports)
     : _parser_okay(true), _idx(0), _mark(std::numeric_limits<uint64_t>::max()),
-      _file_imports(file_imports)
+      _file_imports(file_imports), _err("parser")
 {
 }
 
@@ -104,11 +96,8 @@ parser::parse(std::string filename,
           locate_import(include_directories, import_statement->target);
 
       if (!item_found) {
-        report_error(_filename, current_td_pair().line, current_td_pair().col,
-                     "Unable to locate import target: " +
-                         import_statement->target,
-                     _parser_okay);
-        _parser_okay = false;
+        std::string message =  "Unable to locate import target: " + import_statement->target;
+        die(error::compiler::parser::UNABLE_TO_LOCATE_IMPORT, message);
         break;
       }
 
@@ -139,7 +128,7 @@ parser::parse(std::string filename,
       top_level_items.push_back(std::move(function_statement));
     }
     else {
-      die("Invalid top level item. Expected 'import' or 'fn'");
+      die(error::compiler::parser::INVALID_TL_ITEM, "");
     };
   }
 
@@ -150,6 +139,20 @@ parser::parse(std::string filename,
   }
 
   return top_level_items;
+}
+
+void parser::report_error(uint64_t error_no, 
+                          size_t line, 
+                          size_t col, 
+                          const std::string msg, 
+                          bool show_full)
+{
+  alert::config cfg;
+  cfg.set_basic(_filename, msg, line, col);
+  cfg.set_show_chunk(show_full);
+  cfg.set_all_attn(show_full);
+  _err.raise(error_no, &cfg);
+  _parser_okay = false;
 }
 
 void parser::prev() { _idx--; }
@@ -173,9 +176,9 @@ const TD_Pair &parser::current_td_pair() const
 
 void parser::reset()
 {
-
   if (_mark > _idx) {
-    die("Internal error - Attempting to reset with unset _mark");
+    _err.raise(error::compiler::parser::INTERNAL_MARK_UNSET);
+    _parser_okay = false;
     unset(); // ensure its set to max, not some other num
     return;
   }
@@ -187,11 +190,10 @@ void parser::reset()
   unset();
 }
 
-void parser::die(std::string error)
+void parser::die(uint64_t error_no, std::string error)
 {
-  report_error(_filename, current_td_pair().line, current_td_pair().col, error,
+  report_error(error_no, current_td_pair().line, current_td_pair().col, error,
                _parser_okay);
-  _parser_okay = false;
 
   LOG(DEBUG) << TAG(APP_FILE_NAME) << "[" << APP_LINE << "]: " << COLOR(magenta)
              << "Curernt token : " << token_to_str(current_td_pair())
@@ -201,7 +203,7 @@ void parser::die(std::string error)
 void parser::expect(Token token, std::string error, size_t ahead)
 {
   if (peek(ahead).token != token) {
-    die(error);
+    die(error::compiler::parser::UNEXPECTED_TOKEN, error);
   }
 }
 
@@ -455,7 +457,7 @@ parse_tree::element_ptr parser::assignment()
 
   advance();
   expect(Token::COLON,
-         "Expected colon between name:type in variabLe assignment");
+         "Expected colon between name:type in variable assignment");
 
   advance();
   expect(Token::IDENTIFIER, "Expected variable type");
@@ -496,7 +498,7 @@ parse_tree::element_ptr parser::if_statement()
   parse_tree::expr_ptr condition = parser::conditional();
 
   if (!condition) {
-    die("Expected conditional for given if statement");
+    die(error::compiler::parser::EXPECTED_CONDITIONAL, "");
     return nullptr;
   }
 
@@ -597,7 +599,7 @@ parse_tree::element_ptr parser::for_statement()
   auto assignment = parser::assignment();
 
   if (!assignment) {
-    die("Expected assignment as first part of for loop");
+    die(error::compiler::parser::EXPECTED_ASSIGNMENT, "first part of for loop");
     return nullptr;
   }
 
@@ -724,7 +726,7 @@ parse_tree::expr_ptr parser::expression(parser::precedence precedence)
 {
 
   if (_prefix_fns.find(current_td_pair().token) == _prefix_fns.end()) {
-    die("No prefix function for given token");
+    die(error::compiler::parser::INTERNAL_NO_FN_FOR_TOK, "");
     return nullptr;
   }
 
@@ -800,7 +802,7 @@ parse_tree::expr_ptr parser::number()
         current_td_pair().data));
   }
   else {
-    die("Expected numerical item");
+    die(error::compiler::parser::INTERNAL_NON_NUMERIC_REACHED, "Expected numerical item");
     return nullptr;
   }
 }

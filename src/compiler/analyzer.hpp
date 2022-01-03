@@ -1,6 +1,7 @@
 #ifndef ANALYZER_HPP
 #define ANALYZER_HPP
 
+#include "error/error_manager.hpp"
 #include "parsetree.hpp"
 #include "symbols.hpp"
 
@@ -39,10 +40,11 @@ private:
   parse_tree::function *_current_function;
   uint8_t _num_errors;
   uint64_t _uid;
+  error::manager _err;
   check_flags _flags;
 
-  void report_error(const std::string &file, size_t line, size_t col,
-                    const std::string &msg, bool show_col = true);
+  void report_error(uint64_t error_no, size_t line, size_t col,
+                    const std::string msg, bool show_col = true, std::string file = "");
 
   virtual void accept(parse_tree::assignment_statement &stmt) override;
   virtual void accept(parse_tree::expression_statement &stmt) override;

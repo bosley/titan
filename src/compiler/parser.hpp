@@ -7,6 +7,8 @@
 #include <unordered_map>
 #include <vector>
 
+#include "error/error_manager.hpp"
+
 #include "common.hpp"
 #include "imports.hpp"
 #include "parsetree.hpp"
@@ -45,18 +47,20 @@ private:
   size_t _idx;
   size_t _mark;
   imports &_file_imports;
+  error::manager _err;
   std::vector<TD_Pair> _tokens;
   std::unordered_map<Token, prefix_parse_fn> _prefix_fns;
   std::unordered_map<Token, infix_parse_fn> _infix_fns;
   std::string _filename;
   std::unordered_map<std::string, std::string> _located_items;
+  void report_error(uint64_t error_no, size_t line, size_t col, const std::string error, bool show_full);
   void prev();
   void advance();
   void mark();
   void reset();
   void unset();
   const TD_Pair &current_td_pair() const;
-  void die(std::string error);
+  void die(uint64_t error_no, std::string error);
   void expect(Token token, std::string error, size_t ahead = 0);
   const TD_Pair &peek(size_t ahead = 1) const;
   precedence peek_precedence();
