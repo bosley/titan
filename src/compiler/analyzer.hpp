@@ -4,7 +4,9 @@
 #include "parsetree.hpp"
 #include "symbols.hpp"
 
+#include <optional>
 #include <string>
+#include <tuple>
 #include <vector>
 
 namespace compiler {
@@ -54,6 +56,18 @@ private:
   bool can_cast_to_expected(parse_tree::variable_types expected,
                             parse_tree::variable_types actual,
                             std::string &out);
+
+  std::optional<parse_tree::variable_types>
+  validate_function_call(parse_tree::expression *expr);
+
+  std::optional<parse_tree::variable_types>
+  validate_prefix(parse_tree::expression *expr);
+
+  std::optional<parse_tree::variable_types>
+  validate_infix(parse_tree::expression *expr);
+
+  std::optional<std::tuple<parse_tree::variable_types, long long> >
+  determine_integer_type(const std::string& data);
 };
 
 } // namespace compiler

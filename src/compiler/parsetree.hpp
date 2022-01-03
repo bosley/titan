@@ -20,7 +20,7 @@ enum class variable_types {
   I16,
   I32,
   I64,
-  FLOAT,
+  FLOAT = 20,
   STRING,
   ARRAY,
   NIL,
@@ -56,7 +56,10 @@ public:
   expression(node_type t) : type(t) {}
   expression(size_t line, size_t col, node_type t) : type(t) {}
   expression(node_type t, std::string val) : type(t), value(val) {}
-  expression(size_t line, size_t col, node_type t, std::string val) : type(t), value(val), line(line), col(col) {}
+  expression(size_t line, size_t col, node_type t, std::string val)
+      : type(t), value(val), line(line), col(col)
+  {
+  }
   virtual ~expression() = default;
 
   node_type type;
@@ -66,6 +69,8 @@ public:
 };
 using expr_ptr = std::unique_ptr<expression>;
 
+
+
 /*
  *  prefix / infix and other expression implementations are used to construct
  * expression trees this method will display the expression trees horizontally
@@ -74,26 +79,42 @@ using expr_ptr = std::unique_ptr<expression>;
 extern void display_expr_tree(const std::string &prefix, expression *n,
                               bool is_left);
 
+class raw_int_expr : public expression {
+public:
+  raw_int_expr(size_t line, size_t col, std::string val)
+    : expression(line, col, node_type::RAW_NUMBER, val), as(variable_types::I64), with_val(0){}
+  raw_int_expr(size_t line, size_t col, std::string val, variable_types as, long long ival)
+    : expression(line, col, node_type::RAW_NUMBER, val), as(as), with_val(ival){}
+  variable_types as;
+  long long with_val;
+};
+using raw_int_expr_ptr = std::unique_ptr<raw_int_expr>;
+
 class prefix_expr : public expression {
 public:
   prefix_expr(size_t line, size_t col, std::string op, expr_ptr right)
-      : expression(line, col, node_type::PREFIX), op(op), right(std::move(right))
+      : expression(line, col, node_type::PREFIX), op(op),
+        right(std::move(right))
   {
   }
   std::string op;
+  Token tok_op;
   expr_ptr right;
 };
 using prefix_expr_ptr = std::unique_ptr<prefix_expr>;
 
 class infix_expr : public expression {
 public:
-  infix_expr(size_t line, size_t col, std::string op, expr_ptr left, expr_ptr right)
+  infix_expr(size_t line, size_t col, std::string op, expr_ptr left,
+             expr_ptr right)
       : expression(line, col, node_type::INFIX), op(op), left(std::move(left)),
         right(std::move(right))
   {
   }
 
   std::string op;
+  Token tok_op;
+  
   expr_ptr left;
   expr_ptr right;
 };
@@ -101,7 +122,10 @@ using infix_expr_ptr = std::unique_ptr<infix_expr>;
 
 class array_literal_expr : public expression {
 public:
-  array_literal_expr(size_t line, size_t col) : expression(line, col, node_type::ARRAY) {}
+  array_literal_expr(size_t line, size_t col)
+      : expression(line, col, node_type::ARRAY)
+  {
+  }
 
   std::vector<expr_ptr> expressions;
 };
@@ -109,7 +133,10 @@ using array_literal_expr_ptr = std::unique_ptr<array_literal_expr>;
 
 class array_index_expr : public expression {
 public:
-  array_index_expr(size_t line, size_t col) : expression(line, col, node_type::ARRAY_IDX) {}
+  array_index_expr(size_t line, size_t col)
+      : expression(line, col, node_type::ARRAY_IDX)
+  {
+  }
   array_index_expr(size_t line, size_t col, expr_ptr arr, expr_ptr idx)
       : expression(line, col, node_type::ARRAY_IDX), arr(std::move(arr)),
         index(std::move(idx))
@@ -123,11 +150,18 @@ using array_index_expr_ptr = std::unique_ptr<array_index_expr>;
 
 class function_call_expr : public expression {
 public:
-  function_call_expr(size_t line, size_t col) : expression(line, col, node_type::CALL) {}
+  function_call_expr(size_t line, size_t col)
+      : expression(line, col, node_type::CALL)
+  {
+  }
   function_call_expr(size_t line, size_t col, expr_ptr fn)
-      : expression(line, col, node_type::CALL), fn(std::move(fn)) {}
-  function_call_expr(size_t line, size_t col, expr_ptr fn, std::vector<expr_ptr> p)
-      : expression(line, col, node_type::CALL), fn(std::move(fn)), params(std::move(p))
+      : expression(line, col, node_type::CALL), fn(std::move(fn))
+  {
+  }
+  function_call_expr(size_t line, size_t col, expr_ptr fn,
+                     std::vector<expr_ptr> p)
+      : expression(line, col, node_type::CALL), fn(std::move(fn)),
+        params(std::move(p))
   {
   }
 
@@ -200,8 +234,12 @@ using expression_statement_ptr = std::unique_ptr<expression_statement>;
 
 class while_statement : public element {
 public:
-  while_statement(size_t line, size_t col) : element(line, col), condition(nullptr) {}
-  while_statement(size_t line, size_t col, expr_ptr c, std::vector<element_ptr> body)
+  while_statement(size_t line, size_t col)
+      : element(line, col), condition(nullptr)
+  {
+  }
+  while_statement(size_t line, size_t col, expr_ptr c,
+                  std::vector<element_ptr> body)
       : element(line, col), condition(std::move(c)), body(std::move(body))
   {
   }
@@ -215,7 +253,10 @@ using while_statement_ptr = std::unique_ptr<while_statement>;
 
 class for_statement : public element {
 public:
-  for_statement(size_t line, size_t col) : element(line, col), condition(nullptr) {}
+  for_statement(size_t line, size_t col)
+      : element(line, col), condition(nullptr)
+  {
+  }
   for_statement(size_t line, size_t col, element_ptr assign, expr_ptr condition,
                 expr_ptr modifier, std::vector<element_ptr> body)
       : element(line, col), assign(std::move(assign)),

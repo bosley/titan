@@ -3,9 +3,10 @@
 #include "app.hpp"
 #include "log/log.hpp"
 
-#include <iostream>
-
 #include <algorithm>
+#include <iostream>
+#include <limits>
+#include <string>
 
 namespace compiler {
 
@@ -253,8 +254,7 @@ void analyzer::accept(parse_tree::return_statement &stmt)
     std::string msg;
     if (!can_cast_to_expected(_current_function->return_type, expression_result,
                               msg)) {
-      report_error(_current_function->file_name, stmt.line, 0, msg,
-                   false);
+      report_error(_current_function->file_name, stmt.line, 0, msg, false);
     }
   }
   else {
@@ -273,14 +273,6 @@ void analyzer::accept(parse_tree::return_statement &stmt)
 parse_tree::variable_types
 analyzer::analyze_expression(parse_tree::expression *expr)
 {
-  /*
-   *    We may want to pass a result type to the method on each call
-   *    so we can track / elevate the type of expression recursively
-   *
-   *    Most likely makes sense to return a tuple to denote
-   *    validity, and resulting type
-   * */
-
   if (!expr) {
     _num_errors++;
     LOG(ERROR) << TAG(APP_FILE_NAME) << "[" << APP_LINE
@@ -298,54 +290,65 @@ analyzer::analyze_expression(parse_tree::expression *expr)
   }
 
   case parse_tree::node_type::CALL: {
-
-    auto call = reinterpret_cast<parse_tree::function_call_expr*>(expr);
-
-    std::cout << "Call to " << call->fn->value << std::endl;
-
-    auto fn = _table.lookup(call->fn->value);
-
-    if(fn == std::nullopt) {
-      // Report error that the function wasn't found
+    // Call validation broken out due to size
+    auto potential_type = validate_function_call(expr);
+    if (std::nullopt != potential_type) {
+      return potential_type.value();
     }
-
-    // ensure that 'call's function parameters
-    // match that of 'fn's in every way
-    //
-    // return the return_type of the fn call
-
     break;
   }
 
   case parse_tree::node_type::ARRAY_IDX: {
-    // Ensure expr->arr is valid (exists - should be an ID)
-    // Ensure expr->index evaluates to a RAW_NUMBER as its the
-    // accessor
-    //
-    //
-    // Need to return the tye that the array holds
+    auto array = reinterpret_cast<parse_tree::array_index_expr *>(expr);
+    auto arr_type = analyze_expression(array->arr.get());
+    auto arr_idx_type = analyze_expression(array->index.get());
+    if (static_cast<uint64_t>(arr_idx_type) <
+        static_cast<uint64_t>(parse_tree::variable_types::FLOAT)) {
+      return arr_type;
+    }
+
+    // Invalid non-integer type
+    report_error(_current_function->file_name, array->line, array->col,
+                 "Given type indexing into array is of a non-integer type");
     break;
   }
 
   case parse_tree::node_type::INFIX: {
-    // expr->op is a string
-    // get type of expr->left
-    // get tyoe of expr->right
-    // ensure that op is valid for the given types
+    auto potential_type = validate_infix(expr);
+    if (std::nullopt != potential_type) {
+      return potential_type.value();
+    }
     break;
   }
 
   case parse_tree::node_type::PREFIX: {
-    // expr->op is a string
-    // get type of expr->right
-    // ensure op is valid for given type
+    auto potential_type = validate_prefix(expr);
+    if (std::nullopt != potential_type) {
+      return potential_type.value();
+    }
     break;
   }
 
   case parse_tree::node_type::ID: {
-    // Ensure ID is reachable
-    // Return type of ID
-    break;
+    auto suspected_id = _table.lookup(expr->value);
+
+    if (suspected_id == std::nullopt) {
+      std::string message = "Unknown variable \"";
+      message += expr->value;
+      message += "\"";
+      report_error(_current_function->file_name, expr->line, expr->col, message);
+      break;
+    }
+
+    if (suspected_id->type != symbol::variant_type::ASSIGNMENT) {
+      std::string message = "Item \"";
+      message += expr->value;
+      message += "\" is not a variable";
+      report_error(_current_function->file_name, expr->line, expr->col, message);
+      break;
+    }
+
+    return suspected_id.value().assignment->var.type;
   }
 
   case parse_tree::node_type::RAW_FLOAT: {
@@ -357,27 +360,35 @@ analyzer::analyze_expression(parse_tree::expression *expr)
   }
 
   case parse_tree::node_type::RAW_NUMBER: {
-    /*
-     *
-     *    Need to check out the value of the number and determine what it
-     *    fits into - OR we could keep i64 and let the next stage cast it.
-     *
-     * */
-    return parse_tree::variable_types::I64;
+    auto determined_type = determine_integer_type(expr->value);
+    if(std::nullopt == determined_type) {
+      std::string message = "Unable to determine integer type from value \"";
+      message += expr->value;
+      message += "\"";
+      report_error(_current_function->file_name, expr->line, expr->col, message);
+      break;
+    }
+    
+    // Tag the type and value so we don't have to parse again later
+    auto raw = reinterpret_cast<parse_tree::raw_int_expr*>(expr);
+    raw->as = std::get<0>(determined_type.value());
+    raw->with_val = std::get<1>(determined_type.value());
+    return raw->as;
   }
 
   case parse_tree::node_type::ARRAY: {
-    // Iterate over expr->expressions
-    // If we care (don't know yet) ensure all expressions are of same type
-    // If we don't, we only need to ensure they are valid (ids/funcs/etc)
+    auto arr = reinterpret_cast<parse_tree::array_literal_expr*>(expr);
+    for(auto &e: arr->expressions) {
+      analyze_expression(e.get());
+    }
     return parse_tree::variable_types::ARRAY;
   }
 
   } // Switch
 
   _num_errors++;
-  LOG(ERROR) << TAG(APP_FILE_NAME) << "[" << APP_LINE
-             << "]: Unhandled node type in analyze_expression" << std::endl;
+  LOG(DEBUG) << TAG(APP_FILE_NAME) << "[" << APP_LINE
+             << "]: Error in current expression" << std::endl;
   return parse_tree::variable_types::U8;
 }
 
@@ -386,13 +397,13 @@ bool analyzer::can_cast_to_expected(parse_tree::variable_types expected,
                                     std::string &msg)
 {
   /*
-      
+
     TODO:
       A more clever way needs to be devised to do this so we can easily drop in
-      user stuff too. 
+      user stuff too.
 
   */
-  if(expected == actual) {
+  if (expected == actual) {
     return true;
   }
 
@@ -413,15 +424,134 @@ bool analyzer::can_cast_to_expected(parse_tree::variable_types expected,
   }
 
   if ((expected == parse_tree::variable_types::NIL &&
-      actual   != parse_tree::variable_types::NIL) ||
-      (actual   == parse_tree::variable_types::NIL &&
-      expected != parse_tree::variable_types::NIL)) {
+       actual != parse_tree::variable_types::NIL) ||
+      (actual == parse_tree::variable_types::NIL &&
+       expected != parse_tree::variable_types::NIL)) {
     msg = "Can not cast with nil value";
     return false;
   }
 
   msg = "";
   return true;
+}
+
+std::optional<parse_tree::variable_types>
+analyzer::validate_function_call(parse_tree::expression *expr)
+{
+  auto call = reinterpret_cast<parse_tree::function_call_expr *>(expr);
+  auto suspected_fn = _table.lookup(call->fn->value);
+
+  if (suspected_fn == std::nullopt) {
+    // Report error that the function wasn't found
+  }
+
+  if (suspected_fn->type != symbol::variant_type::FUNCTION) {
+    // Item is not a function
+  }
+
+  auto fn = suspected_fn->function;
+
+  if (fn->parameters.size() != call->params.size()) {
+    // Expected fn->params.size(), but given call->params.size()
+  }
+
+  for (size_t i = 0; i < fn->parameters.size(); i++) {
+
+    // Validate the parameter
+    auto actual = analyze_expression(call->params[i].get());
+
+    // Ensure that the parameters are convertable
+    std::string msg;
+    if (!can_cast_to_expected(fn->parameters[i].type, actual, msg)) {
+      // Cant convert to call param type
+    }
+  }
+
+  return {fn->return_type};
+}
+
+std::optional<parse_tree::variable_types>
+analyzer::validate_prefix(parse_tree::expression *expr)
+{
+    auto prefix_expr = reinterpret_cast<parse_tree::prefix_expr*>(expr);
+    return analyze_expression(prefix_expr->right.get());
+}
+
+std::optional<parse_tree::variable_types>
+analyzer::validate_infix(parse_tree::expression *expr)
+{
+    auto infix_expr = reinterpret_cast<parse_tree::infix_expr*>(expr);
+    auto lhs = analyze_expression(infix_expr->left.get());
+    auto rhs = analyze_expression(infix_expr->right.get());
+
+    /*
+     *  Check if expression type needs to be modified to allow expression 
+     *
+     *  Precedence: 
+     *    uints < ints < floats < string
+     *
+     * */
+    if(lhs == rhs) {
+      return rhs;
+    }
+
+    if(static_cast<uint8_t>(lhs) > static_cast<uint8_t>(parse_tree::variable_types::STRING)) {
+      report_error(_current_function->file_name, expr->line, expr->col, "Unable to assign mismatched types");
+      return std::nullopt;
+    }
+
+    if(static_cast<uint8_t>(rhs) > static_cast<uint8_t>(parse_tree::variable_types::STRING)) {
+      report_error(_current_function->file_name, expr->line, expr->col, "Unable to assign mismatched types");
+      return std::nullopt;
+    }
+
+    if(static_cast<uint8_t>(lhs) > static_cast<uint8_t>(rhs)) {
+      return lhs;
+    }
+
+    return rhs;
+}
+
+std::optional<std::tuple<parse_tree::variable_types, long long>>
+analyzer::determine_integer_type(const std::string& data)
+{
+  long long value = 0;
+  try{
+    value = std::stoll(data);
+  } catch (...) {
+    LOG(ERROR) << TAG(APP_FILE_NAME) << "[" << APP_LINE
+               << "]: Exception attempting to determine integer type for : " << data << std::endl;
+    return std::nullopt;
+  }
+  if(value >= 0) {
+    if(value <= std::numeric_limits<int8_t>::max()) {
+      return { { parse_tree::variable_types::I8, value } };
+    }
+    else if(value <= std::numeric_limits<int16_t>::max()) {
+      return { { parse_tree::variable_types::I16, value } };
+
+    }
+    else if(value <= std::numeric_limits<int32_t>::max()) {
+      return { { parse_tree::variable_types::I32, value } };
+    }
+    else {
+      return { { parse_tree::variable_types::I64, value } };
+    }
+  } else {
+    if(value <= std::numeric_limits<uint8_t>::max()) {
+      return { { parse_tree::variable_types::U8, value } };
+    }
+    else if(value <= std::numeric_limits<uint16_t>::max()) {
+      return { { parse_tree::variable_types::U16, value } };
+    }
+    else if(value <= std::numeric_limits<uint32_t>::max()) {
+      return { { parse_tree::variable_types::I32, value } };
+    }
+    else {
+      return { { parse_tree::variable_types::U64, value } };
+    }
+  }
+  return std::nullopt;
 }
 
 } // namespace compiler
