@@ -522,13 +522,13 @@ analyzer::validate_infix(parse_tree::expression *expr)
     }
 
     if(static_cast<uint8_t>(lhs) > static_cast<uint8_t>(parse_tree::variable_types::STRING)) {
-      report_error(error::compiler::analyzer::IMPLICIT_CAST_FAIL, 
+      report_error(error::compiler::analyzer::INVALID_EXPRESSION, 
           expr->line, expr->col, "Unable to assign mismatched types");
       return std::nullopt;
     }
 
     if(static_cast<uint8_t>(rhs) > static_cast<uint8_t>(parse_tree::variable_types::STRING)) {
-      report_error(error::compiler::analyzer::IMPLICIT_CAST_FAIL,
+      report_error(error::compiler::analyzer::INVALID_EXPRESSION,
           expr->line, expr->col, "Unable to assign mismatched types");
       return std::nullopt;
     }

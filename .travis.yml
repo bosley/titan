@@ -9,8 +9,10 @@ matrix:
         apt:
           sources:
             - ubuntu-toolchain-r-test
+            - deadsnakes
           packages:
             - g++-9
+            - python3.5
       env:
         - MATRIX_EVAL="CXX_COMPILER=g++-9"
     
@@ -42,3 +44,6 @@ script:
   - cd $PARENTDIR/build-asan
   - cmake $PARENTDIR/src -DCMAKE_BUILD_TYPE=Release -DWITH_ASAN=ON
   - make -j9
+
+  - cd $PARENTDIR/checks
+  - python3 semantic_failures/run.py $PARENTDIR/build/titan
