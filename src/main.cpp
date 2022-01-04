@@ -174,11 +174,11 @@ int main(int argc, char **argv)
       [](std::string file) -> std::vector<compiler::TD_Pair> {
     compiler::lexer lexer;
     if (!lexer.load_file(file)) {
-      std::exit(-1);
+      std::exit(1);
     }
     std::vector<compiler::TD_Pair> td;
     if (!lexer.lex(td)) {
-      std::exit(-1);
+      std::exit(1);
     }
     return td;
   };
@@ -207,7 +207,7 @@ int main(int argc, char **argv)
 
   if (parse_trees.empty()) {
     std::cout << "No items to generate" << std::endl;
-    return -1;
+    return 1;
   }
 
   compiler::symbol::table symbol_table;
@@ -219,7 +219,7 @@ int main(int argc, char **argv)
     if(!semantic_analyzer->analyze()) {
       std::cout << "Semantic analysis failed" << std::endl;
       delete semantic_analyzer;
-      return -1;
+      return 1;
     }
     delete semantic_analyzer;
   }

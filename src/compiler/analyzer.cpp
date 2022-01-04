@@ -1,5 +1,6 @@
 #include "analyzer.hpp"
 #include "alert/alert.hpp"
+#include "error/error_list.hpp"
 #include "app.hpp"
 #include "log/log.hpp"
 
@@ -13,16 +14,28 @@ namespace compiler {
 analyzer::analyzer(symbol::table &table,
                    std::vector<parse_tree::toplevel_ptr> &tree)
     : _table(table), _tree(tree), _current_function(nullptr), _num_errors(0),
-      _uid(0)
+      _uid(0), _err("analyzer")
 {
   _flags.entry_method_exists = false;
 }
 
-void analyzer::report_error(const std::string &file, size_t line, size_t col,
-                            const std::string &msg, bool show_col)
+void analyzer::report_error(uint64_t error_no, size_t line, size_t col,
+                            const std::string msg, bool show_col, std::string file)
 {
+  std::string target_file;
+  if(!_current_function) {
+    if(!file.empty()) {
+      target_file = file;
+    } else {
+      _err.raise(error_no);
+    }
+  } else {
+    target_file = _current_function->file_name;
+  }
+
   alert::config cfg;
-  cfg.set_basic(file, msg, line, col);
+
+  cfg.set_basic(target_file, msg, line, col);
 
   bool show_full = _num_errors == 0;
 
@@ -32,8 +45,7 @@ void analyzer::report_error(const std::string &file, size_t line, size_t col,
   cfg.show_line_num = line != 0;
   cfg.show_col_num = show_col;
 
-  alert::show(alert::level::ERROR, "analyzer", cfg);
-
+  _err.raise(error_no, &cfg);
   _num_errors++;
 }
 
@@ -82,7 +94,7 @@ bool analyzer::analyze()
           }
         }
 
-        report_error(fn->file_name, fn->line, fn->col, msg);
+        report_error(error::compiler::analyzer::DUPLICATE_FUNCTION_DEF, fn->line, fn->col, msg, true, fn->file_name);
       }
 
       //  Check if the item is entry and contains correct return type
@@ -94,7 +106,7 @@ bool analyzer::analyze()
           msg += "\" is expected to have return type : ";
           msg += EXPECTED_ENTRY_RETURN_TYPE_SV;
           msg += ".";
-          report_error(fn->file_name, fn->line, 0, msg);
+          report_error(error::compiler::analyzer::INCORRECT_ENTRY_RETURN, fn->line, 0, msg);
         }
 
         _flags.entry_method_exists = true;
@@ -106,7 +118,7 @@ bool analyzer::analyze()
   //
   if (!_flags.entry_method_exists) {
     _num_errors++;
-    report_error("program error", 0, 0, "No entry method 'main' found", false);
+    _err.raise(error::compiler::analyzer::ENTRY_NOT_FOUND);
     return false;
   }
 
@@ -170,7 +182,7 @@ void analyzer::accept(parse_tree::assignment_statement &stmt)
     msg += stmt.var.name;
     msg += "\". Item first defined on line ";
     msg += std::to_string(existing_item.assignment->line);
-    report_error(_current_function->file_name, stmt.line, 0, msg, false);
+    report_error(error::compiler::analyzer::DUPLICATE_VARIABLE_DEF, stmt.line, 0, msg, false);
     return;
   }
 
@@ -178,7 +190,7 @@ void analyzer::accept(parse_tree::assignment_statement &stmt)
 
   std::string msg;
   if (!can_cast_to_expected(stmt.var.type, expression_result, msg)) {
-    report_error(_current_function->file_name, stmt.line, 0, msg, false);
+    report_error(error::compiler::analyzer::IMPLICIT_CAST_FAIL, stmt.line, 0, msg, false);
   }
 }
 
@@ -254,7 +266,7 @@ void analyzer::accept(parse_tree::return_statement &stmt)
     std::string msg;
     if (!can_cast_to_expected(_current_function->return_type, expression_result,
                               msg)) {
-      report_error(_current_function->file_name, stmt.line, 0, msg, false);
+      report_error(error::compiler::analyzer::IMPLICIT_CAST_FAIL, stmt.line, stmt.col, msg, false);
     }
   }
   else {
@@ -265,7 +277,7 @@ void analyzer::accept(parse_tree::return_statement &stmt)
 
       std::string message =
           "Expected expression for return in function with non-nil return type";
-      report_error(_current_function->file_name, stmt.line, 0, message);
+      report_error(error::compiler::analyzer::RETURN_EXPECTED_EXPRESSION, stmt.line, stmt.col, message);
     }
   }
 }
@@ -308,7 +320,7 @@ analyzer::analyze_expression(parse_tree::expression *expr)
     }
 
     // Invalid non-integer type
-    report_error(_current_function->file_name, array->line, array->col,
+    report_error(error::compiler::analyzer::INVALID_ARRAY_IDX, array->line, array->col,
                  "Given type indexing into array is of a non-integer type");
     break;
   }
@@ -336,7 +348,7 @@ analyzer::analyze_expression(parse_tree::expression *expr)
       std::string message = "Unknown variable \"";
       message += expr->value;
       message += "\"";
-      report_error(_current_function->file_name, expr->line, expr->col, message);
+      report_error(error::compiler::analyzer::UNKNOWN_ID, expr->line, expr->col, message);
       break;
     }
 
@@ -344,7 +356,7 @@ analyzer::analyze_expression(parse_tree::expression *expr)
       std::string message = "Item \"";
       message += expr->value;
       message += "\" is not a variable";
-      report_error(_current_function->file_name, expr->line, expr->col, message);
+      report_error(error::compiler::analyzer::EXPECTED_VARIABLE, expr->line, expr->col, message);
       break;
     }
 
@@ -365,7 +377,7 @@ analyzer::analyze_expression(parse_tree::expression *expr)
       std::string message = "Unable to determine integer type from value \"";
       message += expr->value;
       message += "\"";
-      report_error(_current_function->file_name, expr->line, expr->col, message);
+      report_error(error::compiler::analyzer::INTERNAL_UNABLE_TO_DETERMINE_INT_VAL, expr->line, expr->col, message);
       break;
     }
     
@@ -443,13 +455,13 @@ analyzer::validate_function_call(parse_tree::expression *expr)
 
   if (suspected_fn == std::nullopt) {
     std::string message = "Unable to locate item \"" + call->fn->value + "\"";
-    report_error(_current_function->file_name, expr->line, expr->col, message);
+    report_error(error::compiler::analyzer::UNKNOWN_ID, expr->line, expr->col, message);
     return std::nullopt;
   }
 
   if (suspected_fn->type != symbol::variant_type::FUNCTION) {
-    std::string message = "Unable to locate item \"" + call->fn->value + "\"";
-    report_error(_current_function->file_name, expr->line, expr->col, message);
+    std::string message = "Call to non-function type \"" + call->fn->value + "\"";
+    report_error(error::compiler::analyzer::UNMATCHED_CALL, expr->line, expr->col, message);
     return std::nullopt;
   }
 
@@ -463,7 +475,7 @@ analyzer::validate_function_call(parse_tree::expression *expr)
     message += " but received ";
     message += std::to_string(call->params.size());
     message += " parameters.";
-    report_error(_current_function->file_name, expr->line, expr->col, message);
+    report_error(error::compiler::analyzer::PARAM_SIZE_MISMATCH, call->line, call->col, message);
     return std::nullopt;
   }
 
@@ -475,7 +487,8 @@ analyzer::validate_function_call(parse_tree::expression *expr)
     // Ensure that the parameters are convertable
     std::string msg;
     if (!can_cast_to_expected(fn->parameters[i].type, actual, msg)) {
-      report_error(_current_function->file_name, expr->line, expr->col, "Invalid parameter type(s) passed to function");
+      report_error(error::compiler::analyzer::PARAM_TYPE_MISMATCH, 
+          expr->line, expr->col, "Invalid parameter type(s) passed to function");
       return std::nullopt;
     }
   }
@@ -509,12 +522,14 @@ analyzer::validate_infix(parse_tree::expression *expr)
     }
 
     if(static_cast<uint8_t>(lhs) > static_cast<uint8_t>(parse_tree::variable_types::STRING)) {
-      report_error(_current_function->file_name, expr->line, expr->col, "Unable to assign mismatched types");
+      report_error(error::compiler::analyzer::INVALID_EXPRESSION, 
+          expr->line, expr->col, "Unable to assign mismatched types");
       return std::nullopt;
     }
 
     if(static_cast<uint8_t>(rhs) > static_cast<uint8_t>(parse_tree::variable_types::STRING)) {
-      report_error(_current_function->file_name, expr->line, expr->col, "Unable to assign mismatched types");
+      report_error(error::compiler::analyzer::INVALID_EXPRESSION,
+          expr->line, expr->col, "Unable to assign mismatched types");
       return std::nullopt;
     }
 
