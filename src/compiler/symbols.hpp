@@ -13,13 +13,14 @@ namespace compiler {
 
 namespace symbol {
 
-enum class variant_type { ASSIGNMENT, FUNCTION };
+enum class variant_type { ASSIGNMENT, PARAMETER, FUNCTION };
 
 struct variant_data {
   variant_type type;
   union {
     parse_tree::assignment_statement *assignment;
     parse_tree::function *function;
+    parse_tree::variable *parameter_variable;
   };
 };
 
@@ -48,6 +49,9 @@ public:
 
   // Add a variable to the current scope's symbol table
   bool add_symbol(const std::string &name, parse_tree::assignment_statement *);
+
+  // Add a parameter variable
+  bool add_symbol(const std::string &name, parse_tree::variable *);
 
   //  Check to see if a symbol exists within reach
   //  Marking current_only will limit search to current scope

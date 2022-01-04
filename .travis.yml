@@ -47,3 +47,6 @@ script:
 
   - cd $PARENTDIR/checks
   - python3 semantic_failures/run.py $PARENTDIR/build/titan
+
+  - cd $PARENTDIR/checks
+  - python3 semantic_passes/run.py $PARENTDIR/build/titan

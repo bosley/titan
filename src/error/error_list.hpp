@@ -36,6 +36,7 @@ namespace analyzer {
   static constexpr uint16_t INVALID_EXPRESSION = 1110;
   static constexpr uint16_t IMPLICIT_CAST_FAIL = 1111;
   static constexpr uint16_t INVALID_ARRAY_IDX = 1112;
+  static constexpr uint16_t DUPLICATE_PARAMETER = 1113;
 } // end analyzer
 
 } // end compiler

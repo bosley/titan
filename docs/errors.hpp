@@ -51,4 +51,5 @@ User Errors
   1110 - Invalid expression - Can no assign mismatched types
   1111 - Unable to implicitly cast types
   1112 - Invalid non-integer type for array index
+  1113 - Duplicate parameter in function
 ```
