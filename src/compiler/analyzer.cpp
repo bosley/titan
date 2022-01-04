@@ -154,6 +154,16 @@ bool analyzer::analyze()
       std::string scope = "top_level_scope_" + std::to_string(item_count);
 
       _table.add_scope_and_enter(scope);
+
+      for(auto &param : _current_function->parameters) {
+        if (!_table.add_symbol(param.name, &param)) {
+          report_error(error::compiler::analyzer::DUPLICATE_PARAMETER, _current_function->line, _current_function->col,
+                         "");
+          _table.pop_scope();
+          return false;
+        }
+      }
+
       for (auto &element : _current_function->element_list) {
         element->visit(*this);
       }
@@ -353,6 +363,11 @@ analyzer::analyze_expression(parse_tree::expression *expr)
     }
 
     if (suspected_id->type != symbol::variant_type::ASSIGNMENT) {
+
+      if(suspected_id->type == symbol::variant_type::PARAMETER) {
+        return suspected_id.value().parameter_variable->type;
+      }
+
       std::string message = "Item \"";
       message += expr->value;
       message += "\" is not a variable";

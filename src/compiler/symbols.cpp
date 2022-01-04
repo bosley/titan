@@ -81,6 +81,21 @@ bool table::add_symbol(const std::string &name,
   return true;
 }
 
+bool table::add_symbol(const std::string &name,
+                       parse_tree::variable *var)
+{
+  if (exists(name, true)) {
+    return false;
+  }
+
+  variant_data v_data;
+  v_data.type = variant_type::PARAMETER;
+  v_data.parameter_variable = var;
+
+  _curr_scope->entries.push_back({name, v_data});
+  return true;
+}
+
 bool table::exists(const std::string &v, bool current_only)
 {
   if (current_only) {

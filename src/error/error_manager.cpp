@@ -34,6 +34,7 @@ manager::manager(std::string reporter) : _num_errors(0), _reporter(reporter) {
   _error_map[error::compiler::analyzer::INVALID_EXPRESSION] = "Invalid expression";
   _error_map[error::compiler::analyzer::IMPLICIT_CAST_FAIL] = "Unable to cast to expected type";
   _error_map[error::compiler::analyzer::INVALID_ARRAY_IDX] = "Invalid type for indexing into array";
+  _error_map[error::compiler::analyzer::DUPLICATE_PARAMETER] = "Duplicate parameter in function definition";
 }
 
 void manager::raise(uint16_t error_number, alert::config *cfg)
