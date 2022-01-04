@@ -475,7 +475,7 @@ analyzer::validate_function_call(parse_tree::expression *expr)
     message += " but received ";
     message += std::to_string(call->params.size());
     message += " parameters.";
-    report_error(error::compiler::analyzer::PARAM_SIZE_MISMATCH, expr->line, expr->col, message);
+    report_error(error::compiler::analyzer::PARAM_SIZE_MISMATCH, call->line, call->col, message);
     return std::nullopt;
   }
 

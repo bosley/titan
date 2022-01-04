@@ -54,18 +54,18 @@ class expression {
 public:
   expression() : type(node_type::ROOT) {}
   expression(node_type t) : type(t) {}
-  expression(size_t line, size_t col, node_type t) : type(t) {}
+  expression(size_t line, size_t col, node_type t) : line(line), col(col), type(t) {}
   expression(node_type t, std::string val) : type(t), value(val) {}
   expression(size_t line, size_t col, node_type t, std::string val)
-      : type(t), value(val), line(line), col(col)
+      : line(line), col(col), type(t), value(val)
   {
   }
   virtual ~expression() = default;
 
-  node_type type;
-  std::string value;
   size_t line;
   size_t col;
+  node_type type;
+  std::string value;
 };
 using expr_ptr = std::unique_ptr<expression>;
 
