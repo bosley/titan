@@ -23,8 +23,8 @@ enum class variable_types {
   FLOAT = 20,
   STRING,
   ARRAY,
-  NIL,
   USER_DEFINED,
+  NIL,
 };
 
 extern variable_types string_to_variable_type(const std::string &s);
@@ -54,7 +54,10 @@ class expression {
 public:
   expression() : type(node_type::ROOT) {}
   expression(node_type t) : type(t) {}
-  expression(size_t line, size_t col, node_type t) : line(line), col(col), type(t) {}
+  expression(size_t line, size_t col, node_type t)
+      : line(line), col(col), type(t)
+  {
+  }
   expression(node_type t, std::string val) : type(t), value(val) {}
   expression(size_t line, size_t col, node_type t, std::string val)
       : line(line), col(col), type(t), value(val)
@@ -69,8 +72,6 @@ public:
 };
 using expr_ptr = std::unique_ptr<expression>;
 
-
-
 /*
  *  prefix / infix and other expression implementations are used to construct
  * expression trees this method will display the expression trees horizontally
@@ -82,9 +83,16 @@ extern void display_expr_tree(const std::string &prefix, expression *n,
 class raw_int_expr : public expression {
 public:
   raw_int_expr(size_t line, size_t col, std::string val)
-    : expression(line, col, node_type::RAW_NUMBER, val), as(variable_types::I64), with_val(0){}
-  raw_int_expr(size_t line, size_t col, std::string val, variable_types as, long long ival)
-    : expression(line, col, node_type::RAW_NUMBER, val), as(as), with_val(ival){}
+      : expression(line, col, node_type::RAW_NUMBER, val),
+        as(variable_types::I64), with_val(0)
+  {
+  }
+  raw_int_expr(size_t line, size_t col, std::string val, variable_types as,
+               long long ival)
+      : expression(line, col, node_type::RAW_NUMBER, val), as(as),
+        with_val(ival)
+  {
+  }
   variable_types as;
   long long with_val;
 };
@@ -114,7 +122,7 @@ public:
 
   std::string op;
   Token tok_op;
-  
+
   expr_ptr left;
   expr_ptr right;
 };

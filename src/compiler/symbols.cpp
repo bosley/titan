@@ -81,8 +81,7 @@ bool table::add_symbol(const std::string &name,
   return true;
 }
 
-bool table::add_symbol(const std::string &name,
-                       parse_tree::variable *var)
+bool table::add_symbol(const std::string &name, parse_tree::variable *var)
 {
   if (exists(name, true)) {
     return false;

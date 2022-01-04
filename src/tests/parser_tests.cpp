@@ -132,8 +132,7 @@ TEST(parser_tests, basic_function)
        "main",
        {
            {"argc", compiler::parse_tree::variable_types::U8, "u8", 0},
-           {"argv", compiler::parse_tree::variable_types::STRING, "str",
-            std::numeric_limits<uint64_t>::max()},
+           {"argv", compiler::parse_tree::variable_types::STRING, "str", 1},
        },
        compiler::parse_tree::variable_types::I64},
       {compiler::parse_tree::toplevel::tl_type::FUNCTION,
@@ -143,10 +142,8 @@ TEST(parser_tests, basic_function)
       {compiler::parse_tree::toplevel::tl_type::FUNCTION,
        "test1",
        {
-           {"a", compiler::parse_tree::variable_types::U32, "u32",
-            std::numeric_limits<uint64_t>::max()},
-           {"b", compiler::parse_tree::variable_types::I8, "i8",
-            std::numeric_limits<uint64_t>::max()},
+           {"a", compiler::parse_tree::variable_types::U32, "u32", 10},
+           {"b", compiler::parse_tree::variable_types::I8, "i8", 20},
            {"c", compiler::parse_tree::variable_types::STRING, "str", 0},
 
        },
@@ -183,9 +180,11 @@ TEST(parser_tests, assignments)
   std::vector<compiler::parse_tree::assignment_statement> expected;
 
   expected.push_back(compiler::parse_tree::assignment_statement(
-      5, 0, {"d", compiler::parse_tree::variable_types::U32, "u32", 0}, nullptr));
+      5, 0, {"d", compiler::parse_tree::variable_types::U32, "u32", 0},
+      nullptr));
   expected.push_back(compiler::parse_tree::assignment_statement(
-      6, 0, {"e", compiler::parse_tree::variable_types::U16, "u16", 12}, nullptr));
+      6, 0, {"e", compiler::parse_tree::variable_types::U16, "u16", 12},
+      nullptr));
   expected.push_back(compiler::parse_tree::assignment_statement(
       7, 0, {"f", compiler::parse_tree::variable_types::U8, "u8", 6}, nullptr));
   expected.push_back(compiler::parse_tree::assignment_statement(
@@ -216,8 +215,7 @@ TEST(parser_tests, expr)
 
   expected.emplace_back(
       compiler::parse_tree::expr_ptr(new compiler::parse_tree::infix_expr(
-          0,0,
-          "+",
+          0, 0, "+",
           compiler::parse_tree::expr_ptr(new compiler::parse_tree::expression(
               compiler::parse_tree::node_type::RAW_NUMBER, "6")),
           compiler::parse_tree::expr_ptr(new compiler::parse_tree::expression(
@@ -225,11 +223,9 @@ TEST(parser_tests, expr)
 
   expected.emplace_back(
       compiler::parse_tree::expr_ptr(new compiler::parse_tree::infix_expr(
-          0,0,
-          "*",
+          0, 0, "*",
           compiler::parse_tree::expr_ptr(new compiler::parse_tree::infix_expr(
-              0,0,
-              "+",
+              0, 0, "+",
               compiler::parse_tree::expr_ptr(
                   new compiler::parse_tree::expression(
                       compiler::parse_tree::node_type::RAW_NUMBER, "4")),
@@ -241,26 +237,24 @@ TEST(parser_tests, expr)
 
   expected.emplace_back(
       compiler::parse_tree::expr_ptr(new compiler::parse_tree::infix_expr(
-          0,0,
-          "+",
+          0, 0, "+",
           compiler::parse_tree::expr_ptr(new compiler::parse_tree::expression(
               compiler::parse_tree::node_type::RAW_NUMBER, "3")),
           compiler::parse_tree::expr_ptr(
               new compiler::parse_tree::function_call_expr(
-                  0,0,
+                  0, 0,
                   compiler::parse_tree::expr_ptr(
                       new compiler::parse_tree::expression(
                           compiler::parse_tree::node_type::ID, "moot")))))));
 
   expected.emplace_back(
       compiler::parse_tree::expr_ptr(new compiler::parse_tree::infix_expr(
-          0,0,
-          "+",
+          0, 0, "+",
           compiler::parse_tree::expr_ptr(new compiler::parse_tree::expression(
               compiler::parse_tree::node_type::RAW_NUMBER, "3")),
           compiler::parse_tree::expr_ptr(
               new compiler::parse_tree::array_index_expr(
-                  0,0,
+                  0, 0,
                   compiler::parse_tree::expr_ptr(
                       new compiler::parse_tree::expression(
                           compiler::parse_tree::node_type::ID, "x")),
@@ -271,13 +265,12 @@ TEST(parser_tests, expr)
 
   expected.emplace_back(
       compiler::parse_tree::expr_ptr(new compiler::parse_tree::infix_expr(
-          0,0,
-          "+",
+          0, 0, "+",
           compiler::parse_tree::expr_ptr(new compiler::parse_tree::expression(
               compiler::parse_tree::node_type::RAW_NUMBER, "3")),
           compiler::parse_tree::expr_ptr(
               new compiler::parse_tree::function_call_expr(
-                  0,0,
+                  0, 0,
                   compiler::parse_tree::expr_ptr(
                       new compiler::parse_tree::expression(
                           compiler::parse_tree::node_type::ID, "add")))))));
@@ -583,7 +576,7 @@ TEST(parser_tests, expression_statement)
 
   auto expected = compiler::parse_tree::expr_ptr(
       new compiler::parse_tree::function_call_expr(
-          0,0,
+          0, 0,
           compiler::parse_tree::expr_ptr(new compiler::parse_tree::expression(
               compiler::parse_tree::node_type::ID, "new"))));
 
@@ -613,13 +606,11 @@ TEST(parser_tests, reassignment_statement)
 
   auto expected =
       compiler::parse_tree::expr_ptr(new compiler::parse_tree::infix_expr(
-          0,0,
-          "=",
+          0, 0, "=",
           compiler::parse_tree::expr_ptr(new compiler::parse_tree::expression(
               compiler::parse_tree::node_type::ID, "x")),
           compiler::parse_tree::expr_ptr(new compiler::parse_tree::infix_expr(
-              0,0,
-              "+",
+              0, 0, "+",
               compiler::parse_tree::expr_ptr(
                   new compiler::parse_tree::expression(
                       compiler::parse_tree::node_type::RAW_NUMBER, "22")),
@@ -651,8 +642,7 @@ TEST(parser_tests, for_statement)
 
   auto expected_condition =
       compiler::parse_tree::expr_ptr(new compiler::parse_tree::infix_expr(
-          0,0,
-          "<",
+          0, 0, "<",
           compiler::parse_tree::expr_ptr(new compiler::parse_tree::expression(
               compiler::parse_tree::node_type::ID, "i")),
           compiler::parse_tree::expr_ptr(new compiler::parse_tree::expression(
@@ -660,13 +650,11 @@ TEST(parser_tests, for_statement)
 
   auto expected_modifier =
       compiler::parse_tree::expr_ptr(new compiler::parse_tree::infix_expr(
-          0,0,
-          "=",
+          0, 0, "=",
           compiler::parse_tree::expr_ptr(new compiler::parse_tree::expression(
               compiler::parse_tree::node_type::ID, "i")),
           compiler::parse_tree::expr_ptr(new compiler::parse_tree::infix_expr(
-              0,0,
-              "+",
+              0, 0, "+",
               compiler::parse_tree::expr_ptr(
                   new compiler::parse_tree::expression(
                       compiler::parse_tree::node_type::ID, "i")),

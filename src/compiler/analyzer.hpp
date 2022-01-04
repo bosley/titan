@@ -44,7 +44,8 @@ private:
   check_flags _flags;
 
   void report_error(uint64_t error_no, size_t line, size_t col,
-                    const std::string msg, bool show_col = true, std::string file = "");
+                    const std::string msg, bool show_col = true,
+                    std::string file = "");
 
   virtual void accept(parse_tree::assignment_statement &stmt) override;
   virtual void accept(parse_tree::expression_statement &stmt) override;
@@ -68,8 +69,8 @@ private:
   std::optional<parse_tree::variable_types>
   validate_infix(parse_tree::expression *expr);
 
-  std::optional<std::tuple<parse_tree::variable_types, long long> >
-  determine_integer_type(const std::string& data);
+  std::optional<std::tuple<parse_tree::variable_types, long long>>
+  determine_integer_type(const std::string &data);
 };
 
 } // namespace compiler
