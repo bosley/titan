@@ -105,7 +105,7 @@ bool analyzer::analyze()
       //  Check if the item is entry and contains correct return type
       //
       if (fn->name == EXPECTED_ENTRY_SV) {
-        if (fn->return_type != EXPECTED_ENTRY_RETURN_TYPE) {
+        if (fn->return_data.type != EXPECTED_ENTRY_RETURN_TYPE) {
           std::string msg = "Entry method \"";
           msg += EXPECTED_ENTRY_SV;
           msg += "\" is expected to have return type : ";
@@ -282,7 +282,7 @@ void analyzer::accept(parse_tree::return_statement &stmt)
   if (stmt.expr.get()) {
     auto expression_result = analyze_expression(stmt.expr.get());
     std::string msg;
-    if (!can_cast_to_expected(_current_function->return_type, expression_result,
+    if (!can_cast_to_expected(_current_function->return_data.type, expression_result,
                               msg)) {
       report_error(error::compiler::analyzer::IMPLICIT_CAST_FAIL, stmt.line,
                    stmt.col, msg, false);
@@ -292,7 +292,7 @@ void analyzer::accept(parse_tree::return_statement &stmt)
 
     // If no statement exists then expect NIL
 
-    if (_current_function->return_type != parse_tree::variable_types::NIL) {
+    if (_current_function->return_data.type != parse_tree::variable_types::NIL) {
 
       std::string message =
           "Expected expression for return in function with non-nil return type";
@@ -527,7 +527,7 @@ analyzer::validate_function_call(parse_tree::expression *expr)
     }
   }
 
-  return {fn->return_type};
+  return {fn->return_data.type};
 }
 
 std::optional<parse_tree::variable_types>

@@ -246,7 +246,6 @@ parse_tree::import_ptr parser::import()
 
 parse_tree::function_ptr parser::function()
 {
-
   // fn some_function
   if (current_td_pair().token != Token::FN) {
     return nullptr;
@@ -271,6 +270,22 @@ parse_tree::function_ptr parser::function()
   std::string return_type = current_td_pair().data;
 
   advance();
+
+  uint64_t return_depth = 0;
+  if (current_td_pair().token == Token::L_BRACKET) {
+    advance();
+
+    expect(Token::LITERAL_NUMBER,
+           "Expected raw number to indicate return size");
+
+    std::istringstream iss(current_td_pair().data);
+    iss >> return_depth;
+    advance();
+
+    expect(Token::R_BRACKET, "Expected closing bracket for return size parameter");
+    advance();
+  }
+
   std::vector<parse_tree::element_ptr> element_list = statements();
 
   if (!_parser_okay) {
@@ -281,7 +296,9 @@ parse_tree::function_ptr parser::function()
 
   new_func->name = function_name;
   new_func->file_name = _filename;
-  new_func->return_type = parse_tree::string_to_variable_type(return_type);
+  new_func->return_data = {"return value",
+                           parse_tree::string_to_variable_type(return_type),
+                           return_type, return_depth};
   new_func->parameters = std::move(parameters);
   new_func->element_list = std::move(element_list);
 

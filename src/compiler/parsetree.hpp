@@ -329,7 +329,7 @@ public:
   }
   std::string name;
   std::string file_name;
-  variable_types return_type;
+  variable return_data;
   std::vector<variable> parameters;
   std::vector<element_ptr> element_list;
 };

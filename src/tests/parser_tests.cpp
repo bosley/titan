@@ -161,7 +161,7 @@ TEST(parser_tests, basic_function)
     auto f = static_cast<compiler::parse_tree::function *>(functions[i].get());
 
     CHECK_EQUAL(tcs[i].name, f->name);
-    CHECK_EQUAL((int)tcs[i].return_type, (int)f->return_type);
+    CHECK_EQUAL((int)tcs[i].return_type, (int)f->return_data.type);
     CHECK_EQUAL(tcs[i].parameters.size(), f->parameters.size());
     CHECK_EQUAL(0, f->element_list.size());
 

@@ -1,5 +1,8 @@
-fn take_it(arr:i8[100]) -> nil {
+fn returned_item() -> i8[100] {
+  return {};
+}
 
+fn take_it(arr:i8[100]) -> nil {
   return;
 }
 
