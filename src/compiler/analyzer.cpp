@@ -206,7 +206,7 @@ void analyzer::accept(parse_tree::assignment_statement &stmt)
   auto expression_result = analyze_expression(stmt.expr.get());
 
   std::string msg;
-  if (!can_cast_to_expected(stmt.var.type, expression_result, msg)) {
+  if (!can_cast_to_expected(stmt.var.type_depth, expression_result, msg)) {
     report_error(error::compiler::analyzer::IMPLICIT_CAST_FAIL, stmt.line, 0,
                  msg, false);
   }
@@ -282,7 +282,7 @@ void analyzer::accept(parse_tree::return_statement &stmt)
   if (stmt.expr.get()) {
     auto expression_result = analyze_expression(stmt.expr.get());
     std::string msg;
-    if (!can_cast_to_expected(_current_function->return_data.type, expression_result,
+    if (!can_cast_to_expected(_current_function->return_data, expression_result,
                               msg)) {
       report_error(error::compiler::analyzer::IMPLICIT_CAST_FAIL, stmt.line,
                    stmt.col, msg, false);
@@ -292,7 +292,8 @@ void analyzer::accept(parse_tree::return_statement &stmt)
 
     // If no statement exists then expect NIL
 
-    if (_current_function->return_data.type != parse_tree::variable_types::NIL) {
+    if (_current_function->return_data.type !=
+        parse_tree::variable_types::NIL) {
 
       std::string message =
           "Expected expression for return in function with non-nil return type";
@@ -302,14 +303,13 @@ void analyzer::accept(parse_tree::return_statement &stmt)
   }
 }
 
-parse_tree::variable_types
-analyzer::analyze_expression(parse_tree::expression *expr)
+parse_tree::vtd analyzer::analyze_expression(parse_tree::expression *expr)
 {
   if (!expr) {
     _num_errors++;
     LOG(ERROR) << TAG(APP_FILE_NAME) << "[" << APP_LINE
                << "]: Null expression passed to analyzer" << std::endl;
-    return parse_tree::variable_types::U8;
+    return {parse_tree::variable_types::U8, 0};
   }
 
   switch (expr->type) {
@@ -318,14 +318,15 @@ analyzer::analyze_expression(parse_tree::expression *expr)
     _num_errors++;
     LOG(ERROR) << TAG(APP_FILE_NAME) << "[" << APP_LINE
                << "]: Root expression passed to analyzer" << std::endl;
-    return parse_tree::variable_types::U8;
+    return {parse_tree::variable_types::U8, 0};
   }
 
   case parse_tree::node_type::CALL: {
     // Call validation broken out due to size
     auto potential_type = validate_function_call(expr);
     if (std::nullopt != potential_type) {
-      return potential_type.value();
+
+      return {potential_type.value().type, potential_type.value().depth};
     }
     break;
   }
@@ -334,7 +335,7 @@ analyzer::analyze_expression(parse_tree::expression *expr)
     auto array = reinterpret_cast<parse_tree::array_index_expr *>(expr);
     auto arr_type = analyze_expression(array->arr.get());
     auto arr_idx_type = analyze_expression(array->index.get());
-    if (static_cast<uint64_t>(arr_idx_type) <
+    if (static_cast<uint64_t>(arr_idx_type.type) <
         static_cast<uint64_t>(parse_tree::variable_types::FLOAT)) {
       return arr_type;
     }
@@ -349,7 +350,7 @@ analyzer::analyze_expression(parse_tree::expression *expr)
   case parse_tree::node_type::INFIX: {
     auto potential_type = validate_infix(expr);
     if (std::nullopt != potential_type) {
-      return potential_type.value();
+      return {potential_type.value(), 0};
     }
     break;
   }
@@ -357,7 +358,7 @@ analyzer::analyze_expression(parse_tree::expression *expr)
   case parse_tree::node_type::PREFIX: {
     auto potential_type = validate_prefix(expr);
     if (std::nullopt != potential_type) {
-      return potential_type.value();
+      return {potential_type.value(), 0};
     }
     break;
   }
@@ -377,7 +378,7 @@ analyzer::analyze_expression(parse_tree::expression *expr)
     if (suspected_id->type != symbol::variant_type::ASSIGNMENT) {
 
       if (suspected_id->type == symbol::variant_type::PARAMETER) {
-        return suspected_id.value().parameter_variable->type;
+        return suspected_id.value().parameter_variable->type_depth;
       }
 
       std::string message = "Item \"";
@@ -388,15 +389,15 @@ analyzer::analyze_expression(parse_tree::expression *expr)
       break;
     }
 
-    return suspected_id.value().assignment->var.type;
+    return suspected_id.value().assignment->var.type_depth;
   }
 
   case parse_tree::node_type::RAW_FLOAT: {
-    return parse_tree::variable_types::FLOAT;
+    return {parse_tree::variable_types::FLOAT, 0};
   }
 
   case parse_tree::node_type::RAW_STRING: {
-    return parse_tree::variable_types::STRING;
+    return {parse_tree::variable_types::STRING, 0};
   }
 
   case parse_tree::node_type::RAW_NUMBER: {
@@ -415,7 +416,7 @@ analyzer::analyze_expression(parse_tree::expression *expr)
     auto raw = reinterpret_cast<parse_tree::raw_int_expr *>(expr);
     raw->as = std::get<0>(determined_type.value());
     raw->with_val = std::get<1>(determined_type.value());
-    return raw->as;
+    return {raw->as, 0};
   }
 
   case parse_tree::node_type::ARRAY: {
@@ -423,7 +424,7 @@ analyzer::analyze_expression(parse_tree::expression *expr)
     for (auto &e : arr->expressions) {
       analyze_expression(e.get());
     }
-    return parse_tree::variable_types::ARRAY;
+    return {parse_tree::variable_types::ARRAY, arr->expressions.size()};
   }
 
   } // Switch
@@ -431,11 +432,11 @@ analyzer::analyze_expression(parse_tree::expression *expr)
   _num_errors++;
   LOG(DEBUG) << TAG(APP_FILE_NAME) << "[" << APP_LINE
              << "]: Error in current expression" << std::endl;
-  return parse_tree::variable_types::U8;
+  return {parse_tree::variable_types::U8, 0};
 }
 
-bool analyzer::can_cast_to_expected(parse_tree::variable_types expected,
-                                    parse_tree::variable_types actual,
+bool analyzer::can_cast_to_expected(parse_tree::vtd expected_vtd,
+                                    parse_tree::vtd actual_vtd,
                                     std::string &msg)
 {
   /*
@@ -445,6 +446,16 @@ bool analyzer::can_cast_to_expected(parse_tree::variable_types expected,
       user stuff too.
 
   */
+
+  auto expected = expected_vtd.type;
+  auto actual = actual_vtd.type;
+
+  // Ensure expression { .... } for array is <= the definition on the lhs
+  if (actual_vtd.depth > expected_vtd.depth) {
+    msg = "Unable to cast items of mismatched depth";
+    return false;
+  }
+
   if (expected == actual) {
     return true;
   }
@@ -477,7 +488,7 @@ bool analyzer::can_cast_to_expected(parse_tree::variable_types expected,
   return true;
 }
 
-std::optional<parse_tree::variable_types>
+std::optional<parse_tree::vtd>
 analyzer::validate_function_call(parse_tree::expression *expr)
 {
   auto call = reinterpret_cast<parse_tree::function_call_expr *>(expr);
@@ -520,21 +531,21 @@ analyzer::validate_function_call(parse_tree::expression *expr)
 
     // Ensure that the parameters are convertable
     std::string msg;
-    if (!can_cast_to_expected(fn->parameters[i].type, actual, msg)) {
+    if (!can_cast_to_expected(fn->parameters[i].type_depth, actual, msg)) {
       report_error(error::compiler::analyzer::PARAM_TYPE_MISMATCH, expr->line,
                    expr->col, "Invalid parameter type(s) passed to function");
       return std::nullopt;
     }
   }
 
-  return {fn->return_data.type};
+  return {fn->return_data};
 }
 
 std::optional<parse_tree::variable_types>
 analyzer::validate_prefix(parse_tree::expression *expr)
 {
   auto prefix_expr = reinterpret_cast<parse_tree::prefix_expr *>(expr);
-  return analyze_expression(prefix_expr->right.get());
+  return analyze_expression(prefix_expr->right.get()).type;
 }
 
 std::optional<parse_tree::variable_types>
@@ -551,29 +562,41 @@ analyzer::validate_infix(parse_tree::expression *expr)
    *    uints < ints < floats < string
    *
    * */
-  if (lhs == rhs) {
-    return rhs;
+
+  if (lhs.depth != rhs.depth) {
+    report_error(error::compiler::analyzer::INVALID_EXPRESSION, expr->line,
+                 expr->col, "Unable to assign items of mismatched depth");
   }
 
-  if (static_cast<uint8_t>(lhs) >
+  if (lhs.type == rhs.type) {
+    return rhs.type;
+  }
+
+  if (lhs.type == parse_tree::variable_types::ARRAY ||
+      rhs.type == parse_tree::variable_types::ARRAY) {
+    report_error(error::compiler::analyzer::INVALID_EXPRESSION, expr->line,
+                 expr->col, "Unable to assign mismatched types");
+  }
+
+  if (static_cast<uint8_t>(lhs.type) >
       static_cast<uint8_t>(parse_tree::variable_types::STRING)) {
     report_error(error::compiler::analyzer::INVALID_EXPRESSION, expr->line,
                  expr->col, "Unable to assign mismatched types");
     return std::nullopt;
   }
 
-  if (static_cast<uint8_t>(rhs) >
+  if (static_cast<uint8_t>(rhs.type) >
       static_cast<uint8_t>(parse_tree::variable_types::STRING)) {
     report_error(error::compiler::analyzer::INVALID_EXPRESSION, expr->line,
                  expr->col, "Unable to assign mismatched types");
     return std::nullopt;
   }
 
-  if (static_cast<uint8_t>(lhs) > static_cast<uint8_t>(rhs)) {
-    return lhs;
+  if (static_cast<uint8_t>(lhs.type) > static_cast<uint8_t>(rhs.type)) {
+    return lhs.type;
   }
 
-  return rhs;
+  return rhs.type;
 }
 
 std::optional<std::tuple<parse_tree::variable_types, long long>>

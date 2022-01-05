@@ -1,5 +1,7 @@
-fn returned_item() -> i8[100] {
-  return {};
+fn returned_item() -> i8[4] {
+
+  let x:i8 [4] = {0,0,0,0};
+  return x;
 }
 
 fn take_it(arr:i8[100]) -> nil {

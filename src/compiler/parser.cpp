@@ -282,7 +282,8 @@ parse_tree::function_ptr parser::function()
     iss >> return_depth;
     advance();
 
-    expect(Token::R_BRACKET, "Expected closing bracket for return size parameter");
+    expect(Token::R_BRACKET,
+           "Expected closing bracket for return size parameter");
     advance();
   }
 
@@ -296,9 +297,8 @@ parse_tree::function_ptr parser::function()
 
   new_func->name = function_name;
   new_func->file_name = _filename;
-  new_func->return_data = {"return value",
-                           parse_tree::string_to_variable_type(return_type),
-                           return_type, return_depth};
+  new_func->return_data = {parse_tree::string_to_variable_type(return_type),
+                           return_depth};
   new_func->parameters = std::move(parameters);
   new_func->element_list = std::move(element_list);
 
@@ -353,7 +353,7 @@ std::vector<parse_tree::variable> parser::function_params()
     }
 
     parameters.push_back(
-        parse_tree::variable{param_name, param_v_type, param_type, depth});
+        parse_tree::variable{param_name, param_type, {param_v_type, depth}});
 
     if (current_td_pair().token != Token::COMMA) {
       eat_params = false;
@@ -498,7 +498,7 @@ parse_tree::element_ptr parser::assignment()
   advance();
   if (_parser_okay) {
     return parse_tree::element_ptr(new parse_tree::assignment_statement(
-        line_no, col, {name, variable_type, type_string, depth},
+        line_no, col, {name, type_string, {variable_type, depth}},
         std::move(exp)));
   }
 

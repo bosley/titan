@@ -54,13 +54,12 @@ private:
   virtual void accept(parse_tree::for_statement &stmt) override;
   virtual void accept(parse_tree::return_statement &stmt) override;
 
-  parse_tree::variable_types analyze_expression(parse_tree::expression *expr);
+  parse_tree::vtd analyze_expression(parse_tree::expression *expr);
 
-  bool can_cast_to_expected(parse_tree::variable_types expected,
-                            parse_tree::variable_types actual,
+  bool can_cast_to_expected(parse_tree::vtd expected, parse_tree::vtd actual,
                             std::string &out);
 
-  std::optional<parse_tree::variable_types>
+  std::optional<parse_tree::vtd>
   validate_function_call(parse_tree::expression *expr);
 
   std::optional<parse_tree::variable_types>

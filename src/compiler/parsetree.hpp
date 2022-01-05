@@ -29,12 +29,15 @@ enum class variable_types {
 
 extern variable_types string_to_variable_type(const std::string &s);
 
+struct vtd {
+  variable_types type;
+  uint64_t depth;
+};
+
 struct variable {
   std::string name;
-  variable_types type;
   std::string type_string;
-  uint64_t depth; // 0 For single variable, >0 for allocation space,
-                  // uint64_t::max() for unknown size
+  vtd type_depth;
 };
 
 enum class node_type {
@@ -329,7 +332,7 @@ public:
   }
   std::string name;
   std::string file_name;
-  variable return_data;
+  vtd return_data;
   std::vector<variable> parameters;
   std::vector<element_ptr> element_list;
 };
