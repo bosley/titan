@@ -246,7 +246,6 @@ parse_tree::import_ptr parser::import()
 
 parse_tree::function_ptr parser::function()
 {
-  // fn some_function
   if (current_td_pair().token != Token::FN) {
     return nullptr;
   }
@@ -271,21 +270,7 @@ parse_tree::function_ptr parser::function()
 
   advance();
 
-  uint64_t return_depth = 0;
-  if (current_td_pair().token == Token::L_BRACKET) {
-    advance();
-
-    expect(Token::LITERAL_NUMBER,
-           "Expected raw number to indicate return size");
-
-    std::istringstream iss(current_td_pair().data);
-    iss >> return_depth;
-    advance();
-
-    expect(Token::R_BRACKET,
-           "Expected closing bracket for return size parameter");
-    advance();
-  }
+  uint64_t return_depth = accessor_lit();
 
   std::vector<parse_tree::element_ptr> element_list = statements();
 
@@ -337,21 +322,8 @@ std::vector<parse_tree::variable> parser::function_params()
     auto param_v_type = parse_tree::string_to_variable_type(param_type);
 
     advance();
-    uint64_t depth = 0;
-    if (current_td_pair().token == Token::L_BRACKET) {
-      advance();
-
-      expect(Token::LITERAL_NUMBER,
-             "Expected raw number to indicate array size");
-
-      std::istringstream iss(current_td_pair().data);
-      iss >> depth;
-      advance();
-
-      expect(Token::R_BRACKET, "Expected closing bracket for array parameter");
-      advance();
-    }
-
+    uint64_t depth = accessor_lit();
+    
     parameters.push_back(
         parse_tree::variable{param_name, param_type, {param_v_type, depth}});
 
@@ -411,7 +383,6 @@ std::vector<parse_tree::element_ptr> parser::statements()
 
 uint64_t parser::accessor_lit()
 {
-
   /*
      Consume [100][3][3]... [?]
      and calculate the number of items that would represent i.e [10][10] = 100
@@ -423,7 +394,12 @@ uint64_t parser::accessor_lit()
     while (consume) {
       advance();
       expect(Token::LITERAL_NUMBER, "Literal number expected");
-      depth *= std::stoull(current_td_pair().data);
+    
+      uint64_t current = 1;
+      std::istringstream iss(current_td_pair().data);
+      iss >> current;
+
+      depth *= current;
 
       advance();
       expect(Token::R_BRACKET, "Ending bracket expected");
