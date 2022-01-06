@@ -20,6 +20,18 @@ namespace {
 std::unordered_map<Token, parser::precedence> precedences = {
     {Token::EQ, parser::precedence::ASSIGN},
     {Token::EQ_EQ, parser::precedence::EQUALS},
+    {Token::ADD_EQ, parser::precedence::EQUALS},
+    {Token::SUB_EQ, parser::precedence::EQUALS},
+    {Token::DIV_EQ, parser::precedence::EQUALS},
+    {Token::MUL_EQ, parser::precedence::EQUALS},
+    {Token::MOD_EQ, parser::precedence::EQUALS},
+    {Token::POW_EQ, parser::precedence::EQUALS},
+    {Token::LSH_EQ, parser::precedence::EQUALS},
+    {Token::RSH_EQ, parser::precedence::EQUALS},
+    {Token::HAT_EQ, parser::precedence::EQUALS},
+    {Token::PIPE_EQ, parser::precedence::EQUALS},
+    {Token::TILDE_EQ, parser::precedence::EQUALS},
+    {Token::AMPERSAND_EQ, parser::precedence::EQUALS},
     {Token::EXCLAMATION_EQ, parser::precedence::EQUALS},
     {Token::LT, parser::precedence::LESS_GREATER},
     {Token::GT, parser::precedence::LESS_GREATER},
@@ -80,6 +92,18 @@ parser::parse(std::string filename,
   _infix_fns[Token::MOD] = &parser::infix_expr;
   _infix_fns[Token::EQ] = &parser::infix_expr;
   _infix_fns[Token::EQ_EQ] = &parser::infix_expr;
+  _infix_fns[Token::ADD_EQ] = &parser::infix_expr;
+  _infix_fns[Token::SUB_EQ] = &parser::infix_expr;
+  _infix_fns[Token::DIV_EQ] = &parser::infix_expr;
+  _infix_fns[Token::MUL_EQ] = &parser::infix_expr;
+  _infix_fns[Token::MOD_EQ] = &parser::infix_expr;
+  _infix_fns[Token::POW_EQ] = &parser::infix_expr;
+  _infix_fns[Token::AMPERSAND_EQ] = &parser::infix_expr;
+  _infix_fns[Token::HAT_EQ] = &parser::infix_expr;
+  _infix_fns[Token::PIPE_EQ] = &parser::infix_expr;
+  _infix_fns[Token::TILDE_EQ] = &parser::infix_expr;
+  _infix_fns[Token::LSH_EQ] = &parser::infix_expr;
+  _infix_fns[Token::RSH_EQ] = &parser::infix_expr;
   _infix_fns[Token::EXCLAMATION_EQ] = &parser::infix_expr;
   _infix_fns[Token::LT] = &parser::infix_expr;
   _infix_fns[Token::LTE] = &parser::infix_expr;
