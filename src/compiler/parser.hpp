@@ -21,10 +21,14 @@ public:
   enum class precedence {
     LOWEST,
     ASSIGN,       // =
+    LOGICAL,      // || && 
+    BITWISE,      // ^ | &
     EQUALS,       // ==
     LESS_GREATER, // > <
+    SHIFT,        // >> << 
     SUM,          // +
     PROD,         // *
+    POW,          // **
     PREFIX,       // -a or !a
     CALL,         // call()
     INDEX         // []

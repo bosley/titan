@@ -142,8 +142,15 @@ bool lexer::lex_line()
     case '>':
       if (peek() == '>') {
         advance();
-        _tokens->emplace_back(
-            TD_Pair{Token::RSH, ">>", _current_line->file_line_no, _idx});
+        if(peek() == '=') {
+          advance();
+          _tokens->emplace_back(
+              TD_Pair{Token::RSH_EQ, ">>=", _current_line->file_line_no, _idx});
+        } 
+        else {
+          _tokens->emplace_back(
+              TD_Pair{Token::RSH, ">>", _current_line->file_line_no, _idx});
+        }
       }
       else if (peek() == '=') {
         advance();
@@ -151,7 +158,6 @@ bool lexer::lex_line()
             TD_Pair{Token::GTE, ">=", _current_line->file_line_no, _idx});
       }
       else {
-
         _tokens->emplace_back(
             TD_Pair{Token::GT, ">", _current_line->file_line_no, _idx});
       }
@@ -160,8 +166,14 @@ bool lexer::lex_line()
     case '<':
       if (peek() == '<') {
         advance();
-        _tokens->emplace_back(
-            TD_Pair{Token::LSH, "<<", _current_line->file_line_no, _idx});
+        if(peek() == '=') {
+          advance();
+          _tokens->emplace_back(
+              TD_Pair{Token::LSH_EQ, "<<=", _current_line->file_line_no, _idx});
+        } else {
+          _tokens->emplace_back(
+              TD_Pair{Token::LSH, "<<", _current_line->file_line_no, _idx});
+        }
       }
       else if (peek() == '=') {
         advance();
