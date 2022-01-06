@@ -1,9 +1,0 @@
-
-
-fn main(argc:u64, argv:string[]) -> u8 {
-
-  let d:u32 = 545;
-  let e:u16[3][4] = 3;
-  let d:u8[3][2] = 545;
-  let d:i8 = 545;
-}

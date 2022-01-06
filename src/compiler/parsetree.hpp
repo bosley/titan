@@ -23,18 +23,21 @@ enum class variable_types {
   FLOAT = 20,
   STRING,
   ARRAY,
-  NIL,
   USER_DEFINED,
+  NIL,
 };
 
 extern variable_types string_to_variable_type(const std::string &s);
 
+struct vtd {
+  variable_types type;
+  uint64_t depth;
+};
+
 struct variable {
   std::string name;
-  variable_types type;
   std::string type_string;
-  uint64_t depth; // 0 For single variable, >0 for allocation space,
-                  // uint64_t::max() for unknown size
+  vtd type_depth;
 };
 
 enum class node_type {
@@ -54,7 +57,10 @@ class expression {
 public:
   expression() : type(node_type::ROOT) {}
   expression(node_type t) : type(t) {}
-  expression(size_t line, size_t col, node_type t) : line(line), col(col), type(t) {}
+  expression(size_t line, size_t col, node_type t)
+      : line(line), col(col), type(t)
+  {
+  }
   expression(node_type t, std::string val) : type(t), value(val) {}
   expression(size_t line, size_t col, node_type t, std::string val)
       : line(line), col(col), type(t), value(val)
@@ -69,8 +75,6 @@ public:
 };
 using expr_ptr = std::unique_ptr<expression>;
 
-
-
 /*
  *  prefix / infix and other expression implementations are used to construct
  * expression trees this method will display the expression trees horizontally
@@ -82,9 +86,16 @@ extern void display_expr_tree(const std::string &prefix, expression *n,
 class raw_int_expr : public expression {
 public:
   raw_int_expr(size_t line, size_t col, std::string val)
-    : expression(line, col, node_type::RAW_NUMBER, val), as(variable_types::I64), with_val(0){}
-  raw_int_expr(size_t line, size_t col, std::string val, variable_types as, long long ival)
-    : expression(line, col, node_type::RAW_NUMBER, val), as(as), with_val(ival){}
+      : expression(line, col, node_type::RAW_NUMBER, val),
+        as(variable_types::I64), with_val(0)
+  {
+  }
+  raw_int_expr(size_t line, size_t col, std::string val, variable_types as,
+               long long ival)
+      : expression(line, col, node_type::RAW_NUMBER, val), as(as),
+        with_val(ival)
+  {
+  }
   variable_types as;
   long long with_val;
 };
@@ -114,7 +125,7 @@ public:
 
   std::string op;
   Token tok_op;
-  
+
   expr_ptr left;
   expr_ptr right;
 };
@@ -321,7 +332,7 @@ public:
   }
   std::string name;
   std::string file_name;
-  variable_types return_type;
+  vtd return_data;
   std::vector<variable> parameters;
   std::vector<element_ptr> element_list;
 };

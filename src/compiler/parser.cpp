@@ -9,7 +9,7 @@
 #include <filesystem>
 #include <iostream>
 #include <iterator>
-#include <limits>
+#include <sstream>
 #include <tuple>
 #include <unordered_map>
 
@@ -39,7 +39,6 @@ TD_Pair end_of_stream = {Token::EOS, {}, 0};
 
 } // namespace
 
-
 parser::parser(imports &file_imports)
     : _parser_okay(true), _idx(0), _mark(std::numeric_limits<uint64_t>::max()),
       _file_imports(file_imports), _err("parser")
@@ -62,7 +61,7 @@ parser::parse(std::string filename,
   _prefix_fns[Token::EXCLAMATION] = &parser::prefix_expr;
   _prefix_fns[Token::SUB] = &parser::prefix_expr;
   _prefix_fns[Token::L_PAREN] = &parser::grouped_expr;
-  _prefix_fns[Token::L_BRACKET] = &parser::array;
+  _prefix_fns[Token::L_BRACE] = &parser::array;
 
   _infix_fns[Token::ADD] = &parser::infix_expr;
   _infix_fns[Token::SUB] = &parser::infix_expr;
@@ -96,7 +95,8 @@ parser::parse(std::string filename,
           locate_import(include_directories, import_statement->target);
 
       if (!item_found) {
-        std::string message =  "Unable to locate import target: " + import_statement->target;
+        std::string message =
+            "Unable to locate import target: " + import_statement->target;
         die(error::compiler::parser::UNABLE_TO_LOCATE_IMPORT, message);
         break;
       }
@@ -141,11 +141,8 @@ parser::parse(std::string filename,
   return top_level_items;
 }
 
-void parser::report_error(uint64_t error_no, 
-                          size_t line, 
-                          size_t col, 
-                          const std::string msg, 
-                          bool show_full)
+void parser::report_error(uint64_t error_no, size_t line, size_t col,
+                          const std::string msg, bool show_full)
 {
   alert::config cfg;
   cfg.set_basic(_filename, msg, line, col);
@@ -249,8 +246,6 @@ parse_tree::import_ptr parser::import()
 
 parse_tree::function_ptr parser::function()
 {
-
-  // fn some_function
   if (current_td_pair().token != Token::FN) {
     return nullptr;
   }
@@ -274,6 +269,9 @@ parse_tree::function_ptr parser::function()
   std::string return_type = current_td_pair().data;
 
   advance();
+
+  uint64_t return_depth = accessor_lit();
+
   std::vector<parse_tree::element_ptr> element_list = statements();
 
   if (!_parser_okay) {
@@ -284,7 +282,8 @@ parse_tree::function_ptr parser::function()
 
   new_func->name = function_name;
   new_func->file_name = _filename;
-  new_func->return_type = parse_tree::string_to_variable_type(return_type);
+  new_func->return_data = {parse_tree::string_to_variable_type(return_type),
+                           return_depth};
   new_func->parameters = std::move(parameters);
   new_func->element_list = std::move(element_list);
 
@@ -323,16 +322,10 @@ std::vector<parse_tree::variable> parser::function_params()
     auto param_v_type = parse_tree::string_to_variable_type(param_type);
 
     advance();
-    uint64_t depth = 0;
-    if (current_td_pair().token == Token::L_BRACKET) {
-      depth = std::numeric_limits<uint64_t>::max();
-      advance();
-      expect(Token::R_BRACKET, "Expected closing bracket for array parameter");
-      advance();
-    }
-
+    uint64_t depth = accessor_lit();
+    
     parameters.push_back(
-        parse_tree::variable{param_name, param_v_type, param_type, depth});
+        parse_tree::variable{param_name, param_type, {param_v_type, depth}});
 
     if (current_td_pair().token != Token::COMMA) {
       eat_params = false;
@@ -390,7 +383,6 @@ std::vector<parse_tree::element_ptr> parser::statements()
 
 uint64_t parser::accessor_lit()
 {
-
   /*
      Consume [100][3][3]... [?]
      and calculate the number of items that would represent i.e [10][10] = 100
@@ -402,7 +394,12 @@ uint64_t parser::accessor_lit()
     while (consume) {
       advance();
       expect(Token::LITERAL_NUMBER, "Literal number expected");
-      depth *= std::stoull(current_td_pair().data);
+    
+      uint64_t current = 1;
+      std::istringstream iss(current_td_pair().data);
+      iss >> current;
+
+      depth *= current;
 
       advance();
       expect(Token::R_BRACKET, "Ending bracket expected");
@@ -477,7 +474,7 @@ parse_tree::element_ptr parser::assignment()
   advance();
   if (_parser_okay) {
     return parse_tree::element_ptr(new parse_tree::assignment_statement(
-        line_no, col, {name, variable_type, type_string, depth},
+        line_no, col, {name, type_string, {variable_type, depth}},
         std::move(exp)));
   }
 
@@ -536,10 +533,10 @@ parse_tree::element_ptr parser::if_statement()
       else {
 
         // TRUE for last else statement
-        condition = parse_tree::expr_ptr(
-            new parse_tree::raw_int_expr(current_td_pair().line, current_td_pair().col,
-                                   "1", parse_tree::variable_types::U8, 1));
-        }
+        condition = parse_tree::expr_ptr(new parse_tree::raw_int_expr(
+            current_td_pair().line, current_td_pair().col, "1",
+            parse_tree::variable_types::U8, 1));
+      }
     }
     else {
       // No continuing segments
@@ -793,8 +790,8 @@ parse_tree::expr_ptr parser::number()
   size_t line_no = current_td_pair().line;
   size_t col = current_td_pair().col;
   if (current_td_pair().token == Token::LITERAL_NUMBER) {
-    return parse_tree::expr_ptr(new parse_tree::raw_int_expr(
-        line_no, col, current_td_pair().data));
+    return parse_tree::expr_ptr(
+        new parse_tree::raw_int_expr(line_no, col, current_td_pair().data));
   }
   else if (current_td_pair().token == Token::LITERAL_FLOAT) {
     return parse_tree::expr_ptr(new parse_tree::expression(
@@ -802,7 +799,8 @@ parse_tree::expr_ptr parser::number()
         current_td_pair().data));
   }
   else {
-    die(error::compiler::parser::INTERNAL_NON_NUMERIC_REACHED, "Expected numerical item");
+    die(error::compiler::parser::INTERNAL_NON_NUMERIC_REACHED,
+        "Expected numerical item");
     return nullptr;
   }
 }
@@ -852,6 +850,7 @@ std::vector<parse_tree::expr_ptr> parser::expression_list()
   results.emplace_back(expression(precedence::LOWEST));
 
   while (peek().token == Token::COMMA) {
+
     advance();
     advance();
     results.emplace_back(expression(precedence::LOWEST));
@@ -883,14 +882,18 @@ parse_tree::expr_ptr parser::array()
   auto arr = parse_tree::array_literal_expr_ptr(
       new parse_tree::array_literal_expr(line_no, col));
 
-  if (peek().token == Token::R_BRACKET) {
+  if (peek().token == Token::R_BRACE) {
     advance();
     return arr;
   }
 
-  arr->expressions = expression_list();
+  advance();
+  arr->expressions = std::move(expression_list());
+  advance();
 
-  if (peek().token != Token::R_BRACKET) {
+  expect(Token::R_BRACE, "Expected '}' at the end of array expression");
+
+  if (!_parser_okay) {
     return nullptr;
   }
 

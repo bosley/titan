@@ -1,12 +1,13 @@
 #include "analyzer.hpp"
 #include "alert/alert.hpp"
-#include "error/error_list.hpp"
 #include "app.hpp"
+#include "error/error_list.hpp"
 #include "log/log.hpp"
 
 #include <algorithm>
 #include <iostream>
 #include <limits>
+#include <sstream>
 #include <string>
 
 namespace compiler {
@@ -20,16 +21,19 @@ analyzer::analyzer(symbol::table &table,
 }
 
 void analyzer::report_error(uint64_t error_no, size_t line, size_t col,
-                            const std::string msg, bool show_col, std::string file)
+                            const std::string msg, bool show_col,
+                            std::string file)
 {
   std::string target_file;
-  if(!_current_function) {
-    if(!file.empty()) {
+  if (!_current_function) {
+    if (!file.empty()) {
       target_file = file;
-    } else {
+    }
+    else {
       _err.raise(error_no);
     }
-  } else {
+  }
+  else {
     target_file = _current_function->file_name;
   }
 
@@ -94,19 +98,21 @@ bool analyzer::analyze()
           }
         }
 
-        report_error(error::compiler::analyzer::DUPLICATE_FUNCTION_DEF, fn->line, fn->col, msg, true, fn->file_name);
+        report_error(error::compiler::analyzer::DUPLICATE_FUNCTION_DEF,
+                     fn->line, fn->col, msg, true, fn->file_name);
       }
 
       //  Check if the item is entry and contains correct return type
       //
       if (fn->name == EXPECTED_ENTRY_SV) {
-        if (fn->return_type != EXPECTED_ENTRY_RETURN_TYPE) {
+        if (fn->return_data.type != EXPECTED_ENTRY_RETURN_TYPE) {
           std::string msg = "Entry method \"";
           msg += EXPECTED_ENTRY_SV;
           msg += "\" is expected to have return type : ";
           msg += EXPECTED_ENTRY_RETURN_TYPE_SV;
           msg += ".";
-          report_error(error::compiler::analyzer::INCORRECT_ENTRY_RETURN, fn->line, 0, msg);
+          report_error(error::compiler::analyzer::INCORRECT_ENTRY_RETURN,
+                       fn->line, 0, msg);
         }
 
         _flags.entry_method_exists = true;
@@ -155,10 +161,10 @@ bool analyzer::analyze()
 
       _table.add_scope_and_enter(scope);
 
-      for(auto &param : _current_function->parameters) {
+      for (auto &param : _current_function->parameters) {
         if (!_table.add_symbol(param.name, &param)) {
-          report_error(error::compiler::analyzer::DUPLICATE_PARAMETER, _current_function->line, _current_function->col,
-                         "");
+          report_error(error::compiler::analyzer::DUPLICATE_PARAMETER,
+                       _current_function->line, _current_function->col, "");
           _table.pop_scope();
           return false;
         }
@@ -192,15 +198,17 @@ void analyzer::accept(parse_tree::assignment_statement &stmt)
     msg += stmt.var.name;
     msg += "\". Item first defined on line ";
     msg += std::to_string(existing_item.assignment->line);
-    report_error(error::compiler::analyzer::DUPLICATE_VARIABLE_DEF, stmt.line, 0, msg, false);
+    report_error(error::compiler::analyzer::DUPLICATE_VARIABLE_DEF, stmt.line,
+                 0, msg, false);
     return;
   }
 
   auto expression_result = analyze_expression(stmt.expr.get());
 
   std::string msg;
-  if (!can_cast_to_expected(stmt.var.type, expression_result, msg)) {
-    report_error(error::compiler::analyzer::IMPLICIT_CAST_FAIL, stmt.line, 0, msg, false);
+  if (!can_cast_to_expected(stmt.var.type_depth, expression_result, msg)) {
+    report_error(error::compiler::analyzer::IMPLICIT_CAST_FAIL, stmt.line, 0,
+                 msg, false);
   }
 }
 
@@ -274,32 +282,34 @@ void analyzer::accept(parse_tree::return_statement &stmt)
   if (stmt.expr.get()) {
     auto expression_result = analyze_expression(stmt.expr.get());
     std::string msg;
-    if (!can_cast_to_expected(_current_function->return_type, expression_result,
+    if (!can_cast_to_expected(_current_function->return_data, expression_result,
                               msg)) {
-      report_error(error::compiler::analyzer::IMPLICIT_CAST_FAIL, stmt.line, stmt.col, msg, false);
+      report_error(error::compiler::analyzer::IMPLICIT_CAST_FAIL, stmt.line,
+                   stmt.col, msg, false);
     }
   }
   else {
 
     // If no statement exists then expect NIL
 
-    if (_current_function->return_type != parse_tree::variable_types::NIL) {
+    if (_current_function->return_data.type !=
+        parse_tree::variable_types::NIL) {
 
       std::string message =
           "Expected expression for return in function with non-nil return type";
-      report_error(error::compiler::analyzer::RETURN_EXPECTED_EXPRESSION, stmt.line, stmt.col, message);
+      report_error(error::compiler::analyzer::RETURN_EXPECTED_EXPRESSION,
+                   stmt.line, stmt.col, message);
     }
   }
 }
 
-parse_tree::variable_types
-analyzer::analyze_expression(parse_tree::expression *expr)
+parse_tree::vtd analyzer::analyze_expression(parse_tree::expression *expr)
 {
   if (!expr) {
     _num_errors++;
     LOG(ERROR) << TAG(APP_FILE_NAME) << "[" << APP_LINE
                << "]: Null expression passed to analyzer" << std::endl;
-    return parse_tree::variable_types::U8;
+    return {parse_tree::variable_types::U8, 0};
   }
 
   switch (expr->type) {
@@ -308,14 +318,15 @@ analyzer::analyze_expression(parse_tree::expression *expr)
     _num_errors++;
     LOG(ERROR) << TAG(APP_FILE_NAME) << "[" << APP_LINE
                << "]: Root expression passed to analyzer" << std::endl;
-    return parse_tree::variable_types::U8;
+    return {parse_tree::variable_types::U8, 0};
   }
 
   case parse_tree::node_type::CALL: {
     // Call validation broken out due to size
     auto potential_type = validate_function_call(expr);
     if (std::nullopt != potential_type) {
-      return potential_type.value();
+
+      return {potential_type.value().type, potential_type.value().depth};
     }
     break;
   }
@@ -324,13 +335,14 @@ analyzer::analyze_expression(parse_tree::expression *expr)
     auto array = reinterpret_cast<parse_tree::array_index_expr *>(expr);
     auto arr_type = analyze_expression(array->arr.get());
     auto arr_idx_type = analyze_expression(array->index.get());
-    if (static_cast<uint64_t>(arr_idx_type) <
+    if (static_cast<uint64_t>(arr_idx_type.type) <
         static_cast<uint64_t>(parse_tree::variable_types::FLOAT)) {
       return arr_type;
     }
 
     // Invalid non-integer type
-    report_error(error::compiler::analyzer::INVALID_ARRAY_IDX, array->line, array->col,
+    report_error(error::compiler::analyzer::INVALID_ARRAY_IDX, array->line,
+                 array->col,
                  "Given type indexing into array is of a non-integer type");
     break;
   }
@@ -338,7 +350,7 @@ analyzer::analyze_expression(parse_tree::expression *expr)
   case parse_tree::node_type::INFIX: {
     auto potential_type = validate_infix(expr);
     if (std::nullopt != potential_type) {
-      return potential_type.value();
+      return {potential_type.value(), 0};
     }
     break;
   }
@@ -346,7 +358,7 @@ analyzer::analyze_expression(parse_tree::expression *expr)
   case parse_tree::node_type::PREFIX: {
     auto potential_type = validate_prefix(expr);
     if (std::nullopt != potential_type) {
-      return potential_type.value();
+      return {potential_type.value(), 0};
     }
     break;
   }
@@ -358,57 +370,61 @@ analyzer::analyze_expression(parse_tree::expression *expr)
       std::string message = "Unknown variable \"";
       message += expr->value;
       message += "\"";
-      report_error(error::compiler::analyzer::UNKNOWN_ID, expr->line, expr->col, message);
+      report_error(error::compiler::analyzer::UNKNOWN_ID, expr->line, expr->col,
+                   message);
       break;
     }
 
     if (suspected_id->type != symbol::variant_type::ASSIGNMENT) {
 
-      if(suspected_id->type == symbol::variant_type::PARAMETER) {
-        return suspected_id.value().parameter_variable->type;
+      if (suspected_id->type == symbol::variant_type::PARAMETER) {
+        return suspected_id.value().parameter_variable->type_depth;
       }
 
       std::string message = "Item \"";
       message += expr->value;
       message += "\" is not a variable";
-      report_error(error::compiler::analyzer::EXPECTED_VARIABLE, expr->line, expr->col, message);
+      report_error(error::compiler::analyzer::EXPECTED_VARIABLE, expr->line,
+                   expr->col, message);
       break;
     }
 
-    return suspected_id.value().assignment->var.type;
+    return suspected_id.value().assignment->var.type_depth;
   }
 
   case parse_tree::node_type::RAW_FLOAT: {
-    return parse_tree::variable_types::FLOAT;
+    return {parse_tree::variable_types::FLOAT, 0};
   }
 
   case parse_tree::node_type::RAW_STRING: {
-    return parse_tree::variable_types::STRING;
+    return {parse_tree::variable_types::STRING, 0};
   }
 
   case parse_tree::node_type::RAW_NUMBER: {
     auto determined_type = determine_integer_type(expr->value);
-    if(std::nullopt == determined_type) {
+    if (std::nullopt == determined_type) {
       std::string message = "Unable to determine integer type from value \"";
       message += expr->value;
       message += "\"";
-      report_error(error::compiler::analyzer::INTERNAL_UNABLE_TO_DETERMINE_INT_VAL, expr->line, expr->col, message);
+      report_error(
+          error::compiler::analyzer::INTERNAL_UNABLE_TO_DETERMINE_INT_VAL,
+          expr->line, expr->col, message);
       break;
     }
-    
+
     // Tag the type and value so we don't have to parse again later
-    auto raw = reinterpret_cast<parse_tree::raw_int_expr*>(expr);
+    auto raw = reinterpret_cast<parse_tree::raw_int_expr *>(expr);
     raw->as = std::get<0>(determined_type.value());
     raw->with_val = std::get<1>(determined_type.value());
-    return raw->as;
+    return {raw->as, 0};
   }
 
   case parse_tree::node_type::ARRAY: {
-    auto arr = reinterpret_cast<parse_tree::array_literal_expr*>(expr);
-    for(auto &e: arr->expressions) {
+    auto arr = reinterpret_cast<parse_tree::array_literal_expr *>(expr);
+    for (auto &e : arr->expressions) {
       analyze_expression(e.get());
     }
-    return parse_tree::variable_types::ARRAY;
+    return {parse_tree::variable_types::ARRAY, arr->expressions.size()};
   }
 
   } // Switch
@@ -416,11 +432,11 @@ analyzer::analyze_expression(parse_tree::expression *expr)
   _num_errors++;
   LOG(DEBUG) << TAG(APP_FILE_NAME) << "[" << APP_LINE
              << "]: Error in current expression" << std::endl;
-  return parse_tree::variable_types::U8;
+  return {parse_tree::variable_types::U8, 0};
 }
 
-bool analyzer::can_cast_to_expected(parse_tree::variable_types expected,
-                                    parse_tree::variable_types actual,
+bool analyzer::can_cast_to_expected(parse_tree::vtd expected_vtd,
+                                    parse_tree::vtd actual_vtd,
                                     std::string &msg)
 {
   /*
@@ -430,6 +446,16 @@ bool analyzer::can_cast_to_expected(parse_tree::variable_types expected,
       user stuff too.
 
   */
+
+  auto expected = expected_vtd.type;
+  auto actual = actual_vtd.type;
+
+  // Ensure expression { .... } for array is <= the definition on the lhs
+  if (actual_vtd.depth > expected_vtd.depth) {
+    msg = "Unable to cast items of mismatched depth";
+    return false;
+  }
+
   if (expected == actual) {
     return true;
   }
@@ -462,7 +488,7 @@ bool analyzer::can_cast_to_expected(parse_tree::variable_types expected,
   return true;
 }
 
-std::optional<parse_tree::variable_types>
+std::optional<parse_tree::vtd>
 analyzer::validate_function_call(parse_tree::expression *expr)
 {
   auto call = reinterpret_cast<parse_tree::function_call_expr *>(expr);
@@ -470,13 +496,16 @@ analyzer::validate_function_call(parse_tree::expression *expr)
 
   if (suspected_fn == std::nullopt) {
     std::string message = "Unable to locate item \"" + call->fn->value + "\"";
-    report_error(error::compiler::analyzer::UNKNOWN_ID, expr->line, expr->col, message);
+    report_error(error::compiler::analyzer::UNKNOWN_ID, expr->line, expr->col,
+                 message);
     return std::nullopt;
   }
 
   if (suspected_fn->type != symbol::variant_type::FUNCTION) {
-    std::string message = "Call to non-function type \"" + call->fn->value + "\"";
-    report_error(error::compiler::analyzer::UNMATCHED_CALL, expr->line, expr->col, message);
+    std::string message =
+        "Call to non-function type \"" + call->fn->value + "\"";
+    report_error(error::compiler::analyzer::UNMATCHED_CALL, expr->line,
+                 expr->col, message);
     return std::nullopt;
   }
 
@@ -490,7 +519,8 @@ analyzer::validate_function_call(parse_tree::expression *expr)
     message += " but received ";
     message += std::to_string(call->params.size());
     message += " parameters.";
-    report_error(error::compiler::analyzer::PARAM_SIZE_MISMATCH, call->line, call->col, message);
+    report_error(error::compiler::analyzer::PARAM_SIZE_MISMATCH, call->line,
+                 call->col, message);
     return std::nullopt;
   }
 
@@ -501,97 +531,107 @@ analyzer::validate_function_call(parse_tree::expression *expr)
 
     // Ensure that the parameters are convertable
     std::string msg;
-    if (!can_cast_to_expected(fn->parameters[i].type, actual, msg)) {
-      report_error(error::compiler::analyzer::PARAM_TYPE_MISMATCH, 
-          expr->line, expr->col, "Invalid parameter type(s) passed to function");
+    if (!can_cast_to_expected(fn->parameters[i].type_depth, actual, msg)) {
+      report_error(error::compiler::analyzer::PARAM_TYPE_MISMATCH, expr->line,
+                   expr->col, "Invalid parameter type(s) passed to function");
       return std::nullopt;
     }
   }
 
-  return {fn->return_type};
+  return {fn->return_data};
 }
 
 std::optional<parse_tree::variable_types>
 analyzer::validate_prefix(parse_tree::expression *expr)
 {
-    auto prefix_expr = reinterpret_cast<parse_tree::prefix_expr*>(expr);
-    return analyze_expression(prefix_expr->right.get());
+  auto prefix_expr = reinterpret_cast<parse_tree::prefix_expr *>(expr);
+  return analyze_expression(prefix_expr->right.get()).type;
 }
 
 std::optional<parse_tree::variable_types>
 analyzer::validate_infix(parse_tree::expression *expr)
 {
-    auto infix_expr = reinterpret_cast<parse_tree::infix_expr*>(expr);
-    auto lhs = analyze_expression(infix_expr->left.get());
-    auto rhs = analyze_expression(infix_expr->right.get());
+  auto infix_expr = reinterpret_cast<parse_tree::infix_expr *>(expr);
+  auto lhs = analyze_expression(infix_expr->left.get());
+  auto rhs = analyze_expression(infix_expr->right.get());
 
-    /*
-     *  Check if expression type needs to be modified to allow expression 
-     *
-     *  Precedence: 
-     *    uints < ints < floats < string
-     *
-     * */
-    if(lhs == rhs) {
-      return rhs;
-    }
+  /*
+   *  Check if expression type needs to be modified to allow expression
+   *
+   *  Precedence:
+   *    uints < ints < floats < string
+   *
+   * */
 
-    if(static_cast<uint8_t>(lhs) > static_cast<uint8_t>(parse_tree::variable_types::STRING)) {
-      report_error(error::compiler::analyzer::INVALID_EXPRESSION, 
-          expr->line, expr->col, "Unable to assign mismatched types");
-      return std::nullopt;
-    }
+  if (lhs.depth != rhs.depth) {
+    report_error(error::compiler::analyzer::INVALID_EXPRESSION, expr->line,
+                 expr->col, "Unable to assign items of mismatched depth");
+  }
 
-    if(static_cast<uint8_t>(rhs) > static_cast<uint8_t>(parse_tree::variable_types::STRING)) {
-      report_error(error::compiler::analyzer::INVALID_EXPRESSION,
-          expr->line, expr->col, "Unable to assign mismatched types");
-      return std::nullopt;
-    }
+  if (lhs.type == rhs.type) {
+    return rhs.type;
+  }
 
-    if(static_cast<uint8_t>(lhs) > static_cast<uint8_t>(rhs)) {
-      return lhs;
-    }
+  if (lhs.type == parse_tree::variable_types::ARRAY ||
+      rhs.type == parse_tree::variable_types::ARRAY) {
+    report_error(error::compiler::analyzer::INVALID_EXPRESSION, expr->line,
+                 expr->col, "Unable to assign mismatched types");
+  }
 
-    return rhs;
+  if (static_cast<uint8_t>(lhs.type) >
+      static_cast<uint8_t>(parse_tree::variable_types::STRING)) {
+    report_error(error::compiler::analyzer::INVALID_EXPRESSION, expr->line,
+                 expr->col, "Unable to assign mismatched types");
+    return std::nullopt;
+  }
+
+  if (static_cast<uint8_t>(rhs.type) >
+      static_cast<uint8_t>(parse_tree::variable_types::STRING)) {
+    report_error(error::compiler::analyzer::INVALID_EXPRESSION, expr->line,
+                 expr->col, "Unable to assign mismatched types");
+    return std::nullopt;
+  }
+
+  if (static_cast<uint8_t>(lhs.type) > static_cast<uint8_t>(rhs.type)) {
+    return lhs.type;
+  }
+
+  return rhs.type;
 }
 
 std::optional<std::tuple<parse_tree::variable_types, long long>>
-analyzer::determine_integer_type(const std::string& data)
+analyzer::determine_integer_type(const std::string &data)
 {
   long long value = 0;
-  try{
-    value = std::stoll(data);
-  } catch (...) {
-    LOG(ERROR) << TAG(APP_FILE_NAME) << "[" << APP_LINE
-               << "]: Exception attempting to determine integer type for : " << data << std::endl;
-    return std::nullopt;
-  }
-  if(value >= 0) {
-    if(value <= std::numeric_limits<int8_t>::max()) {
-      return { { parse_tree::variable_types::I8, value } };
-    }
-    else if(value <= std::numeric_limits<int16_t>::max()) {
-      return { { parse_tree::variable_types::I16, value } };
+  std::istringstream iss(data);
+  iss >> value;
 
+  if (value >= 0) {
+    if (value <= std::numeric_limits<int8_t>::max()) {
+      return {{parse_tree::variable_types::I8, value}};
     }
-    else if(value <= std::numeric_limits<int32_t>::max()) {
-      return { { parse_tree::variable_types::I32, value } };
+    else if (value <= std::numeric_limits<int16_t>::max()) {
+      return {{parse_tree::variable_types::I16, value}};
     }
-    else {
-      return { { parse_tree::variable_types::I64, value } };
-    }
-  } else {
-    if(value <= std::numeric_limits<uint8_t>::max()) {
-      return { { parse_tree::variable_types::U8, value } };
-    }
-    else if(value <= std::numeric_limits<uint16_t>::max()) {
-      return { { parse_tree::variable_types::U16, value } };
-    }
-    else if(value <= std::numeric_limits<uint32_t>::max()) {
-      return { { parse_tree::variable_types::I32, value } };
+    else if (value <= std::numeric_limits<int32_t>::max()) {
+      return {{parse_tree::variable_types::I32, value}};
     }
     else {
-      return { { parse_tree::variable_types::U64, value } };
+      return {{parse_tree::variable_types::I64, value}};
+    }
+  }
+  else {
+    if (value <= std::numeric_limits<uint8_t>::max()) {
+      return {{parse_tree::variable_types::U8, value}};
+    }
+    else if (value <= std::numeric_limits<uint16_t>::max()) {
+      return {{parse_tree::variable_types::U16, value}};
+    }
+    else if (value <= std::numeric_limits<uint32_t>::max()) {
+      return {{parse_tree::variable_types::I32, value}};
+    }
+    else {
+      return {{parse_tree::variable_types::U64, value}};
     }
   }
   return std::nullopt;
