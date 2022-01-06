@@ -25,11 +25,20 @@ std::unordered_map<Token, parser::precedence> precedences = {
     {Token::GT, parser::precedence::LESS_GREATER},
     {Token::LTE, parser::precedence::LESS_GREATER},
     {Token::GTE, parser::precedence::LESS_GREATER},
+    {Token::RSH, parser::precedence::SHIFT},
+    {Token::LSH, parser::precedence::SHIFT},
     {Token::ADD, parser::precedence::SUM},
     {Token::SUB, parser::precedence::SUM},
     {Token::DIV, parser::precedence::PROD},
     {Token::MUL, parser::precedence::PROD},
     {Token::MOD, parser::precedence::PROD},
+    {Token::POW, parser::precedence::POW},
+    {Token::AMPERSAND, parser::precedence::BITWISE},
+    {Token::HAT, parser::precedence::BITWISE},
+    {Token::TILDE, parser::precedence::BITWISE},
+    {Token::OR, parser::precedence::LOGICAL},
+    {Token::AND, parser::precedence::LOGICAL},
+    {Token::PIPE, parser::precedence::LOGICAL},
     {Token::L_PAREN, parser::precedence::CALL},
     {Token::L_BRACKET, parser::precedence::INDEX},
 };
@@ -59,6 +68,7 @@ parser::parse(std::string filename,
   _prefix_fns[Token::LITERAL_FLOAT] = &parser::number;
   _prefix_fns[Token::STRING] = &parser::str;
   _prefix_fns[Token::EXCLAMATION] = &parser::prefix_expr;
+  _prefix_fns[Token::TILDE] = &parser::prefix_expr;
   _prefix_fns[Token::SUB] = &parser::prefix_expr;
   _prefix_fns[Token::L_PAREN] = &parser::grouped_expr;
   _prefix_fns[Token::L_BRACE] = &parser::array;
@@ -75,6 +85,14 @@ parser::parse(std::string filename,
   _infix_fns[Token::LTE] = &parser::infix_expr;
   _infix_fns[Token::GT] = &parser::infix_expr;
   _infix_fns[Token::GTE] = &parser::infix_expr;
+  _infix_fns[Token::RSH] = &parser::infix_expr;
+  _infix_fns[Token::LSH] = &parser::infix_expr;
+  _infix_fns[Token::POW] = &parser::infix_expr;
+  _infix_fns[Token::OR] = &parser::infix_expr;
+  _infix_fns[Token::AND] = &parser::infix_expr;
+  _infix_fns[Token::PIPE] = &parser::infix_expr;
+  _infix_fns[Token::HAT] = &parser::infix_expr;
+  _infix_fns[Token::AMPERSAND] = &parser::infix_expr;
   _infix_fns[Token::L_PAREN] = &parser::call_expr;
   _infix_fns[Token::L_BRACKET] = &parser::index_expr;
 

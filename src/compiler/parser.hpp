@@ -20,11 +20,15 @@ class parser {
 public:
   enum class precedence {
     LOWEST,
+    LOGICAL,      // || && 
+    BITWISE,      // ^ | &
     ASSIGN,       // =
     EQUALS,       // ==
     LESS_GREATER, // > <
+    SHIFT,        // >> << 
     SUM,          // +
     PROD,         // *
+    POW,          // **
     PREFIX,       // -a or !a
     CALL,         // call()
     INDEX         // []
