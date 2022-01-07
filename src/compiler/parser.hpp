@@ -73,7 +73,7 @@ private:
   parse_tree::import_ptr import();
   std::vector<parse_tree::variable> function_params();
   std::vector<parse_tree::element_ptr> statements();
-  uint64_t accessor_lit();
+  std::tuple<uint64_t, std::vector<uint64_t>> accessor_lit();
   parse_tree::element_ptr statement();
   parse_tree::element_ptr assignment();
   parse_tree::element_ptr if_statement();

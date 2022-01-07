@@ -32,6 +32,7 @@ extern variable_types string_to_variable_type(const std::string &s);
 struct vtd {
   variable_types type;
   uint64_t depth;
+  std::vector<uint64_t> segments;
 };
 
 struct variable {
