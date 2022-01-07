@@ -312,7 +312,7 @@ parse_tree::function_ptr parser::function()
 
   advance();
 
-  uint64_t return_depth = accessor_lit();
+  auto [return_depth, segments] = accessor_lit();
 
   std::vector<parse_tree::element_ptr> element_list = statements();
 
@@ -325,7 +325,8 @@ parse_tree::function_ptr parser::function()
   new_func->name = function_name;
   new_func->file_name = _filename;
   new_func->return_data = {parse_tree::string_to_variable_type(return_type),
-                           return_depth};
+                           return_depth,
+                           segments};
   new_func->parameters = std::move(parameters);
   new_func->element_list = std::move(element_list);
 
@@ -364,10 +365,10 @@ std::vector<parse_tree::variable> parser::function_params()
     auto param_v_type = parse_tree::string_to_variable_type(param_type);
 
     advance();
-    uint64_t depth = accessor_lit();
+    auto [depth, segments] = accessor_lit();
     
     parameters.push_back(
-        parse_tree::variable{param_name, param_type, {param_v_type, depth}});
+        parse_tree::variable{param_name, param_type, {param_v_type, depth, segments}});
 
     if (current_td_pair().token != Token::COMMA) {
       eat_params = false;
@@ -423,13 +424,14 @@ std::vector<parse_tree::element_ptr> parser::statements()
   return elements;
 }
 
-uint64_t parser::accessor_lit()
+std::tuple<uint64_t, std::vector<uint64_t>> parser::accessor_lit()
 {
   /*
      Consume [100][3][3]... [?]
      and calculate the number of items that would represent i.e [10][10] = 100
      */
   uint64_t depth = 0;
+  std::vector<uint64_t> segments;
   if (current_td_pair().token == Token::L_BRACKET) {
     depth = 1;
     bool consume = true;
@@ -442,6 +444,7 @@ uint64_t parser::accessor_lit()
       iss >> current;
 
       depth *= current;
+      segments.push_back(current);
 
       advance();
       expect(Token::R_BRACKET, "Ending bracket expected");
@@ -454,7 +457,7 @@ uint64_t parser::accessor_lit()
       }
     }
   }
-  return depth;
+  return { depth, segments };
 }
 
 parse_tree::element_ptr parser::statement()
@@ -504,7 +507,7 @@ parse_tree::element_ptr parser::assignment()
   auto variable_type = parse_tree::string_to_variable_type(type_string);
 
   advance();
-  uint64_t depth = parser::accessor_lit();
+  auto [depth, segments] = parser::accessor_lit();
 
   expect(Token::EQ, "Expected '=' in variable assignment");
   advance();
@@ -516,7 +519,7 @@ parse_tree::element_ptr parser::assignment()
   advance();
   if (_parser_okay) {
     return parse_tree::element_ptr(new parse_tree::assignment_statement(
-        line_no, col, {name, type_string, {variable_type, depth}},
+        line_no, col, {name, type_string, {variable_type, depth, segments}},
         std::move(exp)));
   }
 
