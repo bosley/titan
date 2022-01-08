@@ -1,6 +1,7 @@
 #ifndef VM_HPP
 #define VM_HPP
 
+#include "data/types.hpp"
 #include "settings.hpp"
 
 namespace vm {

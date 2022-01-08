@@ -70,7 +70,7 @@ public:
 };
 using integer_i8_ptr = std::unique_ptr<integer_i8>;
 
-class integer_u16 : public object {
+class integer_i16 : public object {
 public:
   integer_i16() : object(object_type::I16), value(0) {}
   integer_i16(int16_t val) : object(object_type::I16), value(val) {}
