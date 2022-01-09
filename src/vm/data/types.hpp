@@ -25,6 +25,7 @@ enum class object_type {
 
 class object {
 public:
+  object() : underlying_type(object_type::U8) {}
   object(object_type type) : underlying_type(type) {}
   object_type underlying_type;
 };
@@ -113,11 +114,14 @@ using str_ptr = std::unique_ptr<str>;
 class array : public object {
 public:
   array(object_type data_type) : object(object_type::ARRAY), data_type(data_type) {}
+  ~array() {
+    std::vector<object_ptr>().swap(data);
+  }
   object_type data_type;
   std::vector<uint64_t> segments;
   std::vector<object_ptr> data;
 };
-using str_ptr = std::unique_ptr<str>;
+using array_ptr = std::unique_ptr<array>;
 }
 }
 #endif

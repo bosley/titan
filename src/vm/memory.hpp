@@ -17,8 +17,14 @@ namespace vm
 class memory
 {
 public:
+
+  ~memory();
+
   // Create a new frame for data storage
   void new_frame();
+
+  // Create a new frame with references accessable to this frame
+  void new_frame(std::unordered_map<std::string, data::object*> references);
 
   // Remove the current frame
   void del_frame();
@@ -32,10 +38,14 @@ public:
   void store(const std::string& name, data::object_ptr object);
 
 private:
-  struct frame {
+  class frame {
+  public:
+    frame(){}
+    frame(std::unordered_map<std::string, data::object*> refs) : references(refs) {}
+    std::unordered_map<std::string, data::object*> references;
     std::unordered_map<std::string, data::object_ptr> members;
   };
-  std::vector<frame> _frames;
+  std::vector< frame* > _frames;
   std::mutex _mtx;
 };
 
