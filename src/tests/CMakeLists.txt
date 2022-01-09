@@ -11,7 +11,8 @@ add_executable(unit_tests
         main.cpp
         lexer_tests.cpp
         parser_tests.cpp
-        symbol_table_tests.cpp)
+        symbol_table_tests.cpp
+        vm_memory_tests.cpp)
 
 
 target_link_libraries(unit_tests

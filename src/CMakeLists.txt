@@ -55,6 +55,8 @@ set(PROJECT_SOURCES
         ${CMAKE_CURRENT_SOURCE_DIR}/compiler/parser.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/compiler/parsetree.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/compiler/symbols.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/vm/memory.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/vm/vm.cpp
 )
 
 add_executable(${PROJECT_NAME}
