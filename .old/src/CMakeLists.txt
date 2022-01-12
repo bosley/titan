@@ -48,8 +48,15 @@ endif()
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
 
 set(PROJECT_SOURCES
-  ${CMAKE_CURRENT_SOURCE_DIR}/lexer.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/titan.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/alert/alert.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/error/error_manager.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/compiler/analyzer.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/compiler/lexer.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/compiler/parser.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/compiler/parsetree.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/compiler/symbols.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/vm/memory.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/vm/vm.cpp
 )
 
 add_executable(${PROJECT_NAME}
