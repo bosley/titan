@@ -96,5 +96,5 @@ void display_expr_tree(const std::string &prefix, expression *n, bool is_left)
   }
 }
 
-} // namespace parse_tree
-} // namespace compiler
+} // namespace instructions
+} // namespace titan
