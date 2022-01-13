@@ -285,6 +285,6 @@ static std::string token_to_str(const TD_Pair &td)
          "]";
 }
 
-} // namespace compiler
+} // namespace titan
 
 #endif

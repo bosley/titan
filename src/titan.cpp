@@ -1,20 +1,18 @@
 #include "titan.hpp"
-#include "tokens.hpp"
-#include "lexer.hpp"
 #include "instructions.hpp"
+#include "lexer.hpp"
+#include "tokens.hpp"
 
 #include <algorithm>
+#include <filesystem>
+#include <fstream>
 #include <iostream>
 #include <string>
 #include <string_view>
-#include <filesystem>
-#include <fstream>
 
-namespace titan
-{
+namespace titan {
 
-namespace
-{
+namespace {
 void trim_line(std::string &line)
 {
   line.erase(std::find_if(line.rbegin(), line.rend(),
@@ -27,41 +25,40 @@ void trim_line(std::string &line)
 
 bool is_processable(std::string &line)
 {
-  if(line.empty()) {
+  if (line.empty()) {
     return false;
   }
-  if(line.size() >= 2 && line[0] == '/' && line[1] == '/') {
+  if (line.size() >= 2 && line[0] == '/' && line[1] == '/') {
     return false;
   }
   return true;
 }
-}
+} // namespace
 
-titan::titan() : _run(true), _analyze(false), _execute(true), _is_repl(true)
-{
-}
+titan::titan() : _run(true), _analyze(false), _execute(true), _is_repl(true) {}
 
 int titan::do_repl()
 {
   std::cout << "Repl : a = " << _analyze << ", e = " << _execute << std::endl;
 
   /*
-    Needs to be updated to be more aware of syntax so we can have multilined input
+    Needs to be updated to be more aware of syntax so we can have multilined
+    input
   */
 
   std::string line;
   _current_file.line = 1;
 
-  while(_run) {
-    
+  while (_run) {
+
     std::cout << "> ";
     std::getline(std::cin, line);
 
-    if(!is_processable(line)) {
+    if (!is_processable(line)) {
       continue;
     }
 
-    if(!run_line(line)) {
+    if (!run_line(line)) {
       // Report failure
       //
       //  _current_file.col will contain the col position of failure
@@ -80,9 +77,9 @@ int titan::do_run(std::vector<std::string> files)
   std::cout << "Run : a = " << _analyze << ", e = " << _execute << ", "
             << files.size() << " files given" << std::endl;
 
-  for(auto &f : files) {
+  for (auto &f : files) {
     std::cout << "\t" << f << std::endl;
-    if(!run_file(f)) {
+    if (!run_file(f)) {
       return 1;
     }
   }
@@ -111,14 +108,14 @@ bool titan::run_file(std::string_view file)
   std::string line;
   while (std::getline(ifs, line)) {
     _current_file.line++;
-    
+
     trim_line(line);
-    
-    if(!is_processable(line)) {
+
+    if (!is_processable(line)) {
       continue;
     }
 
-    if(!run_line(line)) {
+    if (!run_line(line)) {
       //  Report the error
       //  _current_file.col will be set to error location
       //  _current_file.line will be the line number
@@ -132,24 +129,24 @@ bool titan::run_file(std::string_view file)
 
 bool titan::run_line(std::string_view line)
 {
-  std::cout << "Run line : " << line << std::endl; 
+  std::cout << "Run line : " << line << std::endl;
 
   // Lex the line into tokens
-  
+
   lexer l;
   auto tokens = l.lex(_current_file.line, std::string(line));
 
-  if(tokens.empty()) {
+  if (tokens.empty()) {
     return true;
   }
 
-  for(auto &t: tokens) {
+  for (auto &t : tokens) {
     std::cout << token_to_str(t) << " ";
   }
   std::cout << std::endl;
 
   // Parse the line into an instruction
-  
+
   // If analyze - Analyze the instruction for semantics
 
   // If execute - Execute the instruction
@@ -159,4 +156,4 @@ bool titan::run_line(std::string_view line)
   return true;
 }
 
-}
+} // namespace titan

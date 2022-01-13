@@ -1,3 +1,30 @@
+/*
+   This file defines 5 seperate classifications of types
+
+   1) Meta types
+
+      variable, built_in_variable, user_defined_variable ...
+
+   2) Discriminators
+
+      variable_types, variable_classifications, node_types ...
+
+   3) Expressions
+
+      expression_ptr, array_literal_expr, prefix_expr ...
+
+   4) Instructions
+
+      assignmet_instruction, for_instruction, while_instruction ...
+
+   5) Receiver interface(s)
+
+      Interfaces used by extgernal objects to 'receive' or be 'visited-by'
+      groups of objects defined here
+
+   All of these things are defined together to ease the process of development.
+*/
+
 #ifndef TITAN_INSTRUCTIONS_HPP
 #define TITAN_INSTRUCTIONS_HPP
 
@@ -22,22 +49,59 @@ enum class variable_types {
   FLOAT = 20,
   STRING,
   ARRAY,
-  USER_DEFINED,
-  NIL,
+  UNDEF,
 };
+
+enum class variable_classification { UNDEF, BUILT_IN, USER_DEFINED };
 
 extern variable_types string_to_variable_type(const std::string &s);
 
-struct vtd {
+class variable {
+public:
+  variable() : name(""), classification(variable_classification::UNDEF) {}
+  variable(const std::string name, variable_classification vc)
+      : name(name), classification(vc)
+  {
+  }
+  std::string name;
+  variable_classification classification;
+};
+
+class built_in_variable : public variable {
+public:
+  built_in_variable(const std::string name)
+      : variable(name, variable_classification::BUILT_IN)
+  {
+  }
+
   variable_types type;
   uint64_t depth;
   std::vector<uint64_t> segments;
 };
 
-struct variable {
+class user_defined_variable : public variable {
+public:
+  user_defined_variable(const std::string name)
+      : variable(name, variable_classification::USER_DEFINED)
+  {
+  }
+
+  std::string type; // Name of the user type so it can be mapped
+                    // to a definition later
+};
+
+class user_struct {
+public:
   std::string name;
-  std::string type_string;
-  vtd type_depth;
+
+  enum class def_scope { PUBLIC, PRIVATE };
+
+  struct member_variable {
+    variable var;
+    def_scope scope;
+  };
+
+  std::vector<member_variable> members;
 };
 
 enum class node_type {
@@ -181,22 +245,35 @@ public:
 };
 using function_call_expr_ptr = std::unique_ptr<function_call_expr>;
 
-class visitor;
+class ins_receiver;
 
 class instruction {
 public:
   instruction() = delete;
   instruction(size_t line, size_t col) : line(line), col(col) {}
   virtual ~instruction() = default;
-  virtual void visit(visitor &visitor) = 0;
+  virtual void visit(ins_receiver &ins_receiver) = 0;
   size_t line;
   size_t col;
 };
 using instruction_ptr = std::unique_ptr<instruction>;
 
-class assignment_statement : public instruction {
+class define_user_struct : public instruction {
 public:
-  assignment_statement(size_t line, size_t col, variable var, expr_ptr node)
+  define_user_struct(size_t line, size_t col, user_struct var)
+      : instruction(line, col), var(var)
+  {
+  }
+
+  user_struct var;
+
+  virtual void visit(ins_receiver &v) override;
+};
+using define_user_struct_ptr = std::unique_ptr<define_user_struct>;
+
+class assignment_instruction : public instruction {
+public:
+  assignment_instruction(size_t line, size_t col, variable var, expr_ptr node)
       : instruction(line, col), var(var), expr(std::move(node))
   {
   }
@@ -204,11 +281,11 @@ public:
   variable var;
   expr_ptr expr;
 
-  virtual void visit(visitor &v) override;
+  virtual void visit(ins_receiver &v) override;
 };
-using assignment_statement_ptr = std::unique_ptr<assignment_statement>;
+using assignment_instruction_ptr = std::unique_ptr<assignment_instruction>;
 
-class if_statement : public instruction {
+class if_instruction : public instruction {
 public:
   class segment {
   public:
@@ -222,35 +299,35 @@ public:
     expr_ptr expr;
     std::vector<instruction_ptr> instruction_list;
   };
-  if_statement(size_t line, size_t col) : instruction(line, col) {}
+  if_instruction(size_t line, size_t col) : instruction(line, col) {}
 
   std::vector<segment> segments;
 
-  virtual void visit(visitor &v) override;
+  virtual void visit(ins_receiver &v) override;
 };
-using if_statement_ptr = std::unique_ptr<if_statement>;
+using if_instruction_ptr = std::unique_ptr<if_instruction>;
 
-class expression_statement : public instruction {
+class expression_instruction : public instruction {
 public:
-  expression_statement(size_t line, size_t col, expr_ptr node)
+  expression_instruction(size_t line, size_t col, expr_ptr node)
       : instruction(line, col), expr(std::move(node))
   {
   }
 
   expr_ptr expr;
 
-  virtual void visit(visitor &v) override;
+  virtual void visit(ins_receiver &v) override;
 };
-using expression_statement_ptr = std::unique_ptr<expression_statement>;
+using expression_instruction_ptr = std::unique_ptr<expression_instruction>;
 
-class while_statement : public instruction {
+class while_instruction : public instruction {
 public:
-  while_statement(size_t line, size_t col)
+  while_instruction(size_t line, size_t col)
       : instruction(line, col), condition(nullptr)
   {
   }
-  while_statement(size_t line, size_t col, expr_ptr c,
-                  std::vector<instruction_ptr> body)
+  while_instruction(size_t line, size_t col, expr_ptr c,
+                    std::vector<instruction_ptr> body)
       : instruction(line, col), condition(std::move(c)), body(std::move(body))
   {
   }
@@ -258,18 +335,19 @@ public:
   expr_ptr condition;
   std::vector<instruction_ptr> body;
 
-  virtual void visit(visitor &v) override;
+  virtual void visit(ins_receiver &v) override;
 };
-using while_statement_ptr = std::unique_ptr<while_statement>;
+using while_instruction_ptr = std::unique_ptr<while_instruction>;
 
-class for_statement : public instruction {
+class for_instruction : public instruction {
 public:
-  for_statement(size_t line, size_t col)
+  for_instruction(size_t line, size_t col)
       : instruction(line, col), condition(nullptr)
   {
   }
-  for_statement(size_t line, size_t col, instruction_ptr assign, expr_ptr condition,
-                expr_ptr modifier, std::vector<instruction_ptr> body)
+  for_instruction(size_t line, size_t col, instruction_ptr assign,
+                  expr_ptr condition, expr_ptr modifier,
+                  std::vector<instruction_ptr> body)
       : instruction(line, col), assign(std::move(assign)),
         condition(std::move(condition)), modifier(std::move(modifier)),
         body(std::move(body))
@@ -281,21 +359,21 @@ public:
   expr_ptr modifier;
   std::vector<instruction_ptr> body;
 
-  virtual void visit(visitor &v) override;
+  virtual void visit(ins_receiver &v) override;
 };
-using for_statement_ptr = std::unique_ptr<for_statement>;
+using for_instruction_ptr = std::unique_ptr<for_instruction>;
 
-class return_statement : public instruction {
+class return_instruction : public instruction {
 public:
-  return_statement(size_t line, size_t col, expr_ptr node)
+  return_instruction(size_t line, size_t col, expr_ptr node)
       : instruction(line, col), expr(std::move(node))
   {
   }
   expr_ptr expr;
 
-  virtual void visit(visitor &v) override;
+  virtual void visit(ins_receiver &v) override;
 };
-using return_statement_ptr = std::unique_ptr<return_statement>;
+using return_instruction_ptr = std::unique_ptr<return_instruction>;
 
 class import : public instruction {
 public:
@@ -303,44 +381,44 @@ public:
       : instruction(line, col), target(target)
   {
   }
-  import(size_t line, size_t col)
-      : instruction(line, col)
-  {
-  }
+  import(size_t line, size_t col) : instruction(line, col) {}
   std::string target;
-  virtual void visit(visitor &v) override;
+  virtual void visit(ins_receiver &v) override;
 };
 using import_ptr = std::unique_ptr<import>;
 
 class function : public instruction {
 public:
-  function(size_t line, size_t col)
-      : instruction(line, col)
-  {
-  }
+  function(size_t line, size_t col) : instruction(line, col) {}
   std::string name;
   std::string file_name;
-  vtd return_data;
+  variable return_data;
   std::vector<variable> parameters;
   std::vector<instruction_ptr> instruction_list;
-  virtual void visit(visitor &v) override;
+  virtual void visit(ins_receiver &v) override;
 };
 using function_ptr = std::unique_ptr<function>;
 
-class visitor {
+/*
+
+   Receives instruction statements
+
+ */
+class ins_receiver {
 public:
-  virtual void accept(assignment_statement &stmt) = 0;
-  virtual void accept(expression_statement &stmt) = 0;
-  virtual void accept(if_statement &stmt) = 0;
-  virtual void accept(while_statement &stmt) = 0;
-  virtual void accept(for_statement &stmt) = 0;
-  virtual void accept(return_statement &stmt) = 0;
-  virtual void accept(import &stmt) = 0;
-  virtual void accept(function &stmt) = 0;
+  virtual void receive(define_user_struct &ins) = 0;
+  virtual void receive(assignment_instruction &ins) = 0;
+  virtual void receive(expression_instruction &ins) = 0;
+  virtual void receive(if_instruction &ins) = 0;
+  virtual void receive(while_instruction &ins) = 0;
+  virtual void receive(for_instruction &ins) = 0;
+  virtual void receive(return_instruction &ins) = 0;
+  virtual void receive(import &ins) = 0;
+  virtual void receive(function &ins) = 0;
 };
 
-} // namespace parse_tree
+} // namespace instructions
 
-} // namespace compiler
+} // namespace titan
 
 #endif

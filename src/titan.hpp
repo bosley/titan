@@ -4,15 +4,13 @@
 #include <string>
 #include <vector>
 
-namespace titan
-{
+namespace titan {
 
-class titan
-{
+class titan {
 public:
   titan();
-  void set_analyze(bool analyze){ _analyze = analyze; }
-  void set_execute(bool execute){ _execute = execute; }
+  void set_analyze(bool analyze) { _analyze = analyze; }
+  void set_execute(bool execute) { _execute = execute; }
 
   int do_repl();
   int do_run(std::vector<std::string> files);
@@ -23,8 +21,7 @@ private:
   bool _execute;
   bool _is_repl;
 
-  struct fp_info 
-  {
+  struct fp_info {
     std::string_view name;
     size_t line;
     size_t col;
@@ -36,6 +33,6 @@ private:
   bool run_line(std::string_view line);
 };
 
-}
+} // namespace titan
 
 #endif

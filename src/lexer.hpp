@@ -27,6 +27,6 @@ private:
   void advance();
   char peek(size_t ahead = 1);
 };
-} // namespace compiler
+} // namespace titan
 
 #endif

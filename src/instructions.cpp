@@ -3,14 +3,15 @@
 namespace titan {
 namespace instructions {
 
-void assignment_statement::visit(visitor &v) { v.accept(*this); }
-void expression_statement::visit(visitor &v) { v.accept(*this); }
-void if_statement::visit(visitor &v) { v.accept(*this); }
-void while_statement::visit(visitor &v) { v.accept(*this); }
-void for_statement::visit(visitor &v) { v.accept(*this); }
-void return_statement::visit(visitor &v) { v.accept(*this); }
-void import::visit(visitor &v) { v.accept(*this); }
-void function::visit(visitor &v) { v.accept(*this); }
+void define_user_struct::visit(ins_receiver &ir) { ir.receive(*this); }
+void assignment_instruction::visit(ins_receiver &ir) { ir.receive(*this); }
+void expression_instruction::visit(ins_receiver &ir) { ir.receive(*this); }
+void if_instruction::visit(ins_receiver &ir) { ir.receive(*this); }
+void while_instruction::visit(ins_receiver &ir) { ir.receive(*this); }
+void for_instruction::visit(ins_receiver &ir) { ir.receive(*this); }
+void return_instruction::visit(ins_receiver &ir) { ir.receive(*this); }
+void import::visit(ins_receiver &ir) { ir.receive(*this); }
+void function::visit(ins_receiver &ir) { ir.receive(*this); }
 
 variable_types string_to_variable_type(const std::string &s)
 {
@@ -44,10 +45,12 @@ variable_types string_to_variable_type(const std::string &s)
   if (s == "string") {
     return variable_types::STRING;
   }
-  if (s == "nil") {
-    return variable_types::NIL;
-  }
-  return variable_types::USER_DEFINED;
+  /*
+   *    NOTE : User defined times not handled here
+   *    TODO : When user created constructs are created we will
+   *           need to do something to handle it here
+   */
+  return variable_types::UNDEF;
 }
 
 void display_expr_tree(const std::string &prefix, expression *n, bool is_left)
