@@ -1,6 +1,7 @@
 #include "titan.hpp"
 #include "tokens.hpp"
 #include "lexer.hpp"
+#include "instructions.hpp"
 
 #include <algorithm>
 #include <iostream>
