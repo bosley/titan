@@ -1,32 +1,33 @@
-#include "app.hpp"
-#include "compiler/analyzer.hpp"
-#include "compiler/imports.hpp"
-#include "compiler/lexer.hpp"
-#include "compiler/parser.hpp"
-#include "compiler/symbols.hpp"
 
+#include "app.hpp"
+#include "titan.hpp"
 #include "log/log.hpp"
 
-#include <filesystem>
 #include <iostream>
+#include <filesystem>
 #include <string>
-#include <unordered_map>
 #include <vector>
+#include <unordered_map>
 
-namespace {
+/*
+    - repl
+      If no files are given, REPL begins
 
-std::string program_name;
-std::string working_directory;
-std::vector<std::string> filenames;
-std::vector<std::string> include_directories;
+    - check
+      If check is given, parse all source files given and perform semantic
+   anlysis
 
-enum class LogLevel { TRACE, DEBUG, INFO, WARNING, ERROR, FATAL };
+    - execute
+      Execute given source file(s)
+ */
 
-LogLevel logger_level;
-
-std::unordered_map<std::string, LogLevel> logger_args;
-
-} // namespace
+namespace 
+{
+  enum class LogLevel { TRACE, DEBUG, INFO, WARNING, ERROR, FATAL };
+  
+  LogLevel logger_level;
+  std::unordered_map<std::string, LogLevel> logger_args;
+}
 
 void setup_logger()
 {
@@ -63,15 +64,18 @@ void setup_logger()
   };
 }
 
-void show_usage()
+int show_usage(std::string_view program_name)
 {
   std::cout << program_name << std::endl;
   std::cout << "\nUsage:\n";
   std::cout << "  " << program_name
-            << " [<include-directories>]  <source-file> <source-file>..."
+            << " [options] [<include-directories>] [<source-file>]"
             << std::endl;
   std::cout << "\nOptions:\n";
   std::cout << "  -h --help             Show this help screen\n";
+  std::cout << "  -a --analyze          Analyze input before execution\n";
+  std::cout << "  -n --norun            Disable execution\n";
+  std::cout << "  -i --include          Include a ':' delimited directory list\n";
   std::cout << "  -l --log <level>      Set logging level\n";
   std::cout << "\n     Levels:\n";
 
@@ -79,34 +83,9 @@ void show_usage()
     std::cout << "            " << i.first << std::endl;
   }
 
-  std::cout
-      << "\n  -i --include          Include a ':' delimited directory list\n";
-  std::cout << "\nExample:\n  " << program_name
-            << " -i /path/to/directory:/path/to/another/directory main.tl"
+  std::cout << "\nNeglecting to pass in a source file will start titan in REPL mode"
             << std::endl;
-  return;
-}
-
-/*
-  Builds the list of include directories from -i or --include and ensures
-  that each item given is a directory
-*/
-void parse_includes(std::string includes)
-{
-  size_t pos = 0;
-  std::string directory;
-  while ((pos = includes.find(":")) != std::string::npos) {
-    include_directories.emplace_back(includes.substr(0, pos));
-    includes.erase(0, pos + 1);
-  }
-  include_directories.emplace_back(includes);
-  for (auto &expected_directory : include_directories) {
-    if (!std::filesystem::is_directory(expected_directory)) {
-      std::cout << "Given include item \"" << expected_directory
-                << "\" is not a directory" << std::endl;
-      std::exit(0);
-    }
-  }
+  return 0;
 }
 
 void set_logger_level(std::string level)
@@ -121,38 +100,27 @@ void set_logger_level(std::string level)
 }
 
 /*
-  Parses input arguments
+  Builds the list of include directories from -i or --include and ensures
+  that each item given is a directory
 */
-void parse_args(std::vector<std::string> args)
+std::vector<std::string> parse_includes(std::string includes)
 {
-  program_name = args[0];
-  for (size_t idx = 1; idx < args.size(); idx++) {
-    auto &arg = args[idx];
-    if (arg == "-h" || arg == "--help") {
-      show_usage();
+  std::vector<std::string> include_directories;
+  size_t pos = 0;
+  std::string directory;
+  while ((pos = includes.find(":")) != std::string::npos) {
+    include_directories.emplace_back(includes.substr(0, pos));
+    includes.erase(0, pos + 1);
+  }
+  include_directories.emplace_back(includes);
+  for (auto &expected_directory : include_directories) {
+    if (!std::filesystem::is_directory(expected_directory)) {
+      std::cout << "Given include item \"" << expected_directory
+                << "\" is not a directory" << std::endl;
       std::exit(0);
     }
-    if (arg == "-l" || arg == "--log") {
-      if (args.size() <= idx + 1) {
-        std::cout << "No value given to \"" << arg << "\"" << std::endl;
-        std::exit(0);
-      }
-      set_logger_level(args[idx + 1]);
-      idx += 1;
-      continue;
-    }
-    if (arg == "-i" || arg == "--include") {
-      if (args.size() <= idx + 1) {
-        std::cout << "No value given to \"" << arg << "\"" << std::endl;
-        std::exit(0);
-      }
-      parse_includes(args[idx + 1]);
-      idx += 1;
-      continue;
-    }
-    // After arguments, everything will be file names
-    filenames.push_back(arg);
   }
+  return include_directories;
 }
 
 int main(int argc, char **argv)
@@ -160,74 +128,82 @@ int main(int argc, char **argv)
   logger_args["trace"] = LogLevel::TRACE;
   logger_args["debug"] = LogLevel::DEBUG;
   logger_args["info"] = LogLevel::INFO;
-  logger_args["warning"] = LogLevel::WARNING;
+  logger_args["warn"] = LogLevel::WARNING;
   logger_args["error"] = LogLevel::ERROR;
   logger_args["fatal"] = LogLevel::FATAL;
+  logger_level = logger_args["error"];
 
-  logger_level = LogLevel::FATAL;
+  std::vector<std::string> arguments(argv, argv + argc);
 
-  parse_args(std::vector<std::string>(argv, argv + argc));
+  bool analyze = false;
+  bool execute = true;
+  std::string_view program_name = arguments[0];
+  std::vector<std::string> include_dirs;
+  std::string file;
+
+  for (size_t idx = 1; idx < arguments.size(); ++idx) {
+
+    auto &arg = arguments[idx];
+
+    if (arg == "-h" || arg == "--help") {
+      return show_usage(program_name);
+    }
+
+    if (arg == "-a" || arg == "--analyze") {
+      analyze = true;
+      continue;
+    }
+
+    if (arg == "-n" || arg == "--norun") {
+      execute = false;
+      continue;
+    }
+
+    if (arg == "-l" || arg == "--log") {
+      if (arguments.size() <= idx + 1) {
+        std::cout << "No value given to \"" << arg << "\"" << std::endl;
+        std::exit(0);
+      }
+      set_logger_level(arguments[idx + 1]);
+      idx += 1;
+      continue;
+    }
+
+    if (arg == "-i" || arg == "--include") {
+      if (arguments.size() <= idx + 1) {
+        std::cout << "No value given to \"" << arg << "\"" << std::endl;
+        std::exit(0);
+      }
+      include_dirs = parse_includes(arguments[idx + 1]);
+      idx += 1;
+      continue;
+    }
+
+    if (file.empty()) {
+      file = arg;
+    }
+    else {
+      std::cout << "Multiple source files given. First given \"" << file
+                << "\" and then given \"" << arg << "\"\n"
+                << "Please provide only a single file" << std::endl;
+      std::exit(1);
+    }
+  }
 
   setup_logger();
 
-  constexpr auto import_file =
-      [](std::string file) -> std::vector<compiler::TD_Pair> {
-    compiler::lexer lexer;
-    if (!lexer.load_file(file)) {
-      std::exit(1);
-    }
-    std::vector<compiler::TD_Pair> td;
-    if (!lexer.lex(td)) {
-      std::exit(1);
-    }
-    return td;
-  };
-
-  compiler::imports file_imports;
-
-  std::vector<compiler::parse_tree::toplevel_ptr> parse_trees;
-
-  //  Lex and parse all given files / imports into parse_trees
-  //
-  for (auto &file : filenames) {
-
-    auto files_tokens = import_file(file);
-
-    compiler::parser parser(file_imports);
-
-    auto p_tree =
-        parser.parse(file, include_directories, import_file, files_tokens);
-
-    LOG(DEBUG) << TAG(APP_FILE_NAME) << "[" << APP_LINE
-               << "]: Top level items : " << p_tree.size() << std::endl;
-
-    parse_trees.insert(parse_trees.end(), std::make_move_iterator(p_tree.begin()),
-                   std::make_move_iterator(p_tree.end()));
+  if (!analyze && !execute) {
+    std::cout << "Nothing to do" << std::endl;
+    return 0;
   }
 
-  if (parse_trees.empty()) {
-    std::cout << "No items to generate" << std::endl;
-    return 1;
+  titan::titan t;
+  t.set_analyze(analyze);
+  t.set_execute(execute);
+
+  if (file.empty()) {
+    return t.do_repl();
   }
 
-  compiler::symbol::table symbol_table;
-  
-  //  Analyze the parse trees
-  //
-  {
-    auto semantic_analyzer = new compiler::analyzer(symbol_table, parse_trees);
-    if(!semantic_analyzer->analyze()) {
-      std::cout << "Semantic analysis failed" << std::endl;
-      delete semantic_analyzer;
-      return 1;
-    }
-    delete semantic_analyzer;
-  }
-
-  //  Translate parse tree to IR
-  //
-
-  //  IR to target
-  //
-  return 0;
+  return t.do_run(file);
 }

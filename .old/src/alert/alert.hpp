@@ -1,5 +1,5 @@
-#ifndef TITAN_ALERT_HPP
-#define TITAN_ALERT_HPP
+#ifndef COMPILER_ERROR_HPP
+#define COMPILER_ERROR_HPP
 
 #include <string>
 

@@ -9,15 +9,18 @@ include_directories(
 add_executable(unit_tests
         ${PROJECT_SOURCES}
         main.cpp
-        example_tests.cpp)
+        lexer_tests.cpp
+        parser_tests.cpp
+        symbol_table_tests.cpp
+        vm_memory_tests.cpp)
 
 
 target_link_libraries(unit_tests
         ${CPPUTEST_LDFLAGS})
 
 
-      #add_custom_target(copy-test-files ALL
-      # COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/test_files ${CMAKE_BINARY_DIR}/tests/test_files
-      #  )
+add_custom_target(copy-test-files ALL
+        COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/test_files ${CMAKE_BINARY_DIR}/tests/test_files
+        )
 
 add_custom_command(TARGET unit_tests COMMAND ./unit_tests POST_BUILD)

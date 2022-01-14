@@ -3,6 +3,8 @@
 
 namespace error {
 
+namespace compiler {
+
 namespace lexer {
   static constexpr uint16_t TARGET_NOT_FILE = 100;
   static constexpr uint16_t TARGET_CANT_OPEN = 101;
@@ -36,6 +38,8 @@ namespace analyzer {
   static constexpr uint16_t INVALID_ARRAY_IDX = 1112;
   static constexpr uint16_t DUPLICATE_PARAMETER = 1113;
 } // end analyzer
+
+} // end compiler
 
 }
 
