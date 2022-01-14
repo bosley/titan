@@ -2,6 +2,7 @@
 #define TITAN_HPP
 
 #include "env.hpp"
+#include "tokens.hpp"
 #include "parser.hpp"
 
 #include <string>
@@ -16,7 +17,8 @@ public:
   void set_execute(bool execute) { _execute = execute; }
 
   int do_repl();
-  int do_run(std::vector<std::string> files);
+  int do_run(std::string file);
+  void set_include_dirs(std::vector<std::string> dir_list);
 
   // Install an external function to the environment
   bool install_xfunc(env::xfunc *tei)
@@ -52,8 +54,7 @@ private:
   env _environment;
   parser _parser;
 
-  bool run_file(std::string_view file_name);
-  bool run_line(std::string_view line);
+  bool run_tokens(std::vector<TD_Pair> tokens);
 };
 
 } // namespace titan

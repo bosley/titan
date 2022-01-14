@@ -68,12 +68,13 @@ int show_usage(std::string_view program_name)
   std::cout << program_name << std::endl;
   std::cout << "\nUsage:\n";
   std::cout << "  " << program_name
-            << " [options] <source-file> <source-file>..."
+            << " [options] [<include-directories>] <source-file> <source-file>..."
             << std::endl;
   std::cout << "\nOptions:\n";
   std::cout << "  -h --help             Show this help screen\n";
   std::cout << "  -a --analyze          Analyze input before execution\n";
   std::cout << "  -n --norun            Disable execution\n";
+  std::cout << "  -i --include          Include a ':' delimited directory list\n";
   std::cout << "  -l --log <level>      Set logging level\n";
   std::cout << "\n     Levels:\n";
 
@@ -97,12 +98,36 @@ void set_logger_level(std::string level)
   logger_level = logger_args[level];
 }
 
+/*
+  Builds the list of include directories from -i or --include and ensures
+  that each item given is a directory
+*/
+std::vector<std::string> parse_includes(std::string includes)
+{
+  std::vector<std::string> include_directories;
+  size_t pos = 0;
+  std::string directory;
+  while ((pos = includes.find(":")) != std::string::npos) {
+    include_directories.emplace_back(includes.substr(0, pos));
+    includes.erase(0, pos + 1);
+  }
+  include_directories.emplace_back(includes);
+  for (auto &expected_directory : include_directories) {
+    if (!std::filesystem::is_directory(expected_directory)) {
+      std::cout << "Given include item \"" << expected_directory
+                << "\" is not a directory" << std::endl;
+      std::exit(0);
+    }
+  }
+  return include_directories;
+}
+
 int main(int argc, char **argv)
 {
   logger_args["trace"] = LogLevel::TRACE;
   logger_args["debug"] = LogLevel::DEBUG;
   logger_args["info"] = LogLevel::INFO;
-  logger_args["warning"] = LogLevel::WARNING;
+  logger_args["warn"] = LogLevel::WARNING;
   logger_args["error"] = LogLevel::ERROR;
   logger_args["fatal"] = LogLevel::FATAL;
   logger_level = logger_args["error"];
@@ -113,6 +138,7 @@ int main(int argc, char **argv)
   bool execute = true;
   std::vector<std::string> sources;
   std::string_view program_name = arguments[0];
+  std::vector<std::string> include_dirs;
 
   for (size_t idx = 1; idx < arguments.size(); ++idx) {
 
@@ -138,6 +164,16 @@ int main(int argc, char **argv)
         std::exit(0);
       }
       set_logger_level(arguments[idx + 1]);
+      idx += 1;
+      continue;
+    }
+
+    if (arg == "-i" || arg == "--include") {
+      if (arguments.size() <= idx + 1) {
+        std::cout << "No value given to \"" << arg << "\"" << std::endl;
+        std::exit(0);
+      }
+      include_dirs = parse_includes(arguments[idx + 1]);
       idx += 1;
       continue;
     }

@@ -76,6 +76,9 @@ parser::parse(std::string source_name, std::vector<TD_Pair> &tokens)
   _tokens = tokens;
   _source_name = source_name;
 
+
+  std::cout << "TOKENS : " << tokens.size() << std::endl;
+
   _prefix_fns[Token::IDENTIFIER] = &parser::identifier;
   _prefix_fns[Token::LITERAL_NUMBER] = &parser::number;
   _prefix_fns[Token::LITERAL_FLOAT] = &parser::number;

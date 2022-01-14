@@ -102,9 +102,11 @@ int titan::do_repl()
       continue;
     }
 
-    if (!run_line(line)) {
+    lexer l;
+    auto tokens = l.lex(_current_file.line, std::string(line));
+
+    if (!run_tokens(tokens)) {
       // Report failure
-      //
       //  _current_file.col will contain the col position of failure
       //  in the future when this thing is more aware we can split it by
       //  \n and show the exact "line" of failure too
@@ -112,74 +114,36 @@ int titan::do_repl()
     }
     _current_file.line++;
   }
+
+  // TODO: Return the environment's return code
   return 0;
 }
 
-int titan::do_run(std::vector<std::string> files)
+int titan::do_run(std::string file)
 {
   _is_repl = false;
-  std::cout << "Run : a = " << _analyze << ", e = " << _execute << ", "
-            << files.size() << " files given" << std::endl;
 
-  for (auto &f : files) {
-    std::cout << "\t" << f << std::endl;
-    if (!run_file(f)) {
-      return 1;
-    }
+  if (!std::filesystem::is_regular_file(file)) {
+    std::cout << "Given item : " << file << " is not a file" << std::endl;
+    return 1;
   }
+  
+  if(!run_tokens(lex_file(file))) {
+    // Report failure
+    return 1;
+  }
+
+  // TODO: Return the environment's return code
   return 0;
 }
 
-bool titan::run_file(std::string_view file)
+void titan::set_include_dirs(std::vector<std::string> dir_list)
 {
-  if (!std::filesystem::is_regular_file(file)) {
-    std::cout << "Given item : " << file << " is not a file" << std::endl;
-    return false;
-  }
-
-  std::ifstream ifs;
-  ifs.open(file);
-
-  if (!ifs.is_open()) {
-    std::cout << "Unable to open item : " << file << std::endl;
-    return false;
-  }
-
-  _current_file.name = file;
-  _current_file.line = 0;
-  _current_file.col = 0;
-
-  std::string line;
-  while (std::getline(ifs, line)) {
-    _current_file.line++;
-
-    trim_line(line);
-
-    if (!is_processable(line)) {
-      continue;
-    }
-
-    if (!run_line(line)) {
-      //  Report the error
-      //  _current_file.col will be set to error location
-      //  _current_file.line will be the line number
-      return false;
-    }
-  }
-
-  ifs.close();
-  return true;
+  g_importer.include_directories = dir_list;
 }
 
-bool titan::run_line(std::string_view line)
+bool titan::run_tokens(std::vector<TD_Pair> tokens) 
 {
-  std::cout << "Run line : " << line << std::endl;
-
-  // Lex the line into tokens
-
-  lexer l;
-  auto tokens = l.lex(_current_file.line, std::string(line));
-
   if (tokens.empty()) {
     return true;
   }
