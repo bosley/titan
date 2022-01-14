@@ -2,6 +2,7 @@
 #define TITAN_HPP
 
 #include "env.hpp"
+#include "parser.hpp"
 
 #include <string>
 #include <vector>
@@ -49,7 +50,7 @@ private:
   fp_info _current_file;
 
   env _environment;
-  
+  parser _parser;
 
   bool run_file(std::string_view file_name);
   bool run_line(std::string_view line);

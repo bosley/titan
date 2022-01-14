@@ -66,6 +66,7 @@ public:
   std::string name;
   variable_classification classification;
 };
+using variable_ptr = std::unique_ptr<variable>;
 
 class built_in_variable : public variable {
 public:
@@ -74,11 +75,18 @@ public:
   {
   }
 
+  built_in_variable(const std::string name, variable_types type, uint64_t depth,
+                    std::vector<uint64_t> seg)
+      : variable(name, variable_classification::BUILT_IN), type(type),
+        depth(depth), segments(seg)
+  {
+  }
+
   variable_types type;
   uint64_t depth;
   std::vector<uint64_t> segments;
 };
-
+using built_in_variable_ptr = std::unique_ptr<built_in_variable>;
 class user_defined_variable : public variable {
 public:
   user_defined_variable(const std::string name)
@@ -89,19 +97,25 @@ public:
   std::string type; // Name of the user type so it can be mapped
                     // to a definition later
 };
+using user_defined_variable_ptr = std::unique_ptr<user_defined_variable>;
 
 class user_struct {
 public:
+
+  user_struct(){}
+  ~user_struct() {
+    for(auto &m : members) {
+      delete m;
+    }
+  }
+
   std::string name;
-
   enum class def_scope { PUBLIC, PRIVATE };
-
   struct member_variable {
-    variable var;
+    variable_ptr var;
     def_scope scope;
   };
-
-  std::vector<member_variable> members;
+  std::vector<member_variable*> members;
 };
 
 enum class node_type {
@@ -273,12 +287,12 @@ using define_user_struct_ptr = std::unique_ptr<define_user_struct>;
 
 class assignment_instruction : public instruction {
 public:
-  assignment_instruction(size_t line, size_t col, variable var, expr_ptr node)
-      : instruction(line, col), var(var), expr(std::move(node))
+  assignment_instruction(size_t line, size_t col, variable_ptr var, expr_ptr node)
+      : instruction(line, col), var(std::move(var)), expr(std::move(node))
   {
   }
 
-  variable var;
+  variable_ptr var;
   expr_ptr expr;
 
   virtual void visit(ins_receiver &v) override;
@@ -392,8 +406,8 @@ public:
   function(size_t line, size_t col) : instruction(line, col) {}
   std::string name;
   std::string file_name;
-  variable return_data;
-  std::vector<variable> parameters;
+  variable_ptr return_data;
+  std::vector<variable_ptr> parameters;
   std::vector<instruction_ptr> instruction_list;
   virtual void visit(ins_receiver &v) override;
 };

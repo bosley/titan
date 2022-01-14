@@ -13,6 +13,7 @@
 namespace titan {
 
 namespace {
+
 void trim_line(std::string &line)
 {
   line.erase(std::find_if(line.rbegin(), line.rend(),
@@ -33,9 +34,51 @@ bool is_processable(std::string &line)
   }
   return true;
 }
+
+std::vector<TD_Pair> lex_file(std::string file) 
+{
+  if (!std::filesystem::is_regular_file(file)) {
+    std::cout << "Importer : Given item : " << file << " is not a file" << std::endl;
+    return {};
+  }
+
+  std::ifstream ifs;
+  ifs.open(file);
+
+  if (!ifs.is_open()) {
+    std::cout << "Importer : Unable to open item : " << file << std::endl;
+    return {};
+  }
+
+  std::string line;
+  size_t line_no = 0;
+  std::vector<TD_Pair> result;
+  while (std::getline(ifs, line)) {
+    line_no++;
+    trim_line(line);
+    if (!is_processable(line)) {
+      continue;
+    }
+
+    lexer l;
+    auto tokens = l.lex(line_no, line);
+    if(!tokens.empty()) {
+      result.insert(result.end(), tokens.begin(), tokens.end());
+    }
+  }
+
+  ifs.close();
+  return result;
+}
+
+imports g_importer(lex_file, {});
+
 } // namespace
 
-titan::titan() : _run(true), _analyze(false), _execute(true), _is_repl(true) {}
+titan::titan() : _run(true), _analyze(false), _execute(true), _is_repl(true), _parser(g_importer)
+{
+
+}
 
 int titan::do_repl()
 {
@@ -48,6 +91,7 @@ int titan::do_repl()
 
   std::string line;
   _current_file.line = 1;
+  _current_file.name = "repl";
 
   while (_run) {
 
@@ -145,7 +189,8 @@ bool titan::run_line(std::string_view line)
   }
   std::cout << std::endl;
 
-  // Parse the line into an instruction
+  // Generate instruction(s) from token stream
+  auto instructions = _parser.parse(std::string(_current_file.name), tokens);
 
   // If analyze - Analyze the instruction for semantics
 

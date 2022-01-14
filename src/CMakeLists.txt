@@ -50,6 +50,7 @@ include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
 set(PROJECT_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/instructions.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/lexer.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/parser.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/titan.cpp
 )
 
