@@ -48,6 +48,8 @@ endif()
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
 
 set(PROJECT_SOURCES
+  ${CMAKE_CURRENT_SOURCE_DIR}/alert/alert.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/error/error_manager.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/instructions.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/lexer.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/parser.cpp

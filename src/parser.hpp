@@ -7,7 +7,7 @@
 #include <unordered_map>
 #include <vector>
 
-//#include "error/error_manager.hpp"
+#include "error/error_manager.hpp"
 
 #include "imports.hpp"
 #include "instructions.hpp"
@@ -49,7 +49,7 @@ private:
   size_t _idx;
   size_t _mark;
   imports &_file_imports;
-  //error::manager _err;
+  error::manager _err;
   std::vector<TD_Pair> _tokens;
   std::unordered_map<Token, prefix_parse_fn> _prefix_fns;
   std::unordered_map<Token, infix_parse_fn> _infix_fns;
@@ -67,7 +67,7 @@ private:
   void expect(Token token, std::string error, size_t ahead = 0);
   const TD_Pair &peek(size_t ahead = 1) const;
   precedence peek_precedence();
-  instructions::function_ptr function();
+  instructions::instruction_ptr function();
   instructions::import_ptr import();
   std::vector<instructions::variable_ptr> function_params();
   std::vector<instructions::instruction_ptr> statements();

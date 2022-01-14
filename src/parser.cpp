@@ -1,10 +1,10 @@
 #include "parser.hpp"
 
-#include "error_list.hpp"
+#include "error/error_list.hpp"
+#include "alert/alert.hpp"
+#include "app.hpp"
+#include "log/log.hpp"
 
-//#include "alert/alert.hpp"
-//#include "app.hpp"
-//#include "log/log.hpp"
 #include <algorithm>
 #include <filesystem>
 #include <iostream>
@@ -62,13 +62,17 @@ TD_Pair end_of_stream = {Token::EOS, {}, 0};
 
 parser::parser(imports &file_imports)
     : _parser_okay(true), _idx(0), _mark(std::numeric_limits<uint64_t>::max()),
-      _file_imports(file_imports)//, _err("parser")
+      _file_imports(file_imports), _err("parser")
 {
 }
 
 std::vector<instructions::instruction_ptr>
 parser::parse(std::string source_name, std::vector<TD_Pair> &tokens)
 {
+  _parser_okay = true;
+  _idx = 0;
+  _mark = std::numeric_limits<uint64_t>::max();
+
   _tokens = tokens;
   _source_name = source_name;
 
@@ -165,6 +169,10 @@ parser::parse(std::string source_name, std::vector<TD_Pair> &tokens)
 
       top_level_items.push_back(std::move(function_instruction));
     }
+    else if (auto statement = parser::statement() ) {
+
+      top_level_items.push_back(std::move(statement));
+    }
     else {
       die(error::parser::INVALID_TL_ITEM, "");
     };
@@ -182,15 +190,15 @@ parser::parse(std::string source_name, std::vector<TD_Pair> &tokens)
 void parser::report_error(uint64_t error_no, size_t line, size_t col,
                           const std::string msg, bool show_full)
 {
-  // alert::config cfg;
-  // cfg.set_basic(_source_name, msg, line, col);
-  // cfg.set_show_chunk(show_full);
-  // cfg.set_all_attn(show_full);
-  //_err.raise(error_no, &cfg);
-  //
+   if(_source_name == "repl") {
+     show_full = false;
+   }
 
-  std::cout << "Error : " << error_no << ". line : " << line
-            << ", col : " << col << ", msg : " << msg << std::endl;
+   alert::config cfg;
+   cfg.set_basic(_source_name, msg, line, col);
+   cfg.set_show_chunk(show_full);
+   cfg.set_all_attn(show_full);
+  _err.raise(error_no, &cfg);
   _parser_okay = false;
 }
 void parser::prev() { _idx--; }
@@ -204,8 +212,8 @@ void parser::unset() { _mark = std::numeric_limits<uint64_t>::max(); }
 const TD_Pair &parser::current_td_pair() const
 {
   if (_idx >= _tokens.size()) {
-   // LOG(DEBUG) << TAG(APP_FILE_NAME) << "[" << APP_LINE
-   //            << "]: End of token stream" << std::endl;
+    LOG(DEBUG) << TAG(APP_FILE_NAME) << "[" << APP_LINE
+               << "]: End of token stream" << std::endl;
     return error_token;
   }
 
@@ -215,7 +223,7 @@ const TD_Pair &parser::current_td_pair() const
 void parser::reset()
 {
   if (_mark > _idx) {
-    //_err.raise(error::parser::INTERNAL_MARK_UNSET);
+    _err.raise(error::parser::INTERNAL_MARK_UNSET);
     _parser_okay = false;
     unset(); // ensure its set to max, not some other num
     return;
@@ -233,9 +241,9 @@ void parser::die(uint64_t error_no, std::string error)
   report_error(error_no, current_td_pair().line, current_td_pair().col, error,
                _parser_okay);
 
-  //LOG(DEBUG) << TAG(APP_FILE_NAME) << "[" << APP_LINE << "]: " << COLOR(magenta)
-  //           << "Curernt token : " << token_to_str(current_td_pair())
-  //           << COLOR(none) << std::endl;
+  LOG(DEBUG) << TAG(APP_FILE_NAME) << "[" << APP_LINE << "]: " << COLOR(magenta)
+             << "Curernt token : " << token_to_str(current_td_pair())
+             << COLOR(none) << std::endl;
 }
 
 void parser::expect(Token token, std::string error, size_t ahead)
@@ -248,8 +256,8 @@ void parser::expect(Token token, std::string error, size_t ahead)
 const TD_Pair &parser::peek(size_t ahead) const
 {
   if (_idx + ahead >= _tokens.size()) {
-    //LOG(DEBUG) << TAG(APP_FILE_NAME) << "[" << APP_LINE
-    //           << "]: End of token stream" << std::endl;
+    LOG(DEBUG) << TAG(APP_FILE_NAME) << "[" << APP_LINE
+               << "]: End of token stream" << std::endl;
     return end_of_stream;
   }
   return _tokens.at(_idx + ahead);
@@ -285,7 +293,7 @@ instructions::import_ptr parser::import()
   }
 }
 
-instructions::function_ptr parser::function()
+instructions::instruction_ptr parser::function()
 {
   if (current_td_pair().token != Token::FN) {
     return nullptr;
@@ -319,7 +327,7 @@ instructions::function_ptr parser::function()
     return nullptr;
   }
 
-  auto new_func = instructions::function_ptr(new instructions::function(line, col));
+  auto new_func = new instructions::function(line, col);
 
   new_func->name = function_name;
   new_func->file_name = _source_name;
@@ -335,7 +343,7 @@ instructions::function_ptr parser::function()
   new_func->parameters = std::move(parameters);
   new_func->instruction_list = std::move(instruction_list);
 
-  return new_func;
+  return instructions::instruction_ptr(new_func);
 }
 
 std::vector<instructions::variable_ptr> parser::function_params()
@@ -990,10 +998,10 @@ instructions::expr_ptr parser::index_expr(instructions::expr_ptr arr)
 std::tuple<bool, std::string>
 parser::locate_import(std::vector<std::string> &paths, std::string &target)
 {
-  //LOG(DEBUG) << TAG(APP_FILE_NAME) << "[" << APP_LINE << "]: " << target
-  //           << std::endl;
-  //LOG(DEBUG) << TAG(APP_FILE_NAME) << "[" << APP_LINE << "]: " << paths.size()
-  //           << " include directories" << std::endl;
+  LOG(DEBUG) << TAG(APP_FILE_NAME) << "[" << APP_LINE << "]: " << target
+             << std::endl;
+  LOG(DEBUG) << TAG(APP_FILE_NAME) << "[" << APP_LINE << "]: " << paths.size()
+             << " include directories" << std::endl;
 
   // Check the local directory first
   std::filesystem::path item_as_local = std::filesystem::current_path();

@@ -192,6 +192,8 @@ bool titan::run_line(std::string_view line)
   // Generate instruction(s) from token stream
   auto instructions = _parser.parse(std::string(_current_file.name), tokens);
 
+  std::cout << "Got : " << instructions.size() << " instructions" << std::endl;
+
   // If analyze - Analyze the instruction for semantics
 
   // If execute - Execute the instruction
