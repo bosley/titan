@@ -4,6 +4,7 @@
 #include "log/log.hpp"
 
 #include <iostream>
+#include <filesystem>
 #include <string>
 #include <vector>
 #include <unordered_map>
@@ -68,7 +69,7 @@ int show_usage(std::string_view program_name)
   std::cout << program_name << std::endl;
   std::cout << "\nUsage:\n";
   std::cout << "  " << program_name
-            << " [options] [<include-directories>] <source-file> <source-file>..."
+            << " [options] [<include-directories>] [<source-file>]"
             << std::endl;
   std::cout << "\nOptions:\n";
   std::cout << "  -h --help             Show this help screen\n";
@@ -82,7 +83,7 @@ int show_usage(std::string_view program_name)
     std::cout << "            " << i.first << std::endl;
   }
 
-  std::cout << "\nNeglecting to pass in source files will start titan in REPL mode"
+  std::cout << "\nNeglecting to pass in a source file will start titan in REPL mode"
             << std::endl;
   return 0;
 }
@@ -136,9 +137,9 @@ int main(int argc, char **argv)
 
   bool analyze = false;
   bool execute = true;
-  std::vector<std::string> sources;
   std::string_view program_name = arguments[0];
   std::vector<std::string> include_dirs;
+  std::string file;
 
   for (size_t idx = 1; idx < arguments.size(); ++idx) {
 
@@ -177,7 +178,16 @@ int main(int argc, char **argv)
       idx += 1;
       continue;
     }
-    sources.push_back(arg);
+
+    if (file.empty()) {
+      file = arg;
+    }
+    else {
+      std::cout << "Multiple source files given. First given \"" << file
+                << "\" and then given \"" << arg << "\"\n"
+                << "Please provide only a single file" << std::endl;
+      std::exit(1);
+    }
   }
 
   setup_logger();
@@ -191,9 +201,9 @@ int main(int argc, char **argv)
   t.set_analyze(analyze);
   t.set_execute(execute);
 
-  if (sources.empty()) {
+  if (file.empty()) {
     return t.do_repl();
   }
 
-  return t.do_run(sources);
+  return t.do_run(file);
 }
