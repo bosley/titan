@@ -48,6 +48,8 @@ private:
   virtual void receive(instructions::for_instruction &ins) override;
   virtual void receive(instructions::return_instruction &ins) override;
 
+  vtd retrieve_type_depth(instructions::variable *var);
+
   vtd analyze_expression(instructions::expression *expr);
 
   bool can_cast_to_expected(vtd expected, vtd actual,

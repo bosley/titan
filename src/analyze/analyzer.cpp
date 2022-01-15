@@ -258,19 +258,7 @@ void analyzer::receive(instructions::return_instruction &ins)
   LOG(DEBUG) << TAG(APP_FILE_NAME) << "[" << APP_LINE << "]: Return Statement"
              << std::endl;
 
-  //
-  //    REMOVE THIS HANDLE IT BETTER
-  //
-  vtd var_type_data;
-  if(_current_function->return_data->classification == instructions::variable_classification::BUILT_IN) {
-    auto bit = reinterpret_cast<instructions::built_in_variable*>(_current_function->return_data.get());
-    var_type_data = { bit->type, bit->depth };
-  } else {
-    LOG(FATAL) << TAG(APP_FILE_NAME) << "[" << APP_LINE
-               << "]: Analyzer does not yet handle given variable type" << std::endl;
-    _num_errors++;
-    return;
-  }
+  auto var_type_data = retrieve_type_depth(_current_function->return_data.get());
 
   //  If the return has a statement ensure it matches the return statement
   //
@@ -291,6 +279,20 @@ void analyzer::receive(instructions::return_instruction &ins)
                    ins.line, ins.col, message);
     }
   }
+}
+
+analyzer::vtd analyzer::retrieve_type_depth(instructions::variable *var)
+{
+  vtd var_type_data;
+  if(_current_function->return_data->classification == instructions::variable_classification::BUILT_IN) {
+    auto bit = reinterpret_cast<instructions::built_in_variable*>(var);
+    var_type_data = { bit->type, bit->depth };
+  } else {
+    LOG(FATAL) << TAG(APP_FILE_NAME) << "[" << APP_LINE
+               << "]: Analyzer does not yet handle given variable type" << std::endl;
+    _num_errors++;
+  }
+  return var_type_data;
 }
 
 analyzer::vtd analyzer::analyze_expression(instructions::expression *expr)
@@ -368,24 +370,7 @@ analyzer::vtd analyzer::analyze_expression(instructions::expression *expr)
     if (suspected_id->type != symbol::variant_type::ASSIGNMENT) {
 
       if (suspected_id->type == symbol::variant_type::PARAMETER) {
-
-        auto& target_item = suspected_id.value().parameter_variable;
-
-        //
-        //    REMOVE THIS HANDLE IT BETTER
-        //
-        vtd var_type_data;
-        if(target_item->classification == instructions::variable_classification::BUILT_IN) {
-          auto bit = reinterpret_cast<instructions::built_in_variable*>(target_item);
-          var_type_data = { bit->type, bit->depth };
-        } else {
-          LOG(FATAL) << TAG(APP_FILE_NAME) << "[" << APP_LINE
-                     << "]: Analyzer does not yet handle given variable type" << std::endl;
-          _num_errors++;
-          break;
-        }
-
-        return var_type_data;
+        return retrieve_type_depth(suspected_id.value().parameter_variable);
       }
 
       std::string message = "Item \"";
@@ -396,21 +381,8 @@ analyzer::vtd analyzer::analyze_expression(instructions::expression *expr)
       break;
     }
 
-    //
-    //    REMOVE THIS HANDLE IT BETTER
-    //
-    vtd var_type_data;
-    if(suspected_id.value().assignment->var->classification == instructions::variable_classification::BUILT_IN) {
-      auto bit = reinterpret_cast<instructions::built_in_variable*>(suspected_id.value().assignment->var.get());
-      var_type_data = { bit->type, bit->depth };
-    } else {
-      LOG(FATAL) << TAG(APP_FILE_NAME) << "[" << APP_LINE
-                 << "]: Analyzer does not yet handle given variable type" << std::endl;
-      _num_errors++;
-      break;
-    }
+    return retrieve_type_depth(suspected_id.value().assignment->var.get());
 
-    return var_type_data;
   }
 
   case instructions::node_type::RAW_FLOAT: {
@@ -550,51 +522,16 @@ analyzer::validate_function_call(instructions::expression *expr)
     // Validate the parameter
     auto actual = analyze_expression(call->params[i].get());
 
-
-    //
-    //    REMOVE THIS HANDLE IT BETTER
-    //
-    vtd var_type_data;
-    if(fn->parameters[i]->classification == instructions::variable_classification::BUILT_IN) {
-      auto bit = reinterpret_cast<instructions::built_in_variable*>(fn->parameters[i].get());
-      var_type_data = { bit->type, bit->depth };
-    } else {
-      LOG(FATAL) << TAG(APP_FILE_NAME) << "[" << APP_LINE
-                 << "]: Analyzer does not yet handle given variable type" << std::endl;
-      _num_errors++;
-      break;
-    }
-
-
-
-
     // Ensure that the parameters are convertable
     std::string msg;
-    if (!can_cast_to_expected(var_type_data, actual, msg)) {
+    if (!can_cast_to_expected(retrieve_type_depth(fn->parameters[i].get()), actual, msg)) {
       report_error(error::analyzer::PARAM_TYPE_MISMATCH, expr->line,
                    expr->col, "Invalid parameter type(s) passed to function");
       return std::nullopt;
     }
   }
 
-
-  //
-  //    REMOVE THIS HANDLE IT BETTER
-  //
-  vtd var_type_data;
-  if(fn->return_data->classification == instructions::variable_classification::BUILT_IN) {
-    auto bit = reinterpret_cast<instructions::built_in_variable*>(fn->return_data.get());
-    var_type_data = { bit->type, bit->depth };
-  } else {
-    LOG(FATAL) << TAG(APP_FILE_NAME) << "[" << APP_LINE
-               << "]: Analyzer does not yet handle given variable type" << std::endl;
-    _num_errors++;
-    return std::nullopt;
-  }
-
-
-
-  return {var_type_data};
+  return retrieve_type_depth(fn->return_data.get());
 }
 
 std::optional<instructions::variable_types>
