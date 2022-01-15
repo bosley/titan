@@ -1,5 +1,5 @@
-#ifndef VM_MEMORY_HPP
-#define VM_MEMORY_HPP
+#ifndef TITAN_MEMORY_HPP
+#define TITAN_MEMORY_HPP
 
 #include "space.hpp"
 #include "lang/instructions.hpp"
@@ -25,10 +25,9 @@ public:
   
   //  Create a new variable
   //  space - Storage unit for data
-  //  name  - Name of the variable
   //  var   - The variable (moved and owned by memory after called)
   //  Returns true iff the space exists or can be translated to a space
-  bool new_variable(const std::string& space, const std::string& name, instructions::variable *var);
+  bool new_variable(const std::string& space, instructions::variable *var);
 
   //  Attempt to get a variable from a space 
   //  space - Storage unit for the data

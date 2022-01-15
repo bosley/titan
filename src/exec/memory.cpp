@@ -25,7 +25,7 @@ bool memory::associate_space_with_name(const std::string& space, const std::stri
   return false;
 }
 
-bool memory::new_variable(const std::string& space, const std::string& name, instructions::variable *var)
+bool memory::new_variable(const std::string& space, instructions::variable *var)
 {
   return false;
 }

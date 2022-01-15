@@ -1,5 +1,5 @@
-#ifndef MEMORY_SPACE_HPP
-#define MEMORY_SPACE_HPP
+#ifndef TITAN_SPACE_HPP
+#define TITAN_SPACE_HPP
 
 #include "lang/instructions.hpp"
 
@@ -29,7 +29,7 @@ public:
   bool delete_var(const std::string& name);
 
   // Attempt to create a new variable
-  bool new_var(const std::string& name, instructions::variable *var);
+  bool new_var(instructions::variable *var);
 
 private:
   struct scope

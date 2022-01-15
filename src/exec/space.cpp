@@ -116,12 +116,12 @@ bool space::delete_var(const std::string& name)
 }
 
 // Takes ownership of the data
-bool space::new_var(const std::string& name, instructions::variable *var) 
+bool space::new_var(instructions::variable *var) 
 {
   if(!var) {
     return false;
   }
-  _operating_scope->members[name] = instructions::variable_ptr(var);
+  _operating_scope->members[var->name] = instructions::variable_ptr(var);
   return true;
 }
 
