@@ -1,6 +1,8 @@
 **/*tags
 **/*.DS_Store
 
+.old/
+
 .vscode
 **/*.vscode
 **/CMakeFiles
