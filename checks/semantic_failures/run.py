@@ -17,7 +17,7 @@ def indicate(result, test):
 def run_item(item):
     print("-"*10)
     error_code = item.split("_")[0]
-    result = subprocess.run([titan, item], stdout=subprocess.PIPE)
+    result = subprocess.run([titan, "-a", item], stdout=subprocess.PIPE)
     
     if result.returncode != 1:
         print("[FAIL]", item, "Incorrect return code")

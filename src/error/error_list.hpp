@@ -23,14 +23,14 @@ namespace analyzer {
   static constexpr uint16_t INTERNAL_UNABLE_TO_DETERMINE_INT_VAL = 1000;
   static constexpr uint16_t DUPLICATE_FUNCTION_DEF = 1100;
   static constexpr uint16_t DUPLICATE_VARIABLE_DEF = 1101;
-  static constexpr uint16_t ENTRY_NOT_FOUND = 1102;
+  //static constexpr uint16_t ENTRY_NOT_FOUND = 1102;
   static constexpr uint16_t RETURN_EXPECTED_EXPRESSION = 1103;
   static constexpr uint16_t UNKNOWN_ID = 1104;
   static constexpr uint16_t UNMATCHED_CALL = 1105;
   static constexpr uint16_t EXPECTED_VARIABLE = 1106;
   static constexpr uint16_t PARAM_SIZE_MISMATCH = 1107;
   static constexpr uint16_t PARAM_TYPE_MISMATCH = 1108;
-  static constexpr uint16_t INCORRECT_ENTRY_RETURN = 1109;
+  //static constexpr uint16_t INCORRECT_ENTRY_RETURN = 1109;
   static constexpr uint16_t INVALID_EXPRESSION = 1110;
   static constexpr uint16_t IMPLICIT_CAST_FAIL = 1111;
   static constexpr uint16_t INVALID_ARRAY_IDX = 1112;

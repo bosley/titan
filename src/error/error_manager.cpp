@@ -23,14 +23,12 @@ manager::manager(std::string reporter) : _num_errors(0), _reporter(reporter) {
   _error_map[error::analyzer::INTERNAL_UNABLE_TO_DETERMINE_INT_VAL] = "Can't determine base type for int";
   _error_map[error::analyzer::DUPLICATE_FUNCTION_DEF] = "Duplicate function name";
   _error_map[error::analyzer::DUPLICATE_VARIABLE_DEF] = "Duplicate variable name";
-  _error_map[error::analyzer::ENTRY_NOT_FOUND] = "Program entry not found";
   _error_map[error::analyzer::RETURN_EXPECTED_EXPRESSION] = "Return expects expression for non-nil function";
   _error_map[error::analyzer::UNKNOWN_ID] = "Unknown identifier";
   _error_map[error::analyzer::UNMATCHED_CALL] = "Unmatched call";
   _error_map[error::analyzer::EXPECTED_VARIABLE] = "Expected variable";
   _error_map[error::analyzer::PARAM_SIZE_MISMATCH] = "Parameter length mismatch";
   _error_map[error::analyzer::PARAM_TYPE_MISMATCH] = "Parameter type mismatch";
-  _error_map[error::analyzer::INCORRECT_ENTRY_RETURN] = "Incorrect return type for entry funtion";
   _error_map[error::analyzer::INVALID_EXPRESSION] = "Invalid expression";
   _error_map[error::analyzer::IMPLICIT_CAST_FAIL] = "Unable to cast to expected type";
   _error_map[error::analyzer::INVALID_ARRAY_IDX] = "Invalid type for indexing into array";

@@ -35,25 +35,24 @@
     Takes in a TDPair list and assumes that the list will become some object(s) found in the above listed
     instructions.h/cpp. 
 
+  symbols.h/cpp
+    Provides a scoping mechanism for the analyzer and execution environment
+
   // Not yet constructed
-
-  maps.h/cpp
-    Storage / owner for inspection-time (exectuon time || analyzation time) program variables and definitions. 
-      - Function defintions, user struct definitions
-      - Function / member variable instances
-      - Provides scoping
-
   builtins
     containing builtin.h/cpp and various other sources the builtins directory will contain all 
     built-in functions that need to interact with the OS (std::io::print, std::net::udp::send, etc)
+
+  env.h/cpp
+    Execution environment for the application
+
+
 
   NOTE : Env and analyzer (below) will share some functionality, so we may want to have some shared
          functionality like (run_expression) where when a leaf item is reached a callback is given
          to the object (env, or analyzer) that the could use to either execute action against (env), 
          or to inspect the item (analyzer)
 
-  env.h/cpp
-    Owner of the various maps (above) and executor of program instructions (above).
 
 
   analyzer.h/cpp

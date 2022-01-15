@@ -1,9 +1,9 @@
 #ifndef TITAN_HPP
 #define TITAN_HPP
 
-#include "env.hpp"
-#include "tokens.hpp"
-#include "parser.hpp"
+#include "vm/env.hpp"
+#include "lang/tokens.hpp"
+#include "lang/parser.hpp"
 
 #include <string>
 #include <vector>
