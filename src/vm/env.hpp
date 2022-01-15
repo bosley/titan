@@ -1,7 +1,7 @@
 #ifndef TITAN_ENV_HPP
 #define TITAN_ENV_HPP
 
-#include "instructions.hpp"
+#include "lang/instructions.hpp"
 #include <unordered_map>
 #include <optional>
 

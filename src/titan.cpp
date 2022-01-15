@@ -1,7 +1,8 @@
 #include "titan.hpp"
-#include "instructions.hpp"
-#include "lexer.hpp"
-#include "tokens.hpp"
+#include "lang/instructions.hpp"
+#include "lang/lexer.hpp"
+#include "lang/tokens.hpp"
+#include "analyze/analyzer.hpp"
 
 #include <algorithm>
 #include <filesystem>
@@ -161,6 +162,13 @@ bool titan::run_tokens(std::vector<TD_Pair> tokens)
   // If analyze - Analyze the instruction for semantics
 
   // If execute - Execute the instruction
+  if (_analyze) {
+    analyzer a(instructions);
+    if(!a.analyze()) {
+      std::cout << "Analyzer has detected a problem" << std::endl;
+      return false;
+    }
+  }
 
   // Check to see if instruction terminates _run
 

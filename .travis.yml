@@ -44,3 +44,9 @@ script:
   - cd $PARENTDIR/build-asan
   - cmake $PARENTDIR/src -DCMAKE_BUILD_TYPE=Release -DWITH_ASAN=ON
   - make -j9
+
+  - cd $PARENTDIR/checks
+  - python3 semantic_failures/run.py $PARENTDIR/build/titan
+
+  - cd $PARENTDIR/checks
+  - python3 semantic_passes/run.py $PARENTDIR/build/titan
