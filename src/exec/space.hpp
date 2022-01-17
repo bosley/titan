@@ -13,6 +13,7 @@ class space
 {
 public:
   space();
+  ~space();
   
   // Scopes that can only access global, and themselves (functions, etc)
   void push_top_level_scope();
@@ -39,6 +40,7 @@ private:
     std::unordered_map<std::string, instructions::variable_ptr> members;
   };
 
+  uint64_t _scope_depth;
   scope _global_scope;
   scope *_operating_scope;
 

@@ -47,7 +47,6 @@ TEST(exec_memory_tests, space)
   // and dont cause ASAN and CPPUTest to think there is a leak
   {
     titan::space s;
-
     s.push_top_level_scope();
 
     auto x = gen::random_built_in_variable("x");

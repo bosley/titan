@@ -5,11 +5,21 @@
 namespace titan
 {
 
-space::space()
+space::space() : _scope_depth(0)
 {
   _global_scope.parent = nullptr;
   _global_scope.sub_scope = nullptr;
   _operating_scope = &_global_scope;
+}
+
+space::~space()
+{
+  while(_scope_depth) {
+    leave_scope();
+  }
+  while(!_top_level_scopes.empty()) {
+    pop_scope();
+  }
 }
 
 void space::push_top_level_scope() 
@@ -54,10 +64,15 @@ void space::sub_scope()
 
   _operating_scope->sub_scope = s;
   _operating_scope = s;
+  ++_scope_depth;
 }
 
 void space::leave_scope()
 {
+  if(_scope_depth != 0) {
+    --_scope_depth;
+  }
+
   auto parent = _operating_scope->parent;
 
   auto tmp = _operating_scope;
@@ -66,6 +81,7 @@ void space::leave_scope()
     tmp = tmp->sub_scope;
     delete staged;
   }
+  delete tmp;
 
   if(parent) {
     _operating_scope = parent;
