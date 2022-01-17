@@ -113,7 +113,6 @@ TEST(exec_memory_tests, space)
       // Should no longer be reachable
       auto get_a = s.get_variable("a");
       auto get_b = s.get_variable("b");
-
       CHECK_TRUE(nullptr == get_a);
       CHECK_TRUE(nullptr == get_b);
     }
@@ -134,5 +133,38 @@ TEST(exec_memory_tests, space)
 
     s.pop_scope();
   }
+}
+
+TEST(exec_memory_tests, memory)
+{
+  /*
+  titan::memory m;
+  CHECK_TRUE(m.new_space("delta_quadrant"));
+  CHECK_TRUE(m.associate_space_with_name("delta_quadrant", "space::delta"));
+  CHECK_TRUE(m.associate_space_with_name("delta_quadrant", "modules::space::delta"));
+
+  auto a = gen::random_built_in_variable("a");
+  auto b = gen::random_built_in_variable("b");
+  CHECK_TRUE(m.new_variable("delta_quadrant", a));
+  CHECK_TRUE(m.new_variable("space::delta", b));
+
+  {
+    auto get_a = m.get_variable("space::delta", "a");
+    auto get_b = m.get_variable("modules::space::delta", "b");
+    CHECK_TRUE(nullptr == get_a);
+    CHECK_TRUE(nullptr == get_b);
+    CHECK_TRUE(vars_equal(a, get_a));
+    CHECK_TRUE(vars_equal(b, get_b));
+  }
+
+  {
+    auto get_a = m.get_variable("delta_quadrant", "a");
+    auto get_b = m.get_variable("modules::space::delta", "b");
+    CHECK_TRUE(nullptr == get_a);
+    CHECK_TRUE(nullptr == get_b);
+    CHECK_TRUE(vars_equal(a, get_a));
+    CHECK_TRUE(vars_equal(b, get_b));
+  }
+  */
 }
 

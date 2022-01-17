@@ -34,13 +34,9 @@ public:
 private:
   struct scope
   {
-    std::unordered_map<std::string, instructions::variable_ptr> members;
-
     scope  *parent;
-
-    // Inner scopes that can safely reach the "up" into
-    // this current scope and further "up"
     scope *sub_scope;
+    std::unordered_map<std::string, instructions::variable_ptr> members;
   };
 
   scope _global_scope;
