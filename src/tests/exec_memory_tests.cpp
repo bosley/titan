@@ -137,7 +137,6 @@ TEST(exec_memory_tests, space)
 
 TEST(exec_memory_tests, memory)
 {
-  /*
   titan::memory m;
   CHECK_TRUE(m.new_space("delta_quadrant"));
   CHECK_TRUE(m.associate_space_with_name("delta_quadrant", "space::delta"));
@@ -151,8 +150,8 @@ TEST(exec_memory_tests, memory)
   {
     auto get_a = m.get_variable("space::delta", "a");
     auto get_b = m.get_variable("modules::space::delta", "b");
-    CHECK_TRUE(nullptr == get_a);
-    CHECK_TRUE(nullptr == get_b);
+    CHECK_TRUE(nullptr != get_a);
+    CHECK_TRUE(nullptr != get_b);
     CHECK_TRUE(vars_equal(a, get_a));
     CHECK_TRUE(vars_equal(b, get_b));
   }
@@ -160,11 +159,25 @@ TEST(exec_memory_tests, memory)
   {
     auto get_a = m.get_variable("delta_quadrant", "a");
     auto get_b = m.get_variable("modules::space::delta", "b");
-    CHECK_TRUE(nullptr == get_a);
-    CHECK_TRUE(nullptr == get_b);
+    CHECK_TRUE(nullptr != get_a);
+    CHECK_TRUE(nullptr != get_b);
     CHECK_TRUE(vars_equal(a, get_a));
     CHECK_TRUE(vars_equal(b, get_b));
   }
-  */
+
+  {
+    auto get_bad = m.get_variable("delta_quadrant", "i_dont_exist");
+    CHECK_TRUE(nullptr == get_bad);
+  }
+
+  CHECK_TRUE(m.delete_variable("space::delta", "a"));
+  CHECK_FALSE(m.delete_variable("space::delta", "no_exist"));
+  CHECK_FALSE(m.delete_variable("not::mapped", "b"));
+  
+  // Ensure its deleted
+  {
+    auto get_a = m.get_variable("space::delta", "a");
+    CHECK_TRUE(nullptr == get_a);
+  }
 }
 

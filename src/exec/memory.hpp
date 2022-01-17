@@ -10,6 +10,8 @@
 namespace titan
 {
 
+//  Assoicates variable storage spaces to mapped scope names
+//  so we can have a many-to-one storage list
 class memory
 {
 public:

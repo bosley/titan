@@ -6,10 +6,7 @@
 namespace titan
 {
 
-memory::memory()
-{
-
-}
+memory::memory(){}
 
 bool memory::new_space(const std::string &name)
 {
@@ -17,27 +14,43 @@ bool memory::new_space(const std::string &name)
     return false;
   }
   _spaces[name] = std::unique_ptr<space>(new space());
-  return true;
+  return associate_space_with_name(name, name);
 }
 
 bool memory::associate_space_with_name(const std::string& space, const std::string& name)
 {
-  return false;
+  if(_spaces.find(space) == _spaces.end()) {
+    return false;
+  }
+  _space_translation[name] = space;
+  return true;
 }
 
 bool memory::new_variable(const std::string& space, instructions::variable *var)
 {
-  return false;
+  if(_space_translation.find(space) == _space_translation.end()) {
+    return false;
+  }
+  auto target_space = _space_translation[space];
+  return _spaces[target_space]->new_var(var);
 }
 
 instructions::variable* memory::get_variable(const std::string& space, const std::string& name)
 {
-  return nullptr;
+  if(_space_translation.find(space) == _space_translation.end()) {
+    return nullptr;
+  }
+  auto target_space = _space_translation[space];
+  return _spaces[target_space]->get_variable(name);
 }
 
 bool memory::delete_variable(const std::string& space, const std::string& name)
 {
-  return false;
+  if(_space_translation.find(space) == _space_translation.end()) {
+    return false;
+  }
+  auto target_space = _space_translation[space];
+  return _spaces[target_space]->delete_var(name);
 }
 
 }
