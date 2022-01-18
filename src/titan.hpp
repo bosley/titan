@@ -2,6 +2,7 @@
 #define TITAN_HPP
 
 #include "exec/env.hpp"
+#include "exec/exec.hpp"
 #include "lang/tokens.hpp"
 #include "lang/parser.hpp"
 
@@ -10,9 +11,10 @@
 
 namespace titan {
 
-class titan {
+class titan : public exec_cb_if {
 public:
   titan();
+  ~titan();
   void set_analyze(bool analyze) { _analyze = analyze; }
   void set_execute(bool execute) { _execute = execute; }
 
@@ -37,6 +39,8 @@ public:
     return _environment.new_variable(var, as_global);
   }
 
+  virtual void signal(exec_sig sig, const std::string& msg) override;
+
 private:
   bool _run;
   bool _analyze;
@@ -53,6 +57,7 @@ private:
 
   env _environment;
   parser _parser;
+  exec * _executor;
 
   bool run_tokens(std::vector<TD_Pair> tokens);
 };

@@ -76,9 +76,16 @@ imports g_importer(lex_file, {});
 
 } // namespace
 
-titan::titan() : _run(true), _analyze(false), _execute(true), _is_repl(true), _parser(g_importer)
+titan::titan()
+    : _run(true), _analyze(false), _execute(true), _is_repl(true),
+      _parser(g_importer), _executor(nullptr)
 {
+  _executor = new exec(*this, _environment);
+}
 
+titan::~titan()
+{
+  delete _executor;
 }
 
 int titan::do_repl()
@@ -170,9 +177,24 @@ bool titan::run_tokens(std::vector<TD_Pair> tokens)
     }
   }
 
-  // Check to see if instruction terminates _run
+  // Run instruction(s)
+  if(_execute) {
+    for(auto& ins : instructions) {
+      ins->visit(*_executor);
+    }
+  }
 
   return true;
+}
+
+void titan::signal(exec_sig sig, const std::string& msg)
+{
+  switch(sig)
+  {
+  case exec_sig::EXIT:
+    std::cout << "Received EXIT signal >> " << msg << std::endl;
+    break;
+  }
 }
 
 } // namespace titan
