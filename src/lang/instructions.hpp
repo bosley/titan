@@ -63,6 +63,8 @@ public:
       : name(name), classification(vc)
   {
   }
+  virtual ~variable() = default;
+
   std::string name;
   variable_classification classification;
 };
@@ -87,6 +89,7 @@ public:
   std::vector<uint64_t> segments;
 };
 using built_in_variable_ptr = std::unique_ptr<built_in_variable>;
+
 class user_defined_variable : public variable {
 public:
   user_defined_variable(const std::string name)

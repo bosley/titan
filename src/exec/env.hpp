@@ -27,17 +27,17 @@ public:
 
   // Add an xfunc into the environment.
   // Will fail if the name is not unique
-  bool add_xfunc(xfunc *env_if);
+  bool add_xfunc(const std::string& name, xfunc *env_if);
 
   // Attempt to a variable from the environment for external use
-  std::optional<instructions::variable> get_variable(std::string_view name);
+  instructions::variable* get_variable(const std::string& name);
 
-  // Attempt to set the value of a variable in the global scope (default)
-  // or the current operating scope iff global=false
-  bool set_variable(instructions::variable var, bool global=true);
+  // Create a new variable
+  // Cleanup of given varible will be handled by internally
+  bool new_variable(instructions::variable *var, bool global=true);
 
 private:
-  std::unordered_map<std::string, xfunc*> _external_xfuncs;
+  std::unordered_map<std::string, xfunc*> _external;
 };
 
 

@@ -53,6 +53,10 @@ set(PROJECT_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/lang/instructions.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/lang/lexer.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/lang/parser.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/exec/exec.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/exec/env.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/exec/memory.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/exec/space.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/analyze/analyzer.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/analyze/symbols.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/titan.cpp

@@ -9,7 +9,8 @@ include_directories(
 add_executable(unit_tests
         ${PROJECT_SOURCES}
         main.cpp
-        example_tests.cpp)
+        example_tests.cpp
+        exec_memory_tests.cpp)
 
 
 target_link_libraries(unit_tests

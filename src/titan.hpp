@@ -1,7 +1,8 @@
 #ifndef TITAN_HPP
 #define TITAN_HPP
 
-#include "vm/env.hpp"
+#include "exec/env.hpp"
+#include "exec/exec.hpp"
 #include "lang/tokens.hpp"
 #include "lang/parser.hpp"
 
@@ -10,9 +11,10 @@
 
 namespace titan {
 
-class titan {
+class titan : public exec_cb_if {
 public:
   titan();
+  ~titan();
   void set_analyze(bool analyze) { _analyze = analyze; }
   void set_execute(bool execute) { _execute = execute; }
 
@@ -21,21 +23,23 @@ public:
   void set_include_dirs(std::vector<std::string> dir_list);
 
   // Install an external function to the environment
-  bool install_xfunc(env::xfunc *tei)
+  bool install_xfunc(const std::string& name, env::xfunc *tei)
   {
     if(!tei){ return false; }
-    return _environment.add_xfunc(tei);
+    return _environment.add_xfunc(name, tei);
   }
 
-  std::optional<instructions::variable> get_env_var(std::string_view name)
+  instructions::variable* get_env_var(const std::string& name)
   {
     return _environment.get_variable(name);
   }
 
-  bool set_env_var(instructions::variable var, bool as_global) 
+  bool new_env_var(instructions::variable* var, bool as_global) 
   {
-    return _environment.set_variable(var, as_global);
+    return _environment.new_variable(var, as_global);
   }
+
+  virtual void signal(exec_sig sig, const std::string& msg) override;
 
 private:
   bool _run;
@@ -53,6 +57,7 @@ private:
 
   env _environment;
   parser _parser;
+  exec * _executor;
 
   bool run_tokens(std::vector<TD_Pair> tokens);
 };
