@@ -1,7 +1,10 @@
 #ifndef TITAN_ENV_HPP
 #define TITAN_ENV_HPP
 
+#include "space.hpp"
+#include "memory.hpp"
 #include "lang/instructions.hpp"
+
 #include <unordered_map>
 #include <optional>
 
@@ -25,18 +28,20 @@ public:
     virtual void execute() = 0;
   };
 
+  env();
+
   // Add an xfunc into the environment.
   // Will fail if the name is not unique
   bool add_xfunc(const std::string& name, xfunc *env_if);
 
-  // Attempt to a variable from the environment for external use
-  instructions::variable* get_variable(const std::string& name);
-
-  // Create a new variable
-  // Cleanup of given varible will be handled by internally
-  bool new_variable(instructions::variable *var, bool global=true);
+  instructions::variable* get_variable(const std::string& space, const std::string& name);
+  bool new_variable(const std::string& space, instructions::variable* var);
 
 private:
+  
+  std::unique_ptr<memory>  _memory;
+
+  // Callable functions
   std::unordered_map<std::string, xfunc*> _external;
 };
 

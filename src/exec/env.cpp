@@ -3,6 +3,11 @@
 namespace titan
 {
 
+env::env()
+{
+  _memory = std::unique_ptr<memory>(new memory());
+}
+
 bool env::add_xfunc(const std::string& name, xfunc *env_if)
 {
   if(!env_if) {
@@ -17,15 +22,14 @@ bool env::add_xfunc(const std::string& name, xfunc *env_if)
   return true;
 }
 
-instructions::variable* env::get_variable(const std::string& name)
+instructions::variable* env::get_variable(const std::string& space, const std::string& name)
 {
-  return nullptr;
+  return _memory->get_variable(space, name);
 }
 
-bool env::new_variable(instructions::variable *var, bool global)
+bool env::new_variable(const std::string& space, instructions::variable* var)
 {
-  return false;
+  return _memory->new_variable(space, var);
 }
-
 
 }

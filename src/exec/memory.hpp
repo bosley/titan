@@ -16,6 +16,7 @@ class memory
 {
 public:
   memory();
+  ~memory();
 
   //  Create a memory segment with a unique name
   //  to encapsulate a file or REPL environment

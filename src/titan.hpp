@@ -31,12 +31,12 @@ public:
 
   instructions::variable* get_env_var(const std::string& name)
   {
-    return _environment.get_variable(name);
+    return _environment.get_variable("main", name);
   }
 
-  bool new_env_var(instructions::variable* var, bool as_global) 
+  bool new_env_var(instructions::variable* var) 
   {
-    return _environment.new_variable(var, as_global);
+    return _environment.new_variable("main", var);
   }
 
   virtual void signal(exec_sig sig, const std::string& msg) override;

@@ -5,6 +5,7 @@
 #include "lang/instructions.hpp"
 
 #include <string>
+#include <vector>
 
 namespace titan
 {
@@ -40,7 +41,8 @@ public:
 
 private:
   exec_cb_if *_cb;
-  env _env;
+  env *_env;
+  std::vector<instructions::expression*> _parameters;
 };
 
 }

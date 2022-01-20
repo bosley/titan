@@ -8,6 +8,12 @@ namespace titan
 
 memory::memory(){}
 
+memory::~memory()
+{
+  //_spaces.clear();
+  //_space_translation.clear();
+}
+
 bool memory::new_space(const std::string &name)
 {
   if(_spaces.find(name) != _spaces.end()) {

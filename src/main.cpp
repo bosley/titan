@@ -3,6 +3,9 @@
 #include "titan.hpp"
 #include "log/log.hpp"
 
+#include "exec/space.hpp"
+#include "exec/memory.hpp"
+
 #include <iostream>
 #include <filesystem>
 #include <string>

@@ -5,7 +5,7 @@
 namespace titan
 {
 
-exec::exec(exec_cb_if &cb, env &env) : _cb(&cb), _env(env)
+exec::exec(exec_cb_if &cb, env &env) : _cb(&cb), _env(&env)
 {
 
 }
