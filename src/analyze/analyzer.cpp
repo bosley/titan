@@ -151,6 +151,12 @@ void analyzer::receive(instructions::define_user_struct &ins)
   _num_errors++;
 }
 
+void analyzer::receive(instructions::scope_change &ins)
+{
+  LOG(DEBUG) << TAG(APP_FILE_NAME) << "[" << APP_LINE
+             << "]: Scope change to : " << ins.scope << std::endl;
+}
+
 void analyzer::receive(instructions::assignment_instruction &ins)
 {
   LOG(DEBUG) << TAG(APP_FILE_NAME) << "[" << APP_LINE

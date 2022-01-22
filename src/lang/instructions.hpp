@@ -416,6 +416,15 @@ public:
 };
 using function_ptr = std::unique_ptr<function>;
 
+class scope_change : public instruction {
+public:
+  scope_change(std::string scope) : instruction(0,0), scope(scope) {}
+
+  std::string scope;
+  virtual void visit(ins_receiver &v) override;
+};
+using scope_change_ptr = std::unique_ptr<scope_change>;
+
 /*
 
    Receives instruction statements
@@ -432,6 +441,7 @@ public:
   virtual void receive(return_instruction &ins) = 0;
   virtual void receive(import &ins) = 0;
   virtual void receive(function &ins) = 0;
+  virtual void receive(scope_change &ins) = 0;
 };
 
 } // namespace instructions

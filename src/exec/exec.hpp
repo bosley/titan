@@ -29,7 +29,10 @@ class exec : public instructions::ins_receiver {
 public:
   exec(exec_cb_if &cb, env &env);
 
+  void set_operating_space(const std::string& space);
+
   virtual void receive(instructions::define_user_struct &ins) override;
+  virtual void receive(instructions::scope_change &ins) override;
   virtual void receive(instructions::assignment_instruction &ins) override;
   virtual void receive(instructions::expression_instruction &ins) override;
   virtual void receive(instructions::if_instruction &ins) override;
@@ -42,6 +45,7 @@ public:
 private:
   exec_cb_if *_cb;
   env *_env;
+  std::string _space;
   std::vector<instructions::expression*> _parameters;
 };
 

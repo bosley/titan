@@ -12,6 +12,7 @@ void for_instruction::visit(ins_receiver &ir) { ir.receive(*this); }
 void return_instruction::visit(ins_receiver &ir) { ir.receive(*this); }
 void import::visit(ins_receiver &ir) { ir.receive(*this); }
 void function::visit(ins_receiver &ir) { ir.receive(*this); }
+void scope_change::visit(ins_receiver &ir) { ir.receive(*this); }
 
 variable_types string_to_variable_type(const std::string &s)
 {

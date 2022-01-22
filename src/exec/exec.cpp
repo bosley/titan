@@ -5,14 +5,24 @@
 namespace titan
 {
 
-exec::exec(exec_cb_if &cb, env &env) : _cb(&cb), _env(&env)
+exec::exec(exec_cb_if &cb, env &env) : _cb(&cb), _env(&env), _space("GLOBAL")
 {
 
+}
+
+void exec::set_operating_space(const std::string& op_space)
+{
+  _space = op_space;
 }
 
 void exec::receive(instructions::define_user_struct &ins) 
 {
   std::cout << "EXEC : define user struct" << std::endl;
+}
+
+void exec::receive(instructions::scope_change &ins) 
+{
+  _space = ins.scope;
 }
 
 void exec::receive(instructions::assignment_instruction &ins) 
@@ -54,8 +64,6 @@ void exec::receive(instructions::function &ins)
 {
   std::cout << "EXEC : fn" << std::endl;
 
-  // New top level scope
-
   for(auto& var : ins.parameters) {
     // Load parameters by the name given in var
   }
@@ -63,8 +71,6 @@ void exec::receive(instructions::function &ins)
   for(auto& ins : ins.instruction_list) {
     ins->visit(*this);
   }
-
-  // Pop top level scope
 }
 
 }

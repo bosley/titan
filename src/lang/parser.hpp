@@ -54,6 +54,7 @@ private:
   std::unordered_map<Token, prefix_parse_fn> _prefix_fns;
   std::unordered_map<Token, infix_parse_fn> _infix_fns;
   std::string _source_name;
+  std::string _scope_name;
   std::unordered_map<std::string, std::string> _located_items;
   void report_error(uint64_t error_no, size_t line, size_t col,
                     const std::string error, bool show_full);

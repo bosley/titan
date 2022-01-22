@@ -47,6 +47,7 @@ private:
   virtual void receive(instructions::while_instruction &ins) override;
   virtual void receive(instructions::for_instruction &ins) override;
   virtual void receive(instructions::return_instruction &ins) override;
+  virtual void receive(instructions::scope_change &ins) override;
 
   vtd retrieve_type_depth(instructions::variable *var);
 

@@ -58,11 +58,30 @@ std::unordered_map<Token, parser::precedence> precedences = {
 TD_Pair error_token = {Token::ERT, {}, 0};
 TD_Pair end_of_stream = {Token::EOS, {}, 0};
 
+
+std::string scope_name_from_target(std::string target)
+{
+  std::filesystem::path p = target;
+  p.replace_extension();
+  std::string t { p.u8string()};
+  std::replace(t.begin(), t.end(), '\\', '/');
+  std::string result;
+  for(auto& i : t) {
+    if(i == '/') {
+      result += "::";
+    } else {
+      result += i;
+    }
+  }
+  return result;
+}
+
+
 } // namespace
 
 parser::parser(imports &file_imports)
     : _parser_okay(true), _idx(0), _mark(std::numeric_limits<uint64_t>::max()),
-      _file_imports(file_imports), _err("parser")
+      _file_imports(file_imports), _err("parser"), _scope_name("GLOBAL")
 {
 }
 
@@ -151,6 +170,8 @@ parser::parse(std::string source_name, std::vector<TD_Pair> &tokens)
 
       parser import_parser(_file_imports);
 
+      import_parser._scope_name = scope_name_from_target(import_instruction->target);
+
       auto parsed_file = import_parser.parse(target_item, imported_tokens);
 
       if (!import_parser.is_okay()) {
@@ -158,10 +179,19 @@ parser::parse(std::string source_name, std::vector<TD_Pair> &tokens)
         break;
       }
 
+      // Change to target scope
+      top_level_items.emplace_back(instructions::scope_change_ptr(new instructions::scope_change(
+              import_parser._scope_name)));
+
       // Add it to our top level objects
       top_level_items.insert(top_level_items.end(),
                              std::make_move_iterator(parsed_file.begin()),
                              std::make_move_iterator(parsed_file.end()));
+
+      // Come back to current scope
+      top_level_items.emplace_back(instructions::scope_change_ptr(new instructions::scope_change(
+              _scope_name)));
+
       tokens.clear();
     }
 
