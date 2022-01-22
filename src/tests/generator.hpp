@@ -1,7 +1,7 @@
 #ifndef GENERATOR_TESTS_HPP
 #define GENERATOR_TESTS_HPP
 
-#include "lang/instructions.hpp"
+#include "types/types.hpp"
 
 #include <random>
 #include <string>
@@ -42,35 +42,34 @@ private:
 };
 
 
-static titan::instructions::variable*
+static titan::object*
 random_built_in_variable(const std::string& name)
 {
-   
-  GenerateRandom<uint64_t> g;
-
-  uint64_t depth = g.get_range(0, 10);
-  uint64_t num_segments = g.get_range(0, 5);
-
-  std::vector<uint64_t> segments;
-  for(auto i = 0; i < num_segments; i++)
-  {
-    segments.push_back(g.get_range(1, 5));
-  }
-
-  RandomEntry<titan::instructions::variable_types> vt_entry({
-    titan::instructions::variable_types::U8,
-    titan::instructions::variable_types::U16,
-    titan::instructions::variable_types::U32,
-    titan::instructions::variable_types::U64,
-    titan::instructions::variable_types::I8,
-    titan::instructions::variable_types::I16,
-    titan::instructions::variable_types::I32,
-    titan::instructions::variable_types::I64,
-    titan::instructions::variable_types::FLOAT,
+  RandomEntry<titan::obj_type> vt_entry({
+    titan::obj_type::U8,
+    titan::obj_type::U16,
+    titan::obj_type::U32,
+    titan::obj_type::U64,
+    titan::obj_type::I8,
+    titan::obj_type::I16,
+    titan::obj_type::I32,
+    titan::obj_type::I64,
+    titan::obj_type::FLOAT,
     });
 
-  return new titan::instructions::built_in_variable(
-      name, vt_entry.get_value(), depth, segments);
+  switch(vt_entry.get_value()) {
+  case titan::obj_type::U8: return new titan::object_u8(0);
+  case titan::obj_type::U16: return new titan::object_u16(0);
+  case titan::obj_type::U32: return new titan::object_u32(0);
+  case titan::obj_type::U64: return new titan::object_u64(0);
+  case titan::obj_type::I8: return new titan::object_i8(0);
+  case titan::obj_type::I16: return new titan::object_i16(0);
+  case titan::obj_type::I32: return new titan::object_i32(0);
+  case titan::obj_type::I64: return new titan::object_i64(0);
+  case titan::obj_type::FLOAT: return new titan::object_float(3.14159);
+  default: return nullptr; // wont happen
+  }
+
 }
 
 }

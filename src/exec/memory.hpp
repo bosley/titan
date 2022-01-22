@@ -2,7 +2,7 @@
 #define TITAN_MEMORY_HPP
 
 #include "space.hpp"
-#include "lang/instructions.hpp"
+#include "types/types.hpp"
 
 #include <memory>
 #include <unordered_map>
@@ -28,15 +28,16 @@ public:
   
   //  Create a new variable
   //  space - Storage unit for data
+  //  name  - The name of the variable
   //  var   - The variable (moved and owned by memory after called)
   //  Returns true iff the space exists or can be translated to a space
-  bool new_variable(const std::string& space, instructions::variable *var);
+  bool new_variable(const std::string& space, const std::string& name, object *var);
 
   //  Attempt to get a variable from a space 
   //  space - Storage unit for the data
   //  name  - The name of the variable
   //  Returns variable pointer or nullptr 
-  instructions::variable* get_variable(const std::string& space, const std::string& name);
+  object* get_variable(const std::string& space, const std::string& name);
 
   //  Attempt to delete an existing variable
   //  space - Storage unit for the data

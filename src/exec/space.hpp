@@ -1,7 +1,7 @@
 #ifndef TITAN_SPACE_HPP
 #define TITAN_SPACE_HPP
 
-#include "lang/instructions.hpp"
+#include "types/types.hpp"
 
 #include <unordered_map>
 #include <stack>
@@ -24,20 +24,20 @@ public:
   void leave_scope();
 
   // Attempt to get a variable from the space
-  instructions::variable *get_variable(const std::string& name);
+  object *get_variable(const std::string& name);
 
   // Attempt to delete a variable
   bool delete_var(const std::string& name);
 
   // Attempt to create a new variable
-  bool new_var(instructions::variable *var);
+  bool new_var(const std::string& name, object *var);
 
 private:
   struct scope
   {
     scope  *parent;
     scope *sub_scope;
-    std::unordered_map<std::string, instructions::variable_ptr> members;
+    std::unordered_map<std::string, object_ptr> members;
   };
 
   uint64_t _scope_depth;

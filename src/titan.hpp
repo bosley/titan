@@ -5,6 +5,7 @@
 #include "exec/exec.hpp"
 #include "lang/tokens.hpp"
 #include "lang/parser.hpp"
+#include "types/types.hpp"
 
 #include <string>
 #include <vector>
@@ -29,14 +30,14 @@ public:
     return _environment.add_xfunc(name, tei);
   }
 
-  instructions::variable* get_env_var(const std::string& name)
+  object* get_env_var(const std::string& name)
   {
     return _environment.get_variable("main", name);
   }
 
-  bool new_env_var(instructions::variable* var) 
+  bool new_env_var(const std::string& name, object* var) 
   {
-    return _environment.new_variable("main", var);
+    return _environment.new_variable("main", name, var);
   }
 
   virtual void signal(exec_sig sig, const std::string& msg) override;

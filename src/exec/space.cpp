@@ -91,7 +91,7 @@ void space::leave_scope()
   _operating_scope->sub_scope = nullptr;
 }
 
-instructions::variable *space::get_variable(const std::string& name) 
+object *space::get_variable(const std::string& name) 
 {
   // Check current scope
   if(_operating_scope->members.find(name) != _operating_scope->members.end()) {
@@ -131,13 +131,13 @@ bool space::delete_var(const std::string& name)
 }
 
 // Takes ownership of the data
-bool space::new_var(instructions::variable *var) 
+bool space::new_var(const std::string& name, object *var) 
 {
   if(!var) {
     return false;
   }
 
-  _operating_scope->members[var->name] = instructions::variable_ptr(var);
+  _operating_scope->members[name] = object_ptr(var);
   return true;
 }
 

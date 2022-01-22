@@ -32,16 +32,16 @@ bool memory::associate_space_with_name(const std::string& space, const std::stri
   return true;
 }
 
-bool memory::new_variable(const std::string& space, instructions::variable *var)
+bool memory::new_variable(const std::string& space, const std::string& name, object *var)
 {
   if(_space_translation.find(space) == _space_translation.end()) {
     return false;
   }
   auto target_space = _space_translation[space];
-  return _spaces[target_space]->new_var(var);
+  return _spaces[target_space]->new_var(name, var);
 }
 
-instructions::variable* memory::get_variable(const std::string& space, const std::string& name)
+object* memory::get_variable(const std::string& space, const std::string& name)
 {
   if(_space_translation.find(space) == _space_translation.end()) {
     return nullptr;

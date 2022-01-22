@@ -34,8 +34,8 @@ public:
   // Will fail if the name is not unique
   bool add_xfunc(const std::string& name, xfunc *env_if);
 
-  instructions::variable* get_variable(const std::string& space, const std::string& name);
-  bool new_variable(const std::string& space, instructions::variable* var);
+  object* get_variable(const std::string& space, const std::string& name);
+  bool new_variable(const std::string& space, const std::string& name, object* var);
 
 private:
   

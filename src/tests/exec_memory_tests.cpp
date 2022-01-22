@@ -8,33 +8,71 @@
 
 namespace
 {
-  bool vars_equal(titan::instructions::variable* lhs,
-                  titan::instructions::variable* rhs)
+  bool vars_equal(titan::object* lhs,
+                  titan::object* rhs)
   {
     if(!lhs || !rhs) { return false; }
-    if(lhs->name != rhs->name) { return false; }
-    if(lhs->classification != rhs-> classification) { return false; }
+    if(lhs->type != rhs->type) { return false; }
 
-    switch(lhs->classification)
+    switch(lhs->type) {
+    case titan::obj_type::U8: 
     {
-    case titan::instructions::variable_classification::BUILT_IN:
-      break;
-    case titan::instructions::variable_classification::UNDEF: 
-    case titan::instructions::variable_classification::USER_DEFINED:
-      std::cout << "Case not handled in test reached for variable classification" << std::endl;
-      return false;
+      auto l = reinterpret_cast<titan::object_u8*>(lhs);
+      auto r = reinterpret_cast<titan::object_u8*>(rhs);
+      return l->value == r->value;
+    }
+    case titan::obj_type::U16:
+    {
+      auto l = reinterpret_cast<titan::object_u16*>(lhs);
+      auto r = reinterpret_cast<titan::object_u16*>(rhs);
+      return l->value == r->value;
+    }
+    case titan::obj_type::U32:   
+    {
+      auto l = reinterpret_cast<titan::object_u32*>(lhs);
+      auto r = reinterpret_cast<titan::object_u32*>(rhs);
+      return l->value == r->value;
+    }
+    case titan::obj_type::U64:   
+    {
+      auto l = reinterpret_cast<titan::object_u64*>(lhs);
+      auto r = reinterpret_cast<titan::object_u64*>(rhs);
+      return l->value == r->value;
+    }
+    case titan::obj_type::I8:
+    {
+      auto l = reinterpret_cast<titan::object_i8*>(lhs);
+      auto r = reinterpret_cast<titan::object_i8*>(rhs);
+      return l->value == r->value;
+    }
+    case titan::obj_type::I16: 
+    {
+      auto l = reinterpret_cast<titan::object_i16*>(lhs);
+      auto r = reinterpret_cast<titan::object_i16*>(rhs);
+      return l->value == r->value;
+    }
+    case titan::obj_type::I32: 
+    {
+      auto l = reinterpret_cast<titan::object_i32*>(lhs);
+      auto r = reinterpret_cast<titan::object_i32*>(rhs);
+      return l->value == r->value;
+    }
+    case titan::obj_type::I64: 
+    {
+      auto l = reinterpret_cast<titan::object_i64*>(lhs);
+      auto r = reinterpret_cast<titan::object_i64*>(rhs);
+      return l->value == r->value;
+    }
+    case titan::obj_type::FLOAT:
+    {
+      auto l = reinterpret_cast<titan::object_float*>(lhs);
+      auto r = reinterpret_cast<titan::object_float*>(rhs);
+      return l->value == r->value;
+    }
+    default: return false;
     }
 
-    auto c_lhs = reinterpret_cast<titan::instructions::built_in_variable*>(lhs);
-    auto c_rhs = reinterpret_cast<titan::instructions::built_in_variable*>(rhs);
 
-    if(c_lhs->type != c_rhs->type){ return false; }
-    if(c_lhs->depth != c_rhs->depth){ return false; }
-    if(c_lhs->segments.size() != c_rhs->segments.size()){ return false; }
-
-    for(auto i = 0; i < c_lhs->segments.size(); i++) {
-      if(c_lhs->segments[i] != c_rhs->segments[i]) { return false; }
-    }
     return true;
   }
 }
@@ -52,8 +90,8 @@ TEST(exec_memory_tests, space)
     auto x = gen::random_built_in_variable("x");
     auto y = gen::random_built_in_variable("y");
 
-    CHECK_TRUE(s.new_var(x));
-    CHECK_TRUE(s.new_var(y));
+    CHECK_TRUE(s.new_var("x", x));
+    CHECK_TRUE(s.new_var("y", y));
 
     {
       auto get_x = s.get_variable("x");
@@ -77,8 +115,8 @@ TEST(exec_memory_tests, space)
       auto a = gen::random_built_in_variable("a");
       auto b = gen::random_built_in_variable("b");
 
-      CHECK_TRUE(s.new_var(a));
-      CHECK_TRUE(s.new_var(b));
+      CHECK_TRUE(s.new_var("a", a));
+      CHECK_TRUE(s.new_var("b", b));
 
       auto get_a = s.get_variable("a");
       auto get_b = s.get_variable("b");
@@ -143,8 +181,8 @@ TEST(exec_memory_tests, memory)
 
   auto a = gen::random_built_in_variable("a");
   auto b = gen::random_built_in_variable("b");
-  CHECK_TRUE(m.new_variable("delta_quadrant", a));
-  CHECK_TRUE(m.new_variable("space::delta", b));
+  CHECK_TRUE(m.new_variable("delta_quadrant", "a", a));
+  CHECK_TRUE(m.new_variable("space::delta", "b", b));
 
   {
     auto get_a = m.get_variable("space::delta", "a");

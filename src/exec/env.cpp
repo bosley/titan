@@ -22,14 +22,14 @@ bool env::add_xfunc(const std::string& name, xfunc *env_if)
   return true;
 }
 
-instructions::variable* env::get_variable(const std::string& space, const std::string& name)
+object* env::get_variable(const std::string& space, const std::string& name)
 {
   return _memory->get_variable(space, name);
 }
 
-bool env::new_variable(const std::string& space, instructions::variable* var)
+bool env::new_variable(const std::string& space, const std::string& name, object* var)
 {
-  return _memory->new_variable(space, var);
+  return _memory->new_variable(space, name, var);
 }
 
 }
