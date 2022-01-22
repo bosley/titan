@@ -3,6 +3,7 @@
 
 #include "env.hpp"
 #include "lang/instructions.hpp"
+#include "types/types.hpp"
 
 #include <string>
 #include <vector>
@@ -47,6 +48,7 @@ private:
   env *_env;
   std::string _space;
   std::vector<instructions::expression*> _parameters;
+  object* execute_expression(instructions::expression* expr);
 };
 
 }

@@ -137,11 +137,6 @@ public:
   object_if_ptr value;
 };
 using object_user_defined_ptr = std::unique_ptr<object_user_defined>;
-
-
-
-
-
 }
 
 #endif

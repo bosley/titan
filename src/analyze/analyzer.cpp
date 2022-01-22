@@ -605,14 +605,14 @@ analyzer::determine_integer_type(const std::string &data)
   std::istringstream iss(data);
   iss >> value;
 
-  if (value >= 0) {
-    if (value <= std::numeric_limits<int8_t>::max()) {
+  if (value <= 0) {
+    if (value <= std::numeric_limits<int8_t>::min()) {
       return {{instructions::variable_types::I8, value}};
     }
-    else if (value <= std::numeric_limits<int16_t>::max()) {
+    else if (value <= std::numeric_limits<int16_t>::min()) {
       return {{instructions::variable_types::I16, value}};
     }
-    else if (value <= std::numeric_limits<int32_t>::max()) {
+    else if (value <= std::numeric_limits<int32_t>::min()) {
       return {{instructions::variable_types::I32, value}};
     }
     else {

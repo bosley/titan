@@ -34,6 +34,10 @@ public:
   // Will fail if the name is not unique
   bool add_xfunc(const std::string& name, xfunc *env_if);
 
+  bool new_space(const std::string& name);
+
+  bool associate_space(const std::string& space, const std::string& name);
+
   object* get_variable(const std::string& space, const std::string& name);
   bool new_variable(const std::string& space, const std::string& name, object* var);
 

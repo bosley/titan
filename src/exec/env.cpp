@@ -22,6 +22,16 @@ bool env::add_xfunc(const std::string& name, xfunc *env_if)
   return true;
 }
 
+bool env::new_space(const std::string& space)
+{
+  return _memory->new_space(space);
+}
+
+bool env::associate_space(const std::string& space, const std::string& name)
+{
+  return _memory->associate_space_with_name(space, name);
+}
+
 object* env::get_variable(const std::string& space, const std::string& name)
 {
   return _memory->get_variable(space, name);
