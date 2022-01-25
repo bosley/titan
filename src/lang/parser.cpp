@@ -641,7 +641,7 @@ instructions::instruction_ptr parser::if_instruction()
         // TRUE for last else statement
         condition = instructions::expr_ptr(new instructions::raw_int_expr(
             current_td_pair().line, current_td_pair().col, "1",
-            instructions::variable_types::U8, 1));
+            instructions::variable_types::INT, 1));
       }
     }
     else {

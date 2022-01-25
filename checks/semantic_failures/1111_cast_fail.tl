@@ -2,9 +2,9 @@
 //  Invalid assignment that can't be autocasted
 //
 
-fn main() -> i8 {
+fn main() -> int {
 
-  let x:i8 = "Oh no!";
+  let x:int = "Oh no!";
 
   return 0;
 }

@@ -89,7 +89,7 @@ titan::titan()
 
   // Puts
   _built_ins.emplace_back(new built_in::puts());
-  _environment.add_xfunc("__puts", _built_ins.back());
+  _environment.add_xfunc("puts", _built_ins.back());
 }
 
 titan::~titan()

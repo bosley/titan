@@ -46,26 +46,12 @@ static titan::object*
 random_built_in_variable(const std::string& name)
 {
   RandomEntry<titan::obj_type> vt_entry({
-    titan::obj_type::U8,
-    titan::obj_type::U16,
-    titan::obj_type::U32,
-    titan::obj_type::U64,
-    titan::obj_type::I8,
-    titan::obj_type::I16,
-    titan::obj_type::I32,
-    titan::obj_type::I64,
+    titan::obj_type::INT,
     titan::obj_type::FLOAT,
     });
 
   switch(vt_entry.get_value()) {
-  case titan::obj_type::U8: return new titan::object_u8(0);
-  case titan::obj_type::U16: return new titan::object_u16(0);
-  case titan::obj_type::U32: return new titan::object_u32(0);
-  case titan::obj_type::U64: return new titan::object_u64(0);
-  case titan::obj_type::I8: return new titan::object_i8(0);
-  case titan::obj_type::I16: return new titan::object_i16(0);
-  case titan::obj_type::I32: return new titan::object_i32(0);
-  case titan::obj_type::I64: return new titan::object_i64(0);
+  case titan::obj_type::INT: return new titan::object_int(0);
   case titan::obj_type::FLOAT: return new titan::object_float(3.14159);
   default: return nullptr; // wont happen
   }

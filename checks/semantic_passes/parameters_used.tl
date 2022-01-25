@@ -1,6 +1,6 @@
 
-fn add(lhs:i8, rhs:i8) -> i8 {
+fn add(lhs:int, rhs:int) -> int {
   return lhs + rhs;
 }
 
-fn main() -> i8 { return 0; }
+fn main() -> int { return 0; }

@@ -16,7 +16,7 @@ def indicate(result, test):
 
 def run_item(item):
     print("-"*10)
-    result = subprocess.run([titan, "-a", item], stdout=subprocess.PIPE)
+    result = subprocess.run([titan, "-a", "-n", item], stdout=subprocess.PIPE)
     
     unexpected = "Error : "
     if unexpected in result.stdout.decode("utf-8") :

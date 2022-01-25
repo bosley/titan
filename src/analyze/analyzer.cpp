@@ -307,7 +307,7 @@ analyzer::vtd analyzer::analyze_expression(instructions::expression *expr)
     _num_errors++;
     LOG(ERROR) << TAG(APP_FILE_NAME) << "[" << APP_LINE
                << "]: Null expression passed to analyzer" << std::endl;
-    return {instructions::variable_types::U8, 0};
+    return {instructions::variable_types::INT, 0};
   }
 
   switch (expr->type) {
@@ -316,7 +316,7 @@ analyzer::vtd analyzer::analyze_expression(instructions::expression *expr)
     _num_errors++;
     LOG(ERROR) << TAG(APP_FILE_NAME) << "[" << APP_LINE
                << "]: Root expression passed to analyzer" << std::endl;
-    return {instructions::variable_types::U8, 0};
+    return {instructions::variable_types::INT, 0};
   }
 
   case instructions::node_type::CALL: {
@@ -431,7 +431,7 @@ analyzer::vtd analyzer::analyze_expression(instructions::expression *expr)
   _num_errors++;
   LOG(DEBUG) << TAG(APP_FILE_NAME) << "[" << APP_LINE
              << "]: Error in current expression" << std::endl;
-  return {instructions::variable_types::U8, 0};
+  return {instructions::variable_types::INT, 0};
 }
 
 bool analyzer::can_cast_to_expected(analyzer::vtd expected_vtd,
@@ -605,35 +605,7 @@ analyzer::determine_integer_type(const std::string &data)
   std::istringstream iss(data);
   iss >> value;
 
-  if (value <= 0) {
-    if (value <= std::numeric_limits<int8_t>::min()) {
-      return {{instructions::variable_types::I8, value}};
-    }
-    else if (value <= std::numeric_limits<int16_t>::min()) {
-      return {{instructions::variable_types::I16, value}};
-    }
-    else if (value <= std::numeric_limits<int32_t>::min()) {
-      return {{instructions::variable_types::I32, value}};
-    }
-    else {
-      return {{instructions::variable_types::I64, value}};
-    }
-  }
-  else {
-    if (value <= std::numeric_limits<uint8_t>::max()) {
-      return {{instructions::variable_types::U8, value}};
-    }
-    else if (value <= std::numeric_limits<uint16_t>::max()) {
-      return {{instructions::variable_types::U16, value}};
-    }
-    else if (value <= std::numeric_limits<uint32_t>::max()) {
-      return {{instructions::variable_types::I32, value}};
-    }
-    else {
-      return {{instructions::variable_types::U64, value}};
-    }
-  }
-  return std::nullopt;
+  return {{instructions::variable_types::INT, value}};
 }
 
 } // namespace compiler

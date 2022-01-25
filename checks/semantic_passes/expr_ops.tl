@@ -1,5 +1,5 @@
 fn math() -> nil {
-  let x:i8 = 1 + 2 - 3 / 4 * 5 % 6;
+  let x:int = 1 + 2 - 3 / 4 * 5 % 6;
   x = x ** 3;
   x += 1;
   x /= 1;
@@ -10,8 +10,8 @@ fn math() -> nil {
 }
 
 fn cond() -> nil {
-  let x:i8 = 0; 
-  let y:i8 = 1;
+  let x:int = 0; 
+  let y:int = 1;
   if(x >  y){}
   if(x >= y){}
   if(x <  y){}
@@ -25,7 +25,7 @@ fn cond() -> nil {
 }
 
 fn shifts_and_stuff() -> nil {
-  let x:i8 = 1 << 3;
+  let x:int = 1 << 3;
   x = x >> 3;
   x <<= 1;
   x >>= 1;
@@ -39,6 +39,6 @@ fn shifts_and_stuff() -> nil {
   x ~= 3;
 }
 
-fn main() -> i8 {
+fn main() -> int {
   return 0;
 }

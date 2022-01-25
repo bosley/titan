@@ -16,29 +16,8 @@ void scope_change::visit(ins_receiver &ir) { ir.receive(*this); }
 
 variable_types string_to_variable_type(const std::string &s)
 {
-  if (s == "u8") {
-    return variable_types::U8;
-  }
-  if (s == "u16") {
-    return variable_types::U16;
-  }
-  if (s == "u32") {
-    return variable_types::U32;
-  }
-  if (s == "u64") {
-    return variable_types::U64;
-  }
-  if (s == "i8") {
-    return variable_types::I8;
-  }
-  if (s == "i16") {
-    return variable_types::I16;
-  }
-  if (s == "i32") {
-    return variable_types::I32;
-  }
-  if (s == "i64") {
-    return variable_types::I64;
+  if (s == "int") {
+    return variable_types::INT;
   }
   if (s == "float") {
     return variable_types::FLOAT;
@@ -46,6 +25,10 @@ variable_types string_to_variable_type(const std::string &s)
   if (s == "string") {
     return variable_types::STRING;
   }
+
+
+  std::cout << ">>>>>>>>>>>>>>>" << s << std::endl;
+
   /*
    *    NOTE : User defined times not handled here
    *    TODO : When user created constructs are created we will

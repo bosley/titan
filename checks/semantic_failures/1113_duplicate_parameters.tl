@@ -2,10 +2,10 @@
 //  Duplicate parameters in add function
 //
 
-fn add(lhs:i8, lhs:i8) -> i8 {
+fn add(lhs:int, lhs:int) -> int {
   return 0;
 }
 
-fn main() -> i8 {
+fn main() -> int {
   return 0;
 }

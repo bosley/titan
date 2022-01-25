@@ -1,9 +1,9 @@
 
-fn main() -> i8 {
+fn main() -> int {
 
-  let x:i8[5] = {0,0,0,0,0};
+  let x:int[5] = {0,0,0,0,0};
 
-  let y:i8 = x;
+  let y:int = x;
 
   return 0;
 }

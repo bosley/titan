@@ -19,51 +19,9 @@ public:
       auto i = reinterpret_cast<titan::object_var*>(item);
       return put_item(i->value.get());
     }
-    case titan::obj_type::U8:
+    case titan::obj_type::INT:
     {
-      auto i = reinterpret_cast<titan::object_u8*>(item);
-      std::cout << static_cast<int>(i->value);
-      return true;
-    }
-    case titan::obj_type::U16:
-    {
-      auto i = reinterpret_cast<titan::object_u16*>(item);
-      std::cout << i->value;
-      return true;
-    }
-    case titan::obj_type::U32:
-    {
-      auto i = reinterpret_cast<titan::object_u32*>(item);
-      std::cout << i->value;
-      return true;
-    }
-    case titan::obj_type::U64:
-    {
-      auto i = reinterpret_cast<titan::object_u64*>(item);
-      std::cout << i->value;
-      return true;
-    }
-    case titan::obj_type::I8:
-    {
-      auto i = reinterpret_cast<titan::object_i8*>(item);
-      std::cout << static_cast<int>(i->value);
-      return true;
-    }
-    case titan::obj_type::I16:
-    {
-      auto i = reinterpret_cast<titan::object_i16*>(item);
-      std::cout << i->value;
-      return true;
-    }
-    case titan::obj_type::I32:
-    {
-      auto i = reinterpret_cast<titan::object_i32*>(item);
-      std::cout << i->value;
-      return true;
-    }
-    case titan::obj_type::I64:
-    {
-      auto i = reinterpret_cast<titan::object_i64*>(item);
+      auto i = reinterpret_cast<titan::object_int*>(item);
       std::cout << i->value;
       return true;
     }
@@ -125,11 +83,11 @@ public:
   {
     for(auto& param : parameters) {
       if(!put_item(param)) {
-       result = new titan::object_i8(0); 
+       result = new titan::object_int(0); 
       }
     }
 
-    result = new titan::object_i8(1);
+    result = new titan::object_int(1);
   }
 };
 

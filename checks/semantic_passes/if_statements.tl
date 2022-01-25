@@ -1,9 +1,9 @@
-fn main() -> i8 {
-  let a:u8 = 0;
-  let b:u8 = 1;
+fn main() -> int {
+  let a:int = 0;
+  let b:int = 1;
 
   if(a > b) {
-    let t:u8 = a;
+    let t:int = a;
     a = b;
     b = t;
   }

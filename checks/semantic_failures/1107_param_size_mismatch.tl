@@ -1,11 +1,11 @@
 //
 //  Param size mismatch
 //
-fn add(l:u8, r:u8) -> u8 {
+fn add(l:int, r:int) -> int {
   return 0;
 }
 
-fn main() -> i8 {
+fn main() -> int {
   add();
   return 0;
 }

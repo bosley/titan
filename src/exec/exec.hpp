@@ -49,7 +49,6 @@ private:
   exec_cb_if *_cb;
   env *_env;
   std::string _space;
-  std::stack<object *> _object_stack;
   object* execute_expression(instructions::expression* expr);
   object* handle_function_call(instructions::function_call_expr* call);
 

@@ -2,6 +2,6 @@
 //  Return expects expression
 //
 
-fn main() -> i8 {
+fn main() -> int {
   return;
 }

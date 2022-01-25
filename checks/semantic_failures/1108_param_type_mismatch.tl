@@ -1,11 +1,11 @@
 //
 //  Param types mismatched
 //
-fn function(item:u8) -> nil {
+fn function(item:int) -> nil {
   return;
 }
 
-fn main() -> i8 {
+fn main() -> int {
 
   let x:string = "This is a string";
   function(x);

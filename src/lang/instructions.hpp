@@ -38,14 +38,7 @@ namespace titan {
 namespace instructions {
 
 enum class variable_types {
-  U8 = 0,
-  U16,
-  U32,
-  U64,
-  I8,
-  I16,
-  I32,
-  I64,
+  INT = 0,
   FLOAT = 20,
   STRING,
   ARRAY,
@@ -168,7 +161,7 @@ class raw_int_expr : public expression {
 public:
   raw_int_expr(size_t line, size_t col, std::string val)
       : expression(line, col, node_type::RAW_NUMBER, val),
-        as(variable_types::I64), with_val(0)
+        as(variable_types::INT), with_val(0)
   {
   }
   raw_int_expr(size_t line, size_t col, std::string val, variable_types as,

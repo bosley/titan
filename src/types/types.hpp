@@ -10,14 +10,7 @@ namespace titan
 {
 
 enum class obj_type {
-  U8,
-  U16,
-  U32,
-  U64,
-  I8,
-  I16,
-  I32,
-  I64,
+  INT = 0,
   FLOAT,
   STRING,
   ARRAY,
@@ -66,77 +59,14 @@ public:
 };
 using object_var_ptr = std::unique_ptr<object_var>;
 
-class object_u8 : public object {
+class object_int : public object {
 public:
-  object_u8() : object(obj_type::U8), value(0) {}
-  object_u8(uint8_t value) : object(obj_type::U8), value(value) {}
-  uint8_t value;
-  virtual object* clone() const { return new object_u8(value); }
-};
-using object_u8_ptr = std::unique_ptr<object_u8>;
-
-class object_u16 : public object {
-public:
-  object_u16() : object(obj_type::U16), value(0) {}
-  object_u16(uint16_t value) : object(obj_type::U16), value(value) {}
-  uint16_t value;
-  virtual object* clone() const { return new object_u16(value); }
-};
-using object_u16_ptr = std::unique_ptr<object_u16>;
-
-class object_u32 : public object {
-public:
-  object_u32() : object(obj_type::U32), value(0) {}
-  object_u32(uint32_t value) : object(obj_type::U32), value(value) {}
-  uint32_t value;
-  virtual object* clone() const { return new object_u32(value); }
-};
-using object_u32_ptr = std::unique_ptr<object_u32>;
-
-class object_u64 : public object {
-public:
-  object_u64() : object(obj_type::U64), value(0) {}
-  object_u64(uint64_t value) : object(obj_type::U64), value(value) {}
-  uint64_t value;
-  virtual object* clone() const { return new object_u64(value); }
-};
-using object_u64_ptr = std::unique_ptr<object_u64>;
-
-class object_i8 : public object {
-public:
-  object_i8() : object(obj_type::I8), value(0) {}
-  object_i8(int8_t value) : object(obj_type::I8), value(value) {}
-  int8_t value;
-  virtual object* clone() const { return new object_i8(value); }
-};
-using object_i8_ptr = std::unique_ptr<object_i8>;
-
-class object_i16 : public object {
-public:
-  object_i16() : object(obj_type::I16), value(0) {}
-  object_i16(int16_t value) : object(obj_type::I16), value(value) {}
-  int16_t value;
-  virtual object* clone() const { return new object_i16(value); }
-};
-using object_i16_ptr = std::unique_ptr<object_i16>;
-
-class object_i32 : public object {
-public:
-  object_i32() : object(obj_type::I32), value(0) {}
-  object_i32(int32_t value) : object(obj_type::I32), value(value) {}
-  int32_t value;
-  virtual object* clone() const { return new object_i32(value); }
-};
-using object_i32_ptr = std::unique_ptr<object_i32>;
-
-class object_i64 : public object {
-public:
-  object_i64() : object(obj_type::I64), value(0) {}
-  object_i64(int64_t value) : object(obj_type::I64), value(value) {}
+  object_int() : object(obj_type::INT), value(0) {}
+  object_int(int64_t value) : object(obj_type::INT), value(value) {}
   int64_t value;
-  virtual object* clone() const { return new object_i64(value); }
+  virtual object* clone() const { return new object_int(value); }
 };
-using object_i64_ptr = std::unique_ptr<object_i64>;
+using object_int_ptr = std::unique_ptr<object_int>;
 
 class object_float : public object {
 public:

@@ -2,8 +2,8 @@
 // Duplicate variable 
 //
 
-fn main() -> i8 {
-  let x:i8 = 0;
-  let x:i8 = 0;
+fn main() -> int {
+  let x:int = 0;
+  let x:int = 0;
   return 0;
 }

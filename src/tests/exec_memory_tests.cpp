@@ -15,52 +15,10 @@ namespace
     if(lhs->type != rhs->type) { return false; }
 
     switch(lhs->type) {
-    case titan::obj_type::U8: 
+    case titan::obj_type::INT: 
     {
-      auto l = reinterpret_cast<titan::object_u8*>(lhs);
-      auto r = reinterpret_cast<titan::object_u8*>(rhs);
-      return l->value == r->value;
-    }
-    case titan::obj_type::U16:
-    {
-      auto l = reinterpret_cast<titan::object_u16*>(lhs);
-      auto r = reinterpret_cast<titan::object_u16*>(rhs);
-      return l->value == r->value;
-    }
-    case titan::obj_type::U32:   
-    {
-      auto l = reinterpret_cast<titan::object_u32*>(lhs);
-      auto r = reinterpret_cast<titan::object_u32*>(rhs);
-      return l->value == r->value;
-    }
-    case titan::obj_type::U64:   
-    {
-      auto l = reinterpret_cast<titan::object_u64*>(lhs);
-      auto r = reinterpret_cast<titan::object_u64*>(rhs);
-      return l->value == r->value;
-    }
-    case titan::obj_type::I8:
-    {
-      auto l = reinterpret_cast<titan::object_i8*>(lhs);
-      auto r = reinterpret_cast<titan::object_i8*>(rhs);
-      return l->value == r->value;
-    }
-    case titan::obj_type::I16: 
-    {
-      auto l = reinterpret_cast<titan::object_i16*>(lhs);
-      auto r = reinterpret_cast<titan::object_i16*>(rhs);
-      return l->value == r->value;
-    }
-    case titan::obj_type::I32: 
-    {
-      auto l = reinterpret_cast<titan::object_i32*>(lhs);
-      auto r = reinterpret_cast<titan::object_i32*>(rhs);
-      return l->value == r->value;
-    }
-    case titan::obj_type::I64: 
-    {
-      auto l = reinterpret_cast<titan::object_i64*>(lhs);
-      auto r = reinterpret_cast<titan::object_i64*>(rhs);
+      auto l = reinterpret_cast<titan::object_int*>(lhs);
+      auto r = reinterpret_cast<titan::object_int*>(rhs);
       return l->value == r->value;
     }
     case titan::obj_type::FLOAT:

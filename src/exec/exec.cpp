@@ -15,36 +15,7 @@ inline static object* convert_raw_int_to_obj(const std::string &data)
   long long value = 0;
   std::istringstream iss(data);
   iss >> value;
-
-  if (value <= 0) {
-    if (value <= std::numeric_limits<int8_t>::min()) {
-      return new object_i8(static_cast<int8_t>(value));
-    }
-    else if (value <= std::numeric_limits<int16_t>::min()) {
-      return new object_i16(static_cast<int16_t>(value));
-    }
-    else if (value <= std::numeric_limits<int32_t>::min()) {
-      return new object_i32(static_cast<int32_t>(value));
-    }
-    else {
-      return new object_i64(static_cast<int64_t>(value));
-    }
-  }
-  else {
-    if (value <= std::numeric_limits<uint8_t>::max()) {
-      return new object_u8(static_cast<uint8_t>(value));
-    }
-    else if (value <= std::numeric_limits<uint16_t>::max()) {
-      return new object_u16(static_cast<uint16_t>(value));
-    }
-    else if (value <= std::numeric_limits<uint32_t>::max()) {
-      return new object_u32(static_cast<uint32_t>(value));
-    }
-    else {
-      return new object_u64(static_cast<uint64_t>(value));
-    }
-  }
-  return nullptr;
+  return new object_int(value);
 }
 
 inline static object* convert_str_to_float(const std::string &data)
@@ -96,10 +67,11 @@ void exec::receive(instructions::expression_instruction &ins)
   object * result = execute_expression(ins.expr.get());
   if(!result) {
     std::cout << "Exec expression no result" << std::endl;
-    _object_stack.push(new object_nil());
+
+    // TODO : Throw some error 
+
     return;
   }
-  _object_stack.push(result);
 }
 
 void exec::receive(instructions::if_instruction &ins)
@@ -186,6 +158,8 @@ object *exec::execute_expression(instructions::expression *expr)
     //
     // This will mean we modify instructions::expression to hold
     // a 'path' 
+    
+    // Clone so we don't move ownership
     object * var = _env->get_variable(_space, expr->value)->clone();
 
     if(!var) {
@@ -266,21 +240,20 @@ object *exec::perform_op(object *lhs, object *rhs, Token op)
 
 object* exec::assign(object *lhs, object* rhs)
 {
-  // Lhs should be a var
-
   if(lhs->type != obj_type::VAR) { 
-
-    // TODO: Raise an error here
-    return new object_i8(-1);
+    return new object_int(0);
   }
-
   auto var = reinterpret_cast<object_var*>(lhs);
   var->value = object_ptr(rhs->clone());
-
-  return new object_i8(1);
+  return new object_int(1);
 }
 
-object* exec::equality_check(object* lhs, object* rhs){ return new object_nil(); }
+object* exec::equality_check(object* lhs, object* rhs)
+{
+   
+  return new object_nil();
+}
+
 object* exec::add_eq(object* lhs, object* rhs){ return new object_nil(); }
 object* exec::sub_eq(object* lhs, object* rhs){ return new object_nil(); }
 object* exec::div_eq(object* lhs, object* rhs){ return new object_nil(); }

@@ -10,6 +10,6 @@ fn function() -> nil {
   return;
 }
 
-fn main() -> i8 {
+fn main() -> int {
   return 0;
 }

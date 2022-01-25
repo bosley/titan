@@ -3,9 +3,9 @@ fn bad() -> nil {
   return;
 }
 
-fn main() -> i8 {
+fn main() -> int {
 
-  let x:i8 = 3 + bad();
+  let x:int = 3 + bad();
 
   return 0;
 }
