@@ -3,9 +3,10 @@
 
 #include "space.hpp"
 #include "memory.hpp"
-#include "lang/instructions.hpp"
+#include "types/types.hpp"
 
 #include <unordered_map>
+#include <vector>
 #include <optional>
 
 namespace titan
@@ -19,13 +20,11 @@ public:
   // An xfunc to extend the functionality of titan (external function)
   class xfunc {
   public:
-    // Name the full scoping and name of the item ( std::io::print )
-    // Parameters as a vector of 'instruction::variable' 
-    // Reuturn type as an 'instruction::variable'
-    
-    // Execute the functionality of this xfunc using the given parameters
-    // The return_type variable will be used as the return data of the call
+    virtual ~xfunc() = default;
     virtual void execute() = 0;
+
+    std::vector<object*> parameters;
+    object * result;
   };
 
   env();
@@ -40,6 +39,8 @@ public:
 
   object* get_variable(const std::string& space, const std::string& name);
   bool new_variable(const std::string& space, const std::string& name, object* var);
+
+  xfunc* get_external_function(const std::string& name);
 
 private:
   

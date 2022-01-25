@@ -3,8 +3,10 @@
 
 #include "env.hpp"
 #include "lang/instructions.hpp"
+#include "lang/tokens.hpp"
 #include "types/types.hpp"
 
+#include <stack>
 #include <string>
 #include <vector>
 
@@ -47,8 +49,50 @@ private:
   exec_cb_if *_cb;
   env *_env;
   std::string _space;
-  std::vector<instructions::expression*> _parameters;
+  std::stack<object *> _object_stack;
   object* execute_expression(instructions::expression* expr);
+  object* handle_function_call(instructions::function_call_expr* call);
+
+  object* perform_unary_op(object* rhs, Token op);
+  object* perform_op(object* lhs, object* rhs, Token op);
+
+  object* assign(object* lhs, object* rhs);
+
+  object* equality_check(object* lhs, object* rhs);
+  object* add_eq(object* lhs, object* rhs);
+  object* sub_eq(object* lhs, object* rhs);
+  object* div_eq(object* lhs, object* rhs);
+  object* mul_eq(object* lhs, object* rhs);
+  object* mod_eq(object* lhs, object* rhs);
+  object* pow_eq(object* lhs, object* rhs);
+  object* lsh_eq(object* lhs, object* rhs);
+  object* rsh_eq(object* lhs, object* rhs);
+  object* hat_eq(object* lhs, object* rhs);
+  object* pipe_eq(object* lhs, object* rhs);
+  object* tilde_eq(object* lhs, object* rhs);
+  object* ampersand_eq(object* lhs, object* rhs);
+  object* not_equal(object* lhs, object* rhs);
+  object* lt(object* lhs, object* rhs);
+  object* gt(object* lhs, object* rhs);
+  object* lte(object* lhs, object* rhs);
+  object* gte(object* lhs, object* rhs);
+  object* rsh(object* lhs, object* rhs);
+  object* lsh(object* lhs, object* rhs);
+  object* add(object* lhs, object* rhs);
+  object* sub(object* lhs, object* rhs);
+  object* div(object* lhs, object* rhs);
+  object* mul(object* lhs, object* rhs);
+  object* mod(object* lhs, object* rhs);
+  object* pow(object* lhs, object* rhs);
+  object* ampersand(object* lhs, object* rhs);
+  object* logical_or(object* lhs, object* rhs);
+  object* logical_and(object* lhs, object* rhs);
+  object* pipe(object* lhs, object* rhs);
+
+  object* hat(object* rhs);
+  object* tilde(object* rhs);
+  object* sub(object* rhs);
+  object* negate(object* rhs);
 };
 
 }

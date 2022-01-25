@@ -59,6 +59,7 @@ private:
   env _environment;
   parser _parser;
   exec * _executor;
+  std::vector<env::xfunc*> _built_ins;
 
   bool run_tokens(std::vector<TD_Pair> tokens);
 };

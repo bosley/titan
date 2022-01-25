@@ -11,6 +11,11 @@
 #include <string>
 #include <string_view>
 
+// Built in methods that need to be added to the env
+//
+#include "built_in/puts.hpp"
+
+
 namespace titan {
 
 namespace {
@@ -81,11 +86,18 @@ titan::titan()
       _parser(g_importer), _executor(nullptr)
 {
   _executor = new exec(*this, _environment);
+
+  // Puts
+  _built_ins.emplace_back(new built_in::puts());
+  _environment.add_xfunc("__puts", _built_ins.back());
 }
 
 titan::~titan()
 {
   delete _executor;
+  for(auto& f : _built_ins) {
+    delete f;
+  }
 }
 
 int titan::do_repl()
@@ -121,6 +133,7 @@ int titan::do_repl()
       return 1;
     }
     _current_file.line++;
+    std::cout << std::endl;
   }
 
   // TODO: Return the environment's return code

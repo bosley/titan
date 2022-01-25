@@ -42,4 +42,12 @@ bool env::new_variable(const std::string& space, const std::string& name, object
   return _memory->new_variable(space, name, var);
 }
 
+env::xfunc* env::get_external_function(const std::string& name)
+{
+  if(_external.find(name) == _external.end()) {
+    return nullptr;
+  }
+  return _external[name];
+}
+
 }
