@@ -22,12 +22,9 @@ variable_types string_to_variable_type(const std::string &s)
   if (s == "float") {
     return variable_types::FLOAT;
   }
-  if (s == "string") {
+  if (s == "str" || s == "string" ) {
     return variable_types::STRING;
   }
-
-
-  std::cout << ">>>>>>>>>>>>>>>" << s << std::endl;
 
   /*
    *    NOTE : User defined times not handled here

@@ -160,7 +160,7 @@ object *exec::execute_expression(instructions::expression *expr)
     // a 'path' 
     
     // Clone so we don't move ownership
-    object * var = _env->get_variable(_space, expr->value)->clone();
+    object * var = _env->get_variable(_space, expr->value);
 
     if(!var) {
       return new object_nil();
@@ -241,11 +241,128 @@ object *exec::perform_op(object *lhs, object *rhs, Token op)
 object* exec::assign(object *lhs, object* rhs)
 {
   if(lhs->type != obj_type::VAR) { 
+    std::cout << "LHS not a var????" << std::endl;
     return new object_int(0);
   }
+
   auto var = reinterpret_cast<object_var*>(lhs);
-  var->value = object_ptr(rhs->clone());
-  return new object_int(1);
+
+  if(var->value->type == rhs->type) {
+    var->value = object_ptr(rhs->clone());
+    return new object_int(1);
+  }
+
+  /*
+        If the items aren't the same type, then we need to cast the items
+        to whatever type is on the lhs if we can
+  */
+  switch(var->value->type) {
+
+  //
+  //  LHS is int
+  //
+  case obj_type::INT:
+  {
+
+    //
+    //    Check rhs to see how to cast
+    //
+    switch(rhs->type) {
+    case obj_type::INT:
+    {
+      auto r = reinterpret_cast<object_int*>(rhs);
+      var->value = object_ptr(new object_int(r->value));
+      return new object_int(1);
+    }
+    case obj_type::FLOAT:
+    {
+      auto r = reinterpret_cast<object_float*>(rhs);
+      var->value = object_ptr(new object_int(r->value));
+      return new object_int(1);
+    }
+    case obj_type::VAR:
+    {
+      auto r = reinterpret_cast<object_var*>(rhs);
+      return assign(lhs, r->value.get());
+    }
+    default:
+      //
+      //  TODO: Throw an error here
+      //
+      std::cout << "Unhandled item in exec::assign - >>> A " << std::endl;
+      return new object_int(0);
+    };
+  }
+
+  //
+  //  LHS is float
+  //
+  case obj_type::FLOAT:
+  {
+    switch(rhs->type) {
+    case obj_type::INT:
+    {
+      auto r = reinterpret_cast<object_int*>(rhs);
+      var->value = object_ptr(new object_float(r->value));
+      return new object_int(1);
+    }
+    case obj_type::FLOAT:
+    {
+      auto r = reinterpret_cast<object_float*>(rhs);
+      var->value = object_ptr(new object_float(r->value));
+      return new object_int(1);
+    }
+    case obj_type::VAR:
+    {
+      auto r = reinterpret_cast<object_var*>(rhs);
+      return assign(lhs, r->value.get());
+    }
+    default:
+      //
+      //  TODO: Throw an error here
+      //
+      std::cout << "Unhandled item in exec::assign - >>> A " << (int)rhs->type << std::endl;
+      return new object_int(0);
+    };
+  }
+
+  //
+  //  LHS is string
+  //
+  case obj_type::STRING:
+  {
+    switch(rhs->type) {
+    case obj_type::INT:
+    {
+      auto r = reinterpret_cast<object_int*>(rhs);
+      var->value = object_ptr(new object_str(std::to_string(r->value)));
+      return new object_int(1);
+    }
+    case obj_type::FLOAT:
+    {
+      auto r = reinterpret_cast<object_float*>(rhs);
+      var->value = object_ptr(new object_str(std::to_string(r->value)));
+      return new object_int(1);
+    }
+    case obj_type::VAR:
+    {
+      auto r = reinterpret_cast<object_var*>(rhs);
+      return assign(lhs, r->value.get());
+    }
+    default:
+      //
+      //  TODO: Throw an error here
+      //
+      std::cout << "Unhandled item in exec::assign - >>> B " << (int)rhs->type << std::endl;
+      return new object_int(0);
+    };
+  }
+  default:
+    //
+    //  TODO: Throw an error here
+    //
+    return new object_int(0);
+  };
 }
 
 object* exec::equality_check(object* lhs, object* rhs)
