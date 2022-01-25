@@ -186,7 +186,7 @@ object *exec::execute_expression(instructions::expression *expr)
     //
     // This will mean we modify instructions::expression to hold
     // a 'path' 
-    object * var = _env->get_variable(_space, expr->value);
+    object * var = _env->get_variable(_space, expr->value)->clone();
 
     if(!var) {
       return new object_nil();
