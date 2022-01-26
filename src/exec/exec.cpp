@@ -12,7 +12,7 @@ namespace
 {
 inline static object* convert_raw_int_to_obj(const std::string &data)
 {
-  long long value = 0;
+  int64_t value = 0;
   std::istringstream iss(data);
   iss >> value;
   return new object_int(value);
@@ -54,8 +54,12 @@ void exec::receive(instructions::scope_change &ins)
 
 void exec::receive(instructions::assignment_instruction &ins)
 {
+  auto result = execute_expression(ins.expr.get(), true);
+
+
+
   if (!_env->new_variable(_space, ins.var->name,
-                          new object_var(execute_expression(ins.expr.get())))) {
+                          new object_var(execute_expression(ins.expr.get(), true)))) {
     std::cout << "Unable to create variable - raise an error" << std::endl;
   }
 }
@@ -116,7 +120,7 @@ void exec::receive(instructions::function &ins)
     Walk an expression and execute it.  
 
 */
-object *exec::execute_expression(instructions::expression *expr)
+object *exec::execute_expression(instructions::expression *expr, bool clone_variables)
 {
   switch (expr->type) {
   case instructions::node_type::ROOT:
@@ -136,7 +140,7 @@ object *exec::execute_expression(instructions::expression *expr)
   {
     auto infix_expr = reinterpret_cast<instructions::infix_expr*>(expr);
     auto lhs = execute_expression(infix_expr->left.get());
-    auto rhs = execute_expression(infix_expr->right.get());
+    auto rhs = execute_expression(infix_expr->right.get(), true);
     return perform_op(lhs, rhs, infix_expr->tok_op);
   }
   case instructions::node_type::PREFIX:
@@ -158,12 +162,19 @@ object *exec::execute_expression(instructions::expression *expr)
     //
     // This will mean we modify instructions::expression to hold
     // a 'path' 
-    
-    // Clone so we don't move ownership
-    object * var = _env->get_variable(_space, expr->value);
 
+    object *var = (clone_variables)
+                      ? _env->get_variable(_space, expr->value)->clone()
+                      : _env->get_variable(_space, expr->value);
     if(!var) {
       return new object_nil();
+    }
+
+    //  If we clone the variable we are attempting to get its value, so we must drill 
+    //  into it ang ensure we are retrieving a raw value not a var
+    //
+    while(clone_variables && (var->type == obj_type::VAR)) {
+      var = reinterpret_cast<object_var*>(var)->value.get();
     }
     return var;
   }
@@ -283,7 +294,7 @@ object* exec::assign(object *lhs, object* rhs)
     case obj_type::VAR:
     {
       auto r = reinterpret_cast<object_var*>(rhs);
-      return assign(lhs, r->value.get());
+      return assign(lhs, r->value.get()->clone());
     }
     default:
       //
@@ -315,7 +326,7 @@ object* exec::assign(object *lhs, object* rhs)
     case obj_type::VAR:
     {
       auto r = reinterpret_cast<object_var*>(rhs);
-      return assign(lhs, r->value.get());
+      return assign(lhs, r->value.get()->clone());
     }
     default:
       //
@@ -347,7 +358,7 @@ object* exec::assign(object *lhs, object* rhs)
     case obj_type::VAR:
     {
       auto r = reinterpret_cast<object_var*>(rhs);
-      return assign(lhs, r->value.get());
+      return assign(lhs, r->value.get()->clone());
     }
     default:
       //
@@ -357,10 +368,16 @@ object* exec::assign(object *lhs, object* rhs)
       return new object_int(0);
     };
   }
+  case obj_type::VAR:
+  {
+    //auto l = reinterpret_cast<object_var*>(lhs);
+    //return assign(l->value.get(), rhs);
+  }
   default:
     //
     //  TODO: Throw an error here
     //
+  std::cout << "LHS Item not handled in expr : " << (int)var->value->type << std::endl;
     return new object_int(0);
   };
 }

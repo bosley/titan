@@ -60,6 +60,7 @@ set(PROJECT_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/analyze/analyzer.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/analyze/symbols.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/titan.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/types/types.cpp
 )
 
 add_executable(${PROJECT_NAME}

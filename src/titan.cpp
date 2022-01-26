@@ -102,7 +102,7 @@ titan::~titan()
 
 int titan::do_repl()
 {
-  std::cout << "Repl : a = " << _analyze << ", e = " << _execute << std::endl;
+  //std::cout << "Repl : a = " << _analyze << ", e = " << _execute << std::endl;
 
   /*
     Needs to be updated to be more aware of syntax so we can have multilined
@@ -169,15 +169,17 @@ bool titan::run_tokens(std::vector<TD_Pair> tokens)
     return true;
   }
 
+  /*
   for (auto &t : tokens) {
     std::cout << token_to_str(t) << " ";
   }
   std::cout << std::endl;
+  */
 
   // Generate instruction(s) from token stream
   auto instructions = _parser.parse(std::string(_current_file.name), tokens);
 
-  std::cout << "Got : " << instructions.size() << " instructions" << std::endl;
+  //std::cout << "Got : " << instructions.size() << " instructions" << std::endl;
 
   // If analyze - Analyze the instruction for semantics
 

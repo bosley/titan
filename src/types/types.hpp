@@ -112,6 +112,21 @@ public:
 };
 using object_user_defined_ptr = std::unique_ptr<object_user_defined>;
 
+
+namespace obj_operation
+{
+
+//  Copy item from source to destination while respecting types
+//    - Returns true iff source can be safely converted to the type
+//      of the destination
+//
+extern bool copy_to(object* destination, object* source);
+
+
+
+}
+
+
 }
 
 #endif

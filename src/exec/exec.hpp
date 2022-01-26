@@ -49,7 +49,7 @@ private:
   exec_cb_if *_cb;
   env *_env;
   std::string _space;
-  object* execute_expression(instructions::expression* expr);
+  object* execute_expression(instructions::expression* expr, bool clone_variables=false);
   object* handle_function_call(instructions::function_call_expr* call);
 
   object* perform_unary_op(object* rhs, Token op);
